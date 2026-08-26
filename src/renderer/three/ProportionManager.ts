@@ -15,6 +15,8 @@ interface MultiBoneScaleDef {
   bones: string[]
   axis: 'x' | 'y' | 'z' | 'xz'
   range: [number, number]
+  /** Bones form a kinematic chain: divide the target factor across them so the compound product equals the factor. */
+  chained?: boolean
 }
 
 type ProportionDef = BoneScaleDef | MultiBoneScaleDef
@@ -34,35 +36,60 @@ export const PROPORTION_MORPHS: Array<{ name: string; label: string }> = [
 
 const ref = referenceSkeleton as { aliases: Record<string, string> }
 
-const BONE_MORPHS: Record<string, ProportionDef> = {
-  height: {
-    bones: [
-      'spine_01', 'spine_02', 'spine_03',
-      'neck_01',
-      'thigh_l', 'thigh_r',
-      'calf_l', 'calf_r'
-    ],
-    axis: 'y',
-    range: [0.88, 1.12]
-  },
-  shoulderWidth: { bone: 'clavicle_l', axis: 'x', range: [0.8, 1.35], mirror: 'clavicle_r' },
-  neckWidth: { bone: 'neck_01', axis: 'xz', range: [0.7, 1.3] },
-  bellySize: { bone: 'spine_02', axis: 'xz', range: [0.75, 1.35] },
-  headSize: { bone: 'Head', axis: 'y', range: [0.82, 1.22] },
-  legLength: { bone: 'thigh_l', axis: 'y', range: [0.75, 1.25], mirror: 'thigh_r' },
-  armLength: { bone: 'lowerarm_l', axis: 'y', range: [0.8, 1.25], mirror: 'lowerarm_r' },
-  muscleMass: {
-    bones: [
-      'upperarm_l',
-      'upperarm_r',
-      'lowerarm_l',
-      'lowerarm_r',
-      'thigh_l',
-      'thigh_r'
-    ],
-    axis: 'xz',
-    range: [0.8, 1.3]
-  }
+const BONE_MORPHS: Record<string, ProportionDef[]> = {
+  height: [
+    {
+      bones: ['spine_01', 'spine_02', 'spine_03', 'neck_01'],
+      axis: 'y',
+      range: [0.88, 1.12],
+      chained: true
+    },
+    {
+      bones: ['thigh_l', 'calf_l'],
+      axis: 'y',
+      range: [0.88, 1.12],
+      chained: true
+    },
+    {
+      bones: ['thigh_r', 'calf_r'],
+      axis: 'y',
+      range: [0.88, 1.12],
+      chained: true
+    }
+  ],
+  shoulderWidth: [{ bone: 'clavicle_l', axis: 'x', range: [0.8, 1.35], mirror: 'clavicle_r' }],
+  neckWidth: [{ bone: 'neck_01', axis: 'xz', range: [0.7, 1.3] }],
+  bellySize: [{ bone: 'spine_02', axis: 'xz', range: [0.75, 1.35] }],
+  headSize: [{ bone: 'Head', axis: 'y', range: [0.82, 1.22] }],
+  legLength: [
+    {
+      bones: ['thigh_l', 'calf_l'],
+      axis: 'y',
+      range: [0.75, 1.25],
+      chained: true
+    },
+    {
+      bones: ['thigh_r', 'calf_r'],
+      axis: 'y',
+      range: [0.75, 1.25],
+      chained: true
+    }
+  ],
+  armLength: [{ bone: 'lowerarm_l', axis: 'y', range: [0.8, 1.25], mirror: 'lowerarm_r' }],
+  muscleMass: [
+    {
+      bones: [
+        'upperarm_l',
+        'upperarm_r',
+        'lowerarm_l',
+        'lowerarm_r',
+        'thigh_l',
+        'thigh_r'
+      ],
+      axis: 'xz',
+      range: [0.8, 1.3]
+    }
+  ]
 }
 
 function remap01(value: number, range: [number, number]): number {
@@ -83,9 +110,11 @@ export class ProportionManager {
 
   applyProportions(morphValues: Record<string, number>): void {
     for (const [name, value] of Object.entries(morphValues)) {
-      const def = BONE_MORPHS[name]
-      if (def) {
-        this.applyBoneScale(def, value)
+      const defs = BONE_MORPHS[name]
+      if (defs) {
+        for (const def of defs) {
+          this.applyBoneScale(def, value)
+        }
         continue
       }
       this.applyMeshMorph(name, value)
@@ -114,10 +143,11 @@ export class ProportionManager {
     const scale = remap01(value, 'range' in def ? def.range : [0.5, 1.5])
 
     if ('bones' in def) {
+      const perBone = def.chained ? Math.pow(scale, 1 / def.bones.length) : scale
       for (const name of def.bones) {
         const bone = this.boneMap.get(name) ?? this.resolveBone(name)
         if (bone) {
-          applyAxisScale(bone, def.axis, scale)
+          applyAxisScale(bone, def.axis, perBone)
         }
       }
     } else {

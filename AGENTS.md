@@ -2168,3 +2168,34 @@ Regression tests added to BodyParts.test.ts: cranium fully Head-bound (structura
 - 207 tests passing (203 + 4 new)
 
 **Note for user**: if a weird body still appears, Save the character immediately and report the name - the saved DNA JSON gives an exact reproduction.
+
+---
+
+## Session 038 - Height Morph Compounding Fix (Saved-DNA Reproduction)
+
+### Date
+
+2026-08-26
+
+### What we fixed (user saved 3 broken random characters - exact DNA reproductions)
+
+| # | Issue | Root Cause | Fix |
+|---|-------|------------|-----|
+| 1 | Face features swallowed/sinking at various head sizes; flying-squirrel bodies persisted | height morph set scale.y = sY on FOUR nested spine bones (Spine->Spine1->Spine2->Neck) - nested scales COMPOUND: slider 0.05 gave sY^4 = 0.63x at the neck, x0.93 headSize = 0.59 TOTAL vertical squash of the whole head unit onto the shoulders. Legs compounded squared (thigh x calf). Face features were never drifting from the skull (Session 036 rigid binding is exact) - the entire head was being crushed | New chained: true option in ProportionManager MultiBoneScaleDef: per-bone scale = factor^(1/chainLength), so the compound product equals the intended factor exactly. Height spine chain (4 bones) and each leg chain (thigh+calf per side, 2 bones) now de-compounded |
+| 2 | Randomizer wrote ersion: 1 DNA (missing bodyShape/face on save) | generateRandomDNA hardcoded version 1 | Uses CURRENT_DNA_VERSION |
+
+### Verification methodology (new standard)
+
+User saved broken characters as files -> loaded them into a CPU simulation (scripts/debug/trace-head.mts) that replicates the exact render pipeline: real bone hierarchy, real buildHead/buildFace geometry, real Skeleton bind with rest inverses, real ProportionManager morphs, CPU skin-weight deformation. All 3 previously-broken characters verified ON-SURFACE after fix. Feature-center vs surface comparisons must account for feature z half-extents (embedded sclera, torus tubes).
+
+### Files modified
+
+- src/renderer/three/ProportionManager.ts - chained support, height/legLength split into per-chain defs
+- src/renderer/services/RandomGenerator.ts - version constant
+- src/renderer/three/ProportionManager.test.ts +2 compounding regression tests
+- scripts/debug/trace-head.mts - full-pipeline reproduction harness
+
+### Verification
+
+- typecheck 0 errors; lint clean; build succeeds
+- 209 tests passing (207 + 2 new)

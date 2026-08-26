@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { generateRandomDNA } from './RandomGenerator'
+import { CURRENT_DNA_VERSION } from '../../shared/types/dna'
 import type { SlotDefinition } from '../../shared/types/slot'
 import type { AssetEntry } from '../../shared/types/asset'
 import type { Rule } from '../../shared/types/rule'
@@ -29,7 +30,7 @@ const testRules: Rule[] = []
 describe('generateRandomDNA', () => {
   it('returns a valid DNA object', () => {
     const dna = generateRandomDNA({ seed: 'test', slots: testSlots, assets: testAssets, palettes: testPalettes, rules: testRules })
-    expect(dna).toHaveProperty('version', 1)
+    expect(dna).toHaveProperty('version', CURRENT_DNA_VERSION)
     expect(dna).toHaveProperty('name')
     expect(dna).toHaveProperty('slots')
     expect(dna).toHaveProperty('morphs')

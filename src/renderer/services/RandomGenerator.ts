@@ -1,4 +1,5 @@
 import type { CharacterDNA } from '../../shared/types/dna'
+import { CURRENT_DNA_VERSION } from '../../shared/types/dna'
 import type { SlotDefinition } from '../../shared/types/slot'
 import type { AssetEntry } from '../../shared/types/asset'
 import type { Rule } from '../../shared/types/rule'
@@ -50,7 +51,7 @@ export function generateRandomDNA(params: RandomGeneratorParams): CharacterDNA {
   const rng = new SeededPRNG(params.seed)
   const now = new Date().toISOString()
   const dna: CharacterDNA = {
-    version: 1,
+    version: CURRENT_DNA_VERSION,
     name: `Random_${params.seed.slice(0, 6)}`,
     slots: {},
     morphs: {},
