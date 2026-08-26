@@ -249,3 +249,64 @@ varied but coherent faces; expressions persist through save/load and export.
 
 Every sprint ends with: `npm run typecheck && npm run lint && npm run test &&
 npm run build`, manual viewport check, commit + AGENTS.md session log update.
+
+---
+
+## Procedural Clothing Expansion (Sprints 20-23)
+
+> Scoped 2026-08-26 after Sprint 19 user feedback. Generated garments hug our
+> own skeleton exactly, so the Quaternius outfit-fit problem never applies.
+> Plain colors via existing cloth/leather/metal palettes; patterns deferred.
+
+### Sprint 20 - Clothing Pipeline Proof (t-shirt + jeans)
+
+**Goal**: One top + one bottom generated as real slot assets, proving the full
+pipeline before variety.
+
+- [ ] src/renderer/three/procedural/Garments.ts: uildTShirt(bodyShape) -
+      torso-hugging elliptical sweep shell offset ~1cm outside the body
+      surface, short sleeve stubs over the upper arms; uildJeans(bodyShape) -
+      hip shell + two leg tubes down to the ankle
+- [ ] Garment geometry reuses SkinWeights bindings (Root..Spine2 / leg chains)
+      so garments deform with morphs and future animation
+- [ ] Integration: CharacterManager treats garment builders as virtual slot
+      assets (shirt/pants slots list generated variants alongside imported GLBs)
+- [ ] Colors flow through MaterialManager 'cloth'/'leather' categories;
+      thumbnails generate via existing offscreen renderer; rules engine works
+      unchanged
+
+**Acceptance**: Equipping t-shirt + jeans covers torso/legs, deforms with
+Belly/Bust/Butt sliders, exports in GLB, undo/redo works.
+
+### Sprint 21 - Lower Body + Headwear Variants
+
+- [ ] Pants fits: shorts (cutoff mid-calf), loose/baggy (larger radius sweep,
+      cuff), tight/spandex (body-hugging offset)
+- [ ] Hats: baseball cap (dome + brim disc), sombrero (wide lathe brim +
+      domed crown), beanie (skull-hugging shell)
+- [ ] Hat placement on Head bone surface (reuses face-projection math);
+      helmet-hides-hair rules keep working
+
+**Acceptance**: Each variant visually distinct at default camera; hats sit on
+any head shape from bodyShape randomization.
+
+### Sprint 22 - Tops Variety
+
+- [ ] Long sleeves (sleeve sweeps down forearms), tank top (strap tubes, no
+      sleeves), jacket (open front gap + collar ring, leather material)
+- [ ] Top length parameter (crop/waist/hip) shared across tops
+
+**Acceptance**: 6+ distinct tops in shirt slot; layering order respected via
+slot render layers.
+
+### Sprint 23 - Archetype Outfits
+
+- [ ] Mage robe: flared floor-length skirt sweep + wide bell sleeves + collar;
+      elven tunic: fitted long top + V collar accent; dwarf vest: open-front
+      chest piece + belt torus
+- [ ] Outfit presets combining multiple garments + matching palettes
+      (registered like existing presets, shown in PresetPanel)
+- [ ] Randomizer occasionally dresses characters in complete outfits
+
+**Acceptance**: Ctrl+N mage template + outfit preset reads unmistakably as a
+mage; export includes all garments.

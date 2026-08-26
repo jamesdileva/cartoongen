@@ -7,6 +7,10 @@ import { DEFAULT_FACE_SHAPE } from '../../../shared/types/faceShape'
 const EYE_WHITE = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.15 })
 const PUPIL_BLACK = new THREE.MeshStandardMaterial({ color: '#151515', roughness: 0.3 })
 
+const CRANIUM_CENTER_Y = 1.86
+const CRANIUM_CENTER_Z = 0.005
+const HEAD_BONE_Y = 1.75
+
 export interface FaceMaterials {
   skin: THREE.Material
   hair: THREE.Material
@@ -21,6 +25,13 @@ export interface FaceResult {
   mouth: THREE.Mesh
 }
 
+function surfaceZ(shape: BodyShape, x: number, worldY: number): number {
+  const nx = x / shape.headWidth
+  const ny = (worldY - CRANIUM_CENTER_Y) / shape.headHeight
+  const k = Math.max(1 - nx * nx - ny * ny, 0.02)
+  return CRANIUM_CENTER_Z + shape.headLength * Math.sqrt(k)
+}
+
 export function buildFace(
   bodyShape: BodyShape = DEFAULT_BODY_SHAPE,
   faceShape: FaceShape = DEFAULT_FACE_SHAPE,
@@ -30,16 +41,21 @@ export function buildFace(
   const eyes: THREE.Mesh[] = []
   const eyebrows: THREE.Mesh[] = []
 
-  const eyeX = bodyShape.headWidth * 0.38 * faceShape.eyeSpacing
-  const eyeY = 0.135
-  const eyeZ = bodyShape.headLength * 0.84
+  const W = bodyShape.headWidth
+  const H = bodyShape.headHeight
+  const eyeX = W * 0.38 * faceShape.eyeSpacing
+  const eyeWorldY = CRANIUM_CENTER_Y + H * 0.12
+  const eyeY = eyeWorldY - HEAD_BONE_Y
 
   for (const side of [-1, 1]) {
-    const scleraGeo = new THREE.SphereGeometry(0.062 * faceShape.eyeScale, 18, 14)
+    const scleraR = 0.062 * faceShape.eyeScale
+    const scleraHalfZ = scleraR * 0.58
+    const scleraGeo = new THREE.SphereGeometry(scleraR, 18, 14)
     scleraGeo.scale(1, 1, 0.58)
     const sclera = new THREE.Mesh(scleraGeo, EYE_WHITE)
     sclera.name = side < 0 ? 'Eye_Left' : 'Eye_Right'
-    sclera.position.set(side * eyeX, eyeY, eyeZ)
+    const scleraZ = surfaceZ(bodyShape, side * eyeX, eyeWorldY) - scleraHalfZ * 0.45
+    sclera.position.set(side * eyeX, eyeY, scleraZ)
     group.add(sclera)
     eyes.push(sclera)
 
@@ -48,7 +64,7 @@ export function buildFace(
       mats.eye
     )
     iris.name = side < 0 ? 'Iris_Left' : 'Iris_Right'
-    iris.position.set(side * eyeX, eyeY, eyeZ + 0.037 * faceShape.eyeScale)
+    iris.position.set(side * eyeX, eyeY, scleraZ + scleraHalfZ + 0.002)
     group.add(iris)
     eyes.push(iris)
 
@@ -57,7 +73,7 @@ export function buildFace(
       PUPIL_BLACK
     )
     pupil.name = side < 0 ? 'Pupil_Left' : 'Pupil_Right'
-    pupil.position.set(side * eyeX, eyeY, eyeZ + 0.04 * faceShape.eyeScale)
+    pupil.position.set(side * eyeX, eyeY, scleraZ + scleraHalfZ + 0.005)
     group.add(pupil)
 
     const browArc = Math.PI * 0.7
@@ -65,11 +81,8 @@ export function buildFace(
     brow.name = side < 0 ? 'Eyebrow_Left' : 'Eyebrow_Right'
     const archCenter = 0.5 * Math.PI
     brow.rotation.z = archCenter - browArc / 2 + side * faceShape.browTilt * 0.3
-    brow.position.set(
-      side * eyeX,
-      eyeY + 0.082 * faceShape.browHeight,
-      bodyShape.headLength * 0.78
-    )
+    const browWorldY = eyeWorldY + (0.075 + (H - 0.22) * 0.35) * faceShape.browHeight
+    brow.position.set(side * eyeX, browWorldY - HEAD_BONE_Y, surfaceZ(bodyShape, side * eyeX, browWorldY) + 0.006)
     group.add(brow)
     eyebrows.push(brow)
   }
@@ -79,7 +92,8 @@ export function buildFace(
   noseGeo.scale(0.03 * noseSize, 0.05 * noseSize, 0.03 * noseSize)
   const nose = new THREE.Mesh(noseGeo, mats.skin)
   nose.name = 'Nose'
-  nose.position.set(0, 0.075, bodyShape.headLength * 0.95)
+  const noseWorldY = CRANIUM_CENTER_Y - H * 0.15
+  nose.position.set(0, noseWorldY - HEAD_BONE_Y, surfaceZ(bodyShape, 0, noseWorldY) - 0.008 * noseSize)
   group.add(nose)
 
   const curve = Math.max(-1, Math.min(1, faceShape.mouthCurve))
@@ -89,7 +103,8 @@ export function buildFace(
   mouth.name = 'Mouth'
   mouth.rotation.z = curve >= 0 ? 1.5 * Math.PI - arcLen / 2 : 0.5 * Math.PI - arcLen / 2
   mouth.rotation.x = -0.15
-  mouth.position.set(0, 0.015, bodyShape.headLength * 0.86)
+  const mouthWorldY = CRANIUM_CENTER_Y - H * 0.48
+  mouth.position.set(0, mouthWorldY - HEAD_BONE_Y, surfaceZ(bodyShape, 0, mouthWorldY) + 0.004)
   group.add(mouth)
 
   return { group, eyes, eyebrows, mouth }

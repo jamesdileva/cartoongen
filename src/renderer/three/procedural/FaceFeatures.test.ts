@@ -108,4 +108,29 @@ describe('buildFace', () => {
     }
     expect(() => buildFace(DEFAULT_BODY_SHAPE, extreme, mats)).not.toThrow()
   })
+
+  it('projects the mouth onto the skull surface for extreme head shapes', () => {
+    const shapes = [
+      DEFAULT_BODY_SHAPE,
+      { ...DEFAULT_BODY_SHAPE, headLength: 0.36 },
+      { ...DEFAULT_BODY_SHAPE, headLength: 0.17 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.33, headLength: 0.18, headHeight: 0.16 },
+      { ...DEFAULT_BODY_SHAPE, headHeight: 0.29 }
+    ]
+    const CY = 1.86
+    const CZ = 0.005
+    for (const shape of shapes) {
+      const face = buildFace(shape, DEFAULT_FACE_SHAPE, mats)
+      const worldY = face.mouth.position.y + 1.75
+      const ny = (worldY - CY) / shape.headHeight
+      const surf = CZ + shape.headLength * Math.sqrt(Math.max(1 - ny * ny, 0))
+      expect(face.mouth.position.z).toBeGreaterThanOrEqual(surf - 0.002)
+    }
+  })
+
+  it('eye height adapts to tall heads', () => {
+    const normal = buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats)
+    const tall = buildFace({ ...DEFAULT_BODY_SHAPE, headHeight: 0.29 }, DEFAULT_FACE_SHAPE, mats)
+    expect(tall.eyes[0].position.y).toBeGreaterThan(normal.eyes[0].position.y)
+  })
 })

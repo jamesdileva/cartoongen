@@ -2088,3 +2088,30 @@ All 19 sprints complete: fully procedural, DNA-driven character with expressions
 ### Next steps
 
 Discuss and scope **procedural clothing expansion** with the user.
+
+---
+
+## Session 035 - Sprint 19 Follow-up: Face Surface Projection Fix + Clothing Sprints Scoped
+
+### Date
+
+2026-08-26
+
+### What we fixed (user reports after Sprint 19 testing)
+
+| # | Issue | Root Cause | Fix |
+|---|-------|------------|-----|
+| 1 | Randomized faces sometimes too low / not on the face | Face features positioned at fixed fractions of head dims; eye Y never adapted to headHeight, so tall heads grew above the features | All features now project onto the true cranium ellipsoid surface (surfaceZ(shape, x, worldY)); eye level scales as CY + H*0.12, mouth/nose/brows derive from the same surface |
+| 2 | Some randomized faces had no visible mouth | Mouth z was headLength * 0.86 - analytically INSIDE the skull in every configuration (only tube thickness rescued default size); small/long heads buried it fully | Mouth placed at ellipsoid surface + 4mm; verified headlessly across extreme shape grid (default/long/short/wide-short/tall) |
+
+Regression tests added: mouth-on-surface across extreme shapes, eye-height adapts to tall heads. 201 tests passing.
+
+### Clothing expansion scoped
+
+Sprints 20-23 appended to procedural-character.md per user discussion:
+- Sprint 20: pipeline proof (t-shirt + jeans as generated slot assets deforming with morphs)
+- Sprint 21: pants fits (shorts/loose/tight) + hats (baseball cap/sombrero/beanie)
+- Sprint 22: tops variety (long sleeves/tank/jacket with collar)
+- Sprint 23: archetype outfits (mage robe/elven tunic/dwarf vest) + outfit presets
+
+User confirmed archetype outfits (mage robes etc.) as multi-sprint expansion.
