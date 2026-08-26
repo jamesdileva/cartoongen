@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { buildFace, type FaceMaterials } from './FaceFeatures'
-import { DEFAULT_BODY_SHAPE } from '../../../shared/types/bodyShape'
+import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
 import { DEFAULT_FACE_SHAPE, type FaceShape } from '../../../shared/types/faceShape'
 
 const mats: FaceMaterials = {
@@ -18,7 +18,7 @@ describe('buildFace', () => {
     face.group.traverse((c) => {
       if (c instanceof THREE.Mesh) meshCount++
     })
-    expect(meshCount).toBe(10)
+    expect(meshCount).toBe(12)
     expect(face.eyes.length).toBe(4)
     expect(face.eyebrows.length).toBe(2)
   })
@@ -50,13 +50,17 @@ describe('buildFace', () => {
   it('mouthCurve flips the mouth from smile to frown', () => {
     const smile = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, mouthCurve: 0.9 }, mats)
     const frown = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, mouthCurve: -0.9 }, mats)
-    let delta = smile.mouth.rotation.z - frown.mouth.rotation.z
-    delta = Math.atan2(Math.sin(delta), Math.cos(delta))
-    expect(Math.abs(delta)).toBeCloseTo(Math.PI, 1)
-
-    const smileBox = new THREE.Box3().setFromObject(smile.mouth)
-    const frownBox = new THREE.Box3().setFromObject(frown.mouth)
-    expect(frownBox.max.y).toBeGreaterThan(smileBox.max.y)
+    const anchorY = 1.86 - DEFAULT_BODY_SHAPE.headHeight * 0.48 - 1.75
+    // Smile dips below the mouth line, frown arches above it
+    const smileMinY = Math.min(...smile.mouthPoints.map((p) => p.y))
+    const frownMaxY = Math.max(...frown.mouthPoints.map((p) => p.y))
+    expect(smileMinY).toBeLessThan(anchorY - 0.03)
+    expect(frownMaxY).toBeGreaterThan(anchorY + 0.03)
+    // Both arcs are centered on the mouth line
+    const smileMaxY = Math.max(...smile.mouthPoints.map((p) => p.y))
+    const frownMinY = Math.min(...frown.mouthPoints.map((p) => p.y))
+    expect(smileMaxY).toBeLessThan(anchorY + 0.03)
+    expect(frownMinY).toBeGreaterThan(anchorY - 0.03)
   })
 
   it('neutral mouth curve is a shallow line', () => {
@@ -109,22 +113,28 @@ describe('buildFace', () => {
     expect(() => buildFace(DEFAULT_BODY_SHAPE, extreme, mats)).not.toThrow()
   })
 
-  it('projects the mouth onto the skull surface for extreme head shapes', () => {
+  it('projects every mouth point onto the skull surface for extreme shapes and curves', () => {
     const shapes = [
       DEFAULT_BODY_SHAPE,
-      { ...DEFAULT_BODY_SHAPE, headLength: 0.36 },
-      { ...DEFAULT_BODY_SHAPE, headLength: 0.17 },
-      { ...DEFAULT_BODY_SHAPE, headWidth: 0.33, headLength: 0.18, headHeight: 0.16 },
-      { ...DEFAULT_BODY_SHAPE, headHeight: 0.29 }
+      { ...DEFAULT_BODY_SHAPE, headLength: 0.18 },
+      { ...DEFAULT_BODY_SHAPE, headLength: 0.32 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headLength: 0.18, headHeight: 0.16 },
+      { ...DEFAULT_BODY_SHAPE, headHeight: 0.28 }
     ]
     const CY = 1.86
     const CZ = 0.005
     for (const shape of shapes) {
-      const face = buildFace(shape, DEFAULT_FACE_SHAPE, mats)
-      const worldY = face.mouth.position.y + 1.75
-      const ny = (worldY - CY) / shape.headHeight
-      const surf = CZ + shape.headLength * Math.sqrt(Math.max(1 - ny * ny, 0))
-      expect(face.mouth.position.z).toBeGreaterThanOrEqual(surf - 0.002)
+      for (const curve of [0, 0.9, -0.9]) {
+        const face = buildFace(shape, { ...DEFAULT_FACE_SHAPE, mouthCurve: curve }, mats)
+        expect(face.mouthPoints.length).toBeGreaterThan(10)
+        for (const pt of face.mouthPoints) {
+          const worldY = pt.y + 1.75
+          const ny = (worldY - CY) / shape.headHeight
+          const nx = pt.x / shape.headWidth
+          const surf = CZ + shape.headLength * Math.sqrt(Math.max(1 - nx * nx - ny * ny, 0))
+          expect(pt.z).toBeGreaterThanOrEqual(surf - 0.002)
+        }
+      }
     }
   })
 
@@ -134,42 +144,38 @@ describe('buildFace', () => {
     expect(tall.eyes[0].position.y).toBeGreaterThan(normal.eyes[0].position.y)
   })
 
+})
+
+describe('mouth surface containment (regression: disappearing frowns)', () => {
+  const CY = 1.86
+  const CZ = 0.005
+  const shapes = [
+    DEFAULT_BODY_SHAPE,
+    { ...DEFAULT_BODY_SHAPE, headLength: 0.18 },
+    { ...DEFAULT_BODY_SHAPE, headHeight: 0.28 },
+    { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headLength: 0.19 },
+    { ...DEFAULT_BODY_SHAPE, headHeight: 0.16, headLength: 0.32 }
+  ]
+
+  function surfAt(shape: BodyShape, x: number, worldY: number): number {
+    const ny = (worldY - CY) / shape.headHeight
+    const nx = x / shape.headWidth
+    return CZ + shape.headLength * Math.sqrt(Math.max(1 - nx * nx - ny * ny, 0))
+  }
+
   it('frown apex stays outside the skull across extreme shapes', () => {
-    const CY = 1.86
-    const CZ = 0.005
-    const shapes = [
-      DEFAULT_BODY_SHAPE,
-      { ...DEFAULT_BODY_SHAPE, headLength: 0.18 },
-      { ...DEFAULT_BODY_SHAPE, headHeight: 0.28 },
-      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headLength: 0.19 }
-    ]
     for (const shape of shapes) {
       const frown = buildFace(shape, { ...DEFAULT_FACE_SHAPE, mouthCurve: -1 }, mats)
-      const m = frown.mouth
-      // apex of the frown arch: local (0, +R, 0) rotated by rotation.x
-      const R = 0.06 * 1
-      const apexLocalY = m.position.y + R * Math.cos(m.rotation.x)
-      const apexZ = m.position.z + R * Math.sin(m.rotation.x)
-      const apexWorldY = apexLocalY + 1.75
-      const ny = (apexWorldY - CY) / shape.headHeight
-      const surf = CZ + shape.headLength * Math.sqrt(Math.max(1 - ny * ny, 0))
-      expect(apexZ).toBeGreaterThanOrEqual(surf - 0.002)
-      // ends of the arc stay anchored near the surface too
-      const endWorldY = m.position.y + 1.75
-      const nyEnd = (endWorldY - CY) / shape.headHeight
-      const surfEnd = CZ + shape.headLength * Math.sqrt(Math.max(1 - nyEnd * nyEnd, 0))
-      expect(m.position.z).toBeGreaterThanOrEqual(surfEnd - 0.002)
+      const apex = frown.mouthPoints.reduce((a, b) => (b.y > a.y ? b : a))
+      expect(apex.z).toBeGreaterThanOrEqual(surfAt(shape, apex.x, apex.y + 1.75) - 0.002)
     }
   })
 
   it('smile bottom stays outside the skull', () => {
-    const smile = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, mouthCurve: 1 }, mats)
-    const m = smile.mouth
-    const R = 0.06
-    const bottomY = m.position.y - R * Math.cos(m.rotation.x)
-    const bottomZ = m.position.z - R * Math.sin(m.rotation.x)
-    const ny = (bottomY + 1.75 - 1.86) / DEFAULT_BODY_SHAPE.headHeight
-    const surf = 0.005 + DEFAULT_BODY_SHAPE.headLength * Math.sqrt(Math.max(1 - ny * ny, 0))
-    expect(bottomZ).toBeGreaterThanOrEqual(surf - 0.002)
+    for (const shape of shapes) {
+      const smile = buildFace(shape, { ...DEFAULT_FACE_SHAPE, mouthCurve: 1 }, mats)
+      const bottom = smile.mouthPoints.reduce((a, b) => (b.y < a.y ? b : a))
+      expect(bottom.z).toBeGreaterThanOrEqual(surfAt(shape, bottom.x, bottom.y + 1.75) - 0.002)
+    }
   })
 })

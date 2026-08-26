@@ -23,6 +23,7 @@ export interface FaceResult {
   eyes: THREE.Mesh[]
   eyebrows: THREE.Mesh[]
   mouth: THREE.Mesh
+  mouthPoints: THREE.Vector3[]
 }
 
 function surfaceZ(shape: BodyShape, x: number, worldY: number): number {
@@ -99,18 +100,34 @@ export function buildFace(
   const curve = Math.max(-1, Math.min(1, faceShape.mouthCurve))
   const arcLen = (0.35 + 0.65 * Math.abs(curve)) * Math.PI
   const radius = 0.06 * faceShape.mouthWidth
-  const mouth = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.012, 8, 20, arcLen), mats.mouth)
-  mouth.name = 'Mouth'
-  mouth.rotation.z = curve >= 0 ? 1.5 * Math.PI - arcLen / 2 : 0.5 * Math.PI - arcLen / 2
   const mouthWorldY = CRANIUM_CENTER_Y - H * 0.48
-  const surfMid = surfaceZ(bodyShape, 0, mouthWorldY)
-  // A frown arches UP into deeper skull latitudes, a smile dips DOWN into
-  // shallower ones - tilt the arc so its extreme point follows the surface.
-  const extremeWorldY = mouthWorldY + (curve >= 0 ? -radius : radius)
-  const surfExtreme = surfaceZ(bodyShape, 0, extremeWorldY)
-  mouth.rotation.x = Math.atan((surfExtreme - surfMid) / radius)
-  mouth.position.set(0, mouthWorldY - HEAD_BONE_Y, surfMid + 0.004)
+  // Sample the mouth arc directly ON the cranium ellipsoid surface: every
+  // point is projected onto the surface (+4mm), so the mouth hugs any head
+  // shape regardless of slope or curvature. Smile = lower arc, frown = upper.
+  const t0 = curve >= 0 ? 1.5 * Math.PI - arcLen / 2 : 0.5 * Math.PI - arcLen / 2
+  const tubeRadius = 0.012
+  const mouthPoints: THREE.Vector3[] = []
+  const SAMPLES = 16
+  for (let i = 0; i <= SAMPLES; i++) {
+    const t = t0 + arcLen * (i / SAMPLES)
+    const px = radius * Math.cos(t)
+    const pyWorld = mouthWorldY + radius * Math.sin(t)
+    const pz = surfaceZ(bodyShape, px, pyWorld) + 0.004
+    mouthPoints.push(new THREE.Vector3(px, pyWorld - HEAD_BONE_Y, pz))
+  }
+  const mouthCurve3 = new THREE.CatmullRomCurve3(mouthPoints)
+  const mouth = new THREE.Mesh(
+    new THREE.TubeGeometry(mouthCurve3, 20, tubeRadius, 8, false),
+    mats.mouth
+  )
+  mouth.name = 'Mouth'
   group.add(mouth)
+  for (const end of [mouthPoints[0], mouthPoints[mouthPoints.length - 1]]) {
+    const cap = new THREE.Mesh(new THREE.SphereGeometry(tubeRadius, 8, 6), mats.mouth)
+    cap.name = 'Mouth'
+    cap.position.copy(end)
+    group.add(cap)
+  }
 
-  return { group, eyes, eyebrows, mouth }
+  return { group, eyes, eyebrows, mouth, mouthPoints }
 }

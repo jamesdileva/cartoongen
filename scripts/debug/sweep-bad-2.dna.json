@@ -1,0 +1,63 @@
+{
+  "version": 3,
+  "name": "Random_mta3i5",
+  "slots": {
+    "head": null,
+    "hair": null,
+    "helmet": null,
+    "eyebrows": null,
+    "eyes": null,
+    "mouth": null,
+    "beard": null,
+    "shirt": null,
+    "pants": null,
+    "shoes": null,
+    "gloves": null,
+    "cape": null,
+    "wings": null,
+    "body": null
+  },
+  "morphs": {
+    "height": 0.76,
+    "shoulderWidth": 0.69,
+    "neckWidth": 0.13,
+    "bellySize": 0.03,
+    "headSize": 0.48,
+    "legLength": 0.45,
+    "armLength": 0.66,
+    "muscleMass": 0.93,
+    "bust": 0.32,
+    "butt": 0.98
+  },
+  "colors": {
+    "skin": "#906840",
+    "hair": "#3e2d1f",
+    "cloth": "#9b6fd0",
+    "metal": "#404040",
+    "leather": "#7d6057",
+    "eye": "#8aba8a"
+  },
+  "metadata": {
+    "created": "2026-08-26T12:54:05.432Z",
+    "modified": "2026-08-26T12:54:05.432Z"
+  },
+  "bodyShape": {
+    "headWidth": 0.215,
+    "headHeight": 0.204,
+    "headLength": 0.242,
+    "jawChin": 0.3832539623912926,
+    "shoulderWidth": 1.025,
+    "chestDepth": 1.032,
+    "waistTaper": 0.957,
+    "hipWidth": 1.009
+  },
+  "face": {
+    "eyeScale": 1.2,
+    "eyeSpacing": 0.93,
+    "browTilt": -0.35,
+    "browHeight": 1.04,
+    "mouthCurve": 0.76,
+    "mouthWidth": 1.1,
+    "noseSize": 0.92
+  }
+}

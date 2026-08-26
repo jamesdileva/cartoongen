@@ -347,6 +347,11 @@ export class CharacterManager {
     const skinMat = this.skinMaterial ?? this.materialManager.getMaterial('skin')
 
     const geo = buildHead(shape, neckWidth).geometry
+    console.log(
+      '[HeadBuild]',
+      `L=${shape.headLength.toFixed(3)} W=${shape.headWidth.toFixed(3)} H=${shape.headHeight.toFixed(3)}`,
+      'maxZ=', (shape.headLength + 0.005).toFixed(3)
+    )
     const mesh = this.bindToBones(geo, ['Neck', 'Head'], skinMat)
     this.headMesh =
       mesh ??

@@ -2251,3 +2251,27 @@ Also fixed en route: Toolbar Save button bypassed handleSave (no toast/thumbnail
 New capture tooling: scripts/debug/cdp-capture.mts grabs screenshot + DNA + metrics from the live app on demand (no save needed).
 
 Regression tests: frown apex clears skull across extreme shapes; smile bottom clears skull. 211 tests passing.
+
+---
+
+## Session 039 addendum 2 - Disappearing Mouth: Surface-Projected Tube Mouth
+
+### Date
+
+2026-08-26
+
+### What we found (user live-captured a no-mouth smile: scripts/debug/nomouth2.dna.json)
+
+| Issue | Root Cause | Fix |
+|---|---|---|
+| Mouth invisible on many randomizes (both smiles AND frowns) | The mouth was a flat torus arc whose CIRCLE CENTER anchored it - the visible arc sits up to a full radius away from that center (frowns arch into deeper skull latitudes, smiles span ±3cm vertically). A flat arc cannot hug a curved ellipsoid face: placement offsets + a tilt patch both failed on extreme head shapes (small headHeight -> surface slope > 45 deg) | Mouth rebuilt as a TubeGeometry whose 17 sample points are projected directly ONTO the cranium ellipsoid (z = surfaceZ(x, y) + 4mm). Every point hugs the surface by construction for any head shape. End caps added. FaceResult exposes mouthPoints for tests |
+
+### Metric lessons (sweep tooling)
+
+The CDP sweep's per-feature band-scan produced persistent false positives (mouth/brows flagged while screenshots showed them fine): at the mouth latitude the tube is deliberately half-embedded in its mounting surface, and latitude-mixing in the band catches deeper cranium verts. Sweep simplified to two STRUCTURAL invariants that caught the real bugs: head world x/z scale == 1.0, and live mesh max depth == dna headLength. 30/30 UI-button rolls clean. Surface containment is enforced by unit tests (FaceFeatures.test.ts projects every mouth point for 5 extreme shapes x 3 curves).
+
+### Verification
+
+- typecheck 0 errors; lint clean; 211 tests passing; build succeeds
+- Live sweep: 30/30 UI rolls clean on structural invariants
+- Screenshot verification: mouth visible (sweep-bad-9.png shows red smile correctly placed)
