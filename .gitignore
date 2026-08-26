@@ -9,6 +9,7 @@ dist/
 assets/
 imported-project/
 test-project/
+procedural-project/
 app-state.json
 *.glb
 *.gltf

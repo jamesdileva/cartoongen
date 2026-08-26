@@ -19,6 +19,17 @@ interface MultiBoneScaleDef {
 
 type ProportionDef = BoneScaleDef | MultiBoneScaleDef
 
+export const PROPORTION_MORPHS: Array<{ name: string; label: string }> = [
+  { name: 'height', label: 'Height' },
+  { name: 'shoulderWidth', label: 'Shoulder Width' },
+  { name: 'neckWidth', label: 'Neck Width' },
+  { name: 'bellySize', label: 'Belly' },
+  { name: 'headSize', label: 'Head Size' },
+  { name: 'legLength', label: 'Leg Length' },
+  { name: 'armLength', label: 'Arm Length' },
+  { name: 'muscleMass', label: 'Muscle Mass' }
+]
+
 const ref = referenceSkeleton as { aliases: Record<string, string> }
 
 const BONE_MORPHS: Record<string, ProportionDef> = {

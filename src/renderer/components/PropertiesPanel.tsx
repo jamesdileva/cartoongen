@@ -1,10 +1,10 @@
 import { useCharacterStore } from '../stores/useCharacterStore'
+import { PROPORTION_MORPHS } from '../three/ProportionManager'
 import ColorPicker from './ColorPicker'
 
 export default function PropertiesPanel() {
   const morphs = useCharacterStore((s) => s.present?.morphs)
   const setMorph = useCharacterStore((s) => s.setMorph)
-  const morphKeys = morphs ? Object.keys(morphs) : []
 
   return (
     <div style={{ flex: 1, overflow: 'auto' }}>
@@ -15,31 +15,28 @@ export default function PropertiesPanel() {
 
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Morphs</div>
-        {morphKeys.length === 0 ? (
-          <div style={{ fontSize: 12, color: '#666', padding: '8px 10px' }}>
-            No morphs available on current character.
-          </div>
-        ) : (
-          <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {morphKeys.map((name) => (
+        <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {PROPORTION_MORPHS.map(({ name, label }) => {
+            const value = morphs?.[name] ?? 0.5
+            return (
               <div key={name} style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                <div style={{ fontSize: 11, color: '#aaa' }}>{name}</div>
+                <div style={{ fontSize: 11, color: '#aaa' }}>{label}</div>
                 <input
                   type="range"
                   min={0}
                   max={1}
                   step={0.01}
-                  value={morphs[name]}
+                  value={value}
                   onChange={(e) => setMorph(name, parseFloat(e.target.value))}
                   style={{ width: '100%' }}
                 />
                 <div style={{ fontSize: 10, color: '#666', textAlign: 'right' }}>
-                  {Math.round(morphs[name] * 100)}%
+                  {Math.round(value * 100)}%
                 </div>
               </div>
-            ))}
-          </div>
-        )}
+            )
+          })}
+        </div>
       </div>
     </div>
   )

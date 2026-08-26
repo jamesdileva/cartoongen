@@ -146,7 +146,10 @@ export class CharacterManager {
     this.ensureDataLoaded()
     this.subscribe()
     this.checkInitialDNA()
-    this.tryLoadBaseBody()
+    const initialDna = useCharacterStore.getState().present
+    if (initialDna?.slots?.body) {
+      this.tryLoadBaseBody(initialDna.slots.body)
+    }
   }
 
   getSceneGroup(): THREE.Group {
@@ -292,10 +295,11 @@ export class CharacterManager {
     })
 
     this.unsubAssetStore = useAssetStore.subscribe((state) => {
+      const dna = useCharacterStore.getState().present
+      if (!dna?.slots?.body) return
       if (this.hasBaseBody || this.loadingBaseBody) return
       if (state.assets.some((a) => a.tags?.includes('base_body'))) {
-        const dna = useCharacterStore.getState().present
-        this.tryLoadBaseBody(dna?.slots?.body)
+        this.tryLoadBaseBody(dna.slots.body)
       }
     })
   }
@@ -317,6 +321,10 @@ export class CharacterManager {
   private async tryLoadBaseBody(dnaAssetId?: string): Promise<void> {
     console.log('[Debug] tryLoadBaseBody start, hasBaseBody=', this.hasBaseBody, 'loadingBaseBody=', this.loadingBaseBody, 'dnaAssetId=', dnaAssetId)
     if (this.hasBaseBody || this.loadingBaseBody) { return }
+    if (!dnaAssetId) {
+      const dna = useCharacterStore.getState().present
+      if (dna && !dna.slots?.body) return
+    }
     this.loadingBaseBody = true
     try {
       const assetStore = useAssetStore.getState()

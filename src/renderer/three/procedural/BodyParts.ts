@@ -34,7 +34,7 @@ export function buildHeadGeometry(params: HeadShapeParams = DEFAULT_HEAD_PARAMS)
     0.005
   )
 
-  const earGeo = makeEllipsoid(0.035, 0.055, 0.042, 10, 8)
+  const earGeo = makeEllipsoid(0.042, 0.07, 0.05, 10, 8)
   const leftEar = translateGeometry(earGeo.clone(), -headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
   const rightEar = translateGeometry(earGeo, headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
 
