@@ -1723,3 +1723,35 @@ We are at **Sprint 14**. Sprint 13 is complete.
 ### Next steps
 
 **Sprint 14: Face Features** - eyes (sclera+iris+pupil), brow ridges, nose wedge, mouth, placed via head shape params.
+
+---
+
+## Session 027 - Sprint 13 Follow-up Fixes
+
+### Date
+
+2026-08-26
+
+### What we fixed (from first user test of the procedural head)
+
+| # | Issue | Root Cause | Fix |
+|---|-------|------------|-----|
+| 1 | Body slot cannot be cleared ("none" reverts to GLB body) | useAssetStore subscription re-called 	ryLoadBaseBody() whenever assets changed; with no dnaAssetId it fell back to the first ase_body asset even when DNA body slot was null | Subscription + constructor now check dna.slots.body first and skip loading when cleared; defensive guard added inside 	ryLoadBaseBody |
+| 2 | Morph sliders invisible until Randomize/Template applied | PropertiesPanel rendered sliders from Object.keys(dna.morphs); fresh DNA has empty morphs | Panel now renders canonical PROPORTION_MORPHS list (exported from ProportionManager) with neutral default 0.5 |
+| 3 | Ears too small on watermelon head | Parameter tweak | Ear ellipsoid 0.035x0.055x0.042 -> 0.042x0.07x0.05 |
+
+### Repo/project housekeeping
+
+- Created GitHub remote github.com/jamesdileva/cartoongen (private) via gh; all commits pushed.
+- New empty project procedural-project/ (gitignored, like other regenerable project dirs); global app-state.json repointed to it. Old imported-project/ (ill-fitting clothes) left on disk untouched.
+
+### Design note: why the procedural head is not in the 'head' slot
+
+The 'head' slot is for head ASSETS worn over the base (future: masks/glasses). The procedural head is part of the base character geometry (same as torso), so it renders without any asset. A later sprint can hide the procedural head when a full-head asset is equipped.
+
+### Verification
+
+- 
+pm run typecheck - 0 errors
+- 
+pm run test - 164 passing, no regressions
