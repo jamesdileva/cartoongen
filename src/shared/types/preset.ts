@@ -1,4 +1,5 @@
 import type { BodyShape } from './bodyShape'
+import type { FaceShape } from './faceShape'
 
 export interface Preset {
   id: string
@@ -9,4 +10,5 @@ export interface Preset {
   morphs?: Record<string, number>
   colors?: Record<string, string>
   bodyShape?: Partial<BodyShape>
+  face?: Partial<FaceShape>
 }

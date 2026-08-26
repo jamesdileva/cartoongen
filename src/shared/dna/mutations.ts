@@ -2,6 +2,7 @@ import type { CharacterDNA } from '../types/dna'
 import type { Preset } from '../types/preset'
 import { CURRENT_DNA_VERSION } from '../types/dna'
 import { DEFAULT_BODY_SHAPE } from '../types/bodyShape'
+import { DEFAULT_FACE_SHAPE, type FaceShape } from '../types/faceShape'
 
 export function createDNA(name: string): CharacterDNA {
   const now = new Date().toISOString()
@@ -43,6 +44,15 @@ export function setColor(dna: CharacterDNA, materialId: string, hex: string): Ch
   }
 }
 
+export function setFace(dna: CharacterDNA, partial: Partial<FaceShape>): CharacterDNA {
+  const face = { ...DEFAULT_FACE_SHAPE, ...dna.face, ...partial }
+  return {
+    ...dna,
+    face,
+    metadata: { ...dna.metadata, modified: new Date().toISOString() }
+  }
+}
+
 export function applyPreset(dna: CharacterDNA, preset: Preset): CharacterDNA {
   const slots = preset.slots ? { ...dna.slots, ...preset.slots } : dna.slots
   const morphs = preset.morphs ? { ...dna.morphs, ...preset.morphs } : dna.morphs
@@ -50,12 +60,16 @@ export function applyPreset(dna: CharacterDNA, preset: Preset): CharacterDNA {
   const bodyShape = preset.bodyShape
     ? { ...DEFAULT_BODY_SHAPE, ...dna.bodyShape, ...preset.bodyShape }
     : dna.bodyShape
+  const face = preset.face
+    ? { ...DEFAULT_FACE_SHAPE, ...dna.face, ...preset.face }
+    : dna.face
   return {
     ...dna,
     slots,
     morphs,
     colors,
     bodyShape,
+    face,
     metadata: { ...dna.metadata, modified: new Date().toISOString() }
   }
 }

@@ -4,6 +4,7 @@ import type { AssetEntry } from '../../shared/types/asset'
 import type { Rule } from '../../shared/types/rule'
 import { evaluateRules } from '../../shared/rules/engine'
 import type { BodyShape } from '../../shared/types/bodyShape'
+import type { FaceShape } from '../../shared/types/faceShape'
 
 interface PaletteData {
   [category: string]: {
@@ -111,6 +112,8 @@ export function generateRandomDNA(params: RandomGeneratorParams): CharacterDNA {
   dna.morphs.bust = Math.round(Math.pow(rng.next(), bustBias) * 100) / 100
   dna.morphs.butt = Math.round((0.2 + 0.8 * Math.pow(rng.next(), 1.4)) * 100) / 100
 
+  dna.face = randomFaceShape(rng)
+
   for (const matId of MATERIAL_IDS) {
     const palette = params.palettes[matId]
     if (palette && palette.colors.length > 0) {
@@ -157,5 +160,42 @@ function randomBodyShape(rng: SeededPRNG): BodyShape {
     chestDepth: Math.round((base.chestDepth + noise(rng)) * 1000) / 1000,
     waistTaper: Math.round((base.waistTaper + noise(rng)) * 1000) / 1000,
     hipWidth: Math.round((base.hipWidth + noise(rng)) * 1000) / 1000
+  }
+}
+
+interface ExpressionMood {
+  browTilt: number
+  browHeight: number
+  mouthCurve: number
+}
+
+const MOODS: Array<{ weight: number; mood: ExpressionMood }> = [
+  { weight: 0.4, mood: { browTilt: -0.15, browHeight: 1.05, mouthCurve: 0.65 } },
+  { weight: 0.3, mood: { browTilt: 0, browHeight: 1.0, mouthCurve: 0.15 } },
+  { weight: 0.18, mood: { browTilt: 0.55, browHeight: 0.9, mouthCurve: -0.35 } },
+  { weight: 0.12, mood: { browTilt: -0.6, browHeight: 1.15, mouthCurve: -0.45 } }
+]
+
+function pickMood(rng: SeededPRNG): ExpressionMood {
+  const roll = rng.next()
+  let acc = 0
+  for (const { weight, mood } of MOODS) {
+    acc += weight
+    if (roll <= acc) return mood
+  }
+  return MOODS[0].mood
+}
+
+function randomFaceShape(rng: SeededPRNG): FaceShape {
+  const mood = pickMood(rng)
+  const jitter = (amount: number) => noise(rng, amount)
+  return {
+    eyeScale: Math.round((1 + jitter(0.22)) * 100) / 100,
+    eyeSpacing: Math.round((1 + jitter(0.14)) * 100) / 100,
+    browTilt: Math.max(-1, Math.min(1, Math.round((mood.browTilt + jitter(0.25)) * 100) / 100)),
+    browHeight: Math.max(0.8, Math.min(1.25, Math.round((mood.browHeight + jitter(0.1)) * 100) / 100)),
+    mouthCurve: Math.max(-1, Math.min(1, Math.round((mood.mouthCurve + jitter(0.3)) * 100) / 100)),
+    mouthWidth: Math.round((1 + jitter(0.16)) * 100) / 100,
+    noseSize: Math.round((1 + jitter(0.25)) * 100) / 100
   }
 }

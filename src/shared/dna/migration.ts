@@ -1,8 +1,12 @@
 import type { CharacterDNA } from '../types/dna'
 
 export function migrateDNA(dna: CharacterDNA): CharacterDNA {
-  if (dna.version === 1) {
-    return { ...dna, version: 2 }
+  let out = dna
+  if (out.version === 1) {
+    out = { ...out, version: 2 }
   }
-  return dna
+  if (out.version === 2) {
+    out = { ...out, version: 3 }
+  }
+  return out
 }

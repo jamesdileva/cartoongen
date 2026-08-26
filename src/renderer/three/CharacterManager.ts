@@ -16,6 +16,7 @@ import { ProportionManager } from './ProportionManager'
 import { buildHead, buildTorso, buildArm, buildLeg } from './procedural/BodyParts'
 import { buildFace } from './procedural/FaceFeatures'
 import { sanitizeBodyShape } from '../../shared/types/bodyShape'
+import { sanitizeFaceShape, type FaceShape } from '../../shared/types/faceShape'
 import referenceSkeleton from '../../shared/data/reference-skeleton.json'
 
 const gltfLoader = new GLTFLoader()
@@ -148,6 +149,20 @@ function torsoKeyOf(shape: BodyShape, bust: number, butt: number): string {
   return JSON.stringify([shape.shoulderWidth, shape.chestDepth, shape.waistTaper, shape.hipWidth, bust, butt])
 }
 
+function faceKeyOf(shape: BodyShape, face: FaceShape): string {
+  return JSON.stringify([
+    shape.headWidth,
+    shape.headLength,
+    face.eyeScale,
+    face.eyeSpacing,
+    face.browTilt,
+    face.browHeight,
+    face.mouthCurve,
+    face.mouthWidth,
+    face.noseSize
+  ])
+}
+
 export class CharacterManager {
   private scene = new THREE.Group()
   private boneMap = new Map<string, THREE.Bone>()
@@ -183,6 +198,7 @@ export class CharacterManager {
   private faceGroup: THREE.Group | null = null
   private lastTorsoShapeKey: string | null = null
   private lastHeadShapeKey: string | null = null
+  private lastFaceKey: string | null = null
 
   constructor() {
     this.buildBaseCharacter()
@@ -237,6 +253,7 @@ export class CharacterManager {
     this.restInversesCache.clear()
     this.lastTorsoShapeKey = null
     this.lastHeadShapeKey = null
+    this.lastFaceKey = null
     const rootBone = buildSkeleton(SKELETON)
     collectBones(rootBone, this.boneMap)
 
@@ -322,7 +339,6 @@ export class CharacterManager {
       this.proceduralMeshes = this.proceduralMeshes.filter((m) => m !== this.headMesh)
       this.headMesh = null
     }
-    this.disposeFaceGroup()
 
     const shape = sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape)
     this.lastHeadShapeKey = headKeyOf(shape)
@@ -336,7 +352,16 @@ export class CharacterManager {
     this.scene.add(this.headMesh)
     this.proceduralMeshes.push(this.headMesh)
 
-    const face = buildFace(shape, {
+    this.rebuildFaceGroup()
+  }
+
+  private rebuildFaceGroup(): void {
+    this.disposeFaceGroup()
+    const bodyShape = sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape)
+    const faceShape = sanitizeFaceShape(useCharacterStore.getState().present?.face)
+    this.lastFaceKey = faceKeyOf(bodyShape, faceShape)
+
+    const face = buildFace(bodyShape, faceShape, {
       skin: this.materialManager.getMaterial('skin'),
       hair: this.materialManager.getMaterial('hair'),
       eye: this.materialManager.getMaterial('eye'),
@@ -768,10 +793,14 @@ export class CharacterManager {
       const shape = sanitizeBodyShape(dna.bodyShape)
       const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
       const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const face = sanitizeFaceShape(dna.face)
       const nextHeadKey = headKeyOf(shape)
       const nextTorsoKey = torsoKeyOf(shape, bust, butt)
+      const nextFaceKey = faceKeyOf(shape, face)
       if (nextHeadKey !== this.lastHeadShapeKey) {
         this.rebuildHeadMesh()
+      } else if (nextFaceKey !== this.lastFaceKey) {
+        this.rebuildFaceGroup()
       }
       if (nextTorsoKey !== this.lastTorsoShapeKey) {
         this.rebuildTorsoMesh()

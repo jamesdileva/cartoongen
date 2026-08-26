@@ -2041,3 +2041,50 @@ We are at **Sprint 19** (final planned sprint). Sprints 13-18 complete: fully pr
 ### Next steps
 
 **Sprint 19: Face Variations & Expressions** (browTilt/mouthCurve/etc via torus arc params). After that, user-requested discussion: procedural clothing slots (plain t-shirts, jeans, hats, glasses generated like the body).
+
+---
+
+## Session 034 - Sprint 19: Face Variations & Expressions
+
+### Date
+
+2026-08-26
+
+### What we built
+
+Sprint 19 (final planned sprint) - expressions became data. The face is now parameterized by a shared FaceShape type persisted in CharacterDNA, with sliders in the UI and mood-based coherent randomization.
+
+| Change | Detail |
+|---|---|
+| FaceShape shared type | src/shared/types/faceShape.ts - eyeScale, eyeSpacing, browTilt (-1..1 sad->angry), browHeight, mouthCurve (-1..1 frown<->smile), mouthWidth, noseSize; DEFAULT + sanitize clamps |
+| DNA v3 | CharacterDNA.face?: Partial<FaceShape>; CURRENT_DNA_VERSION bumped to 3; migration chains v1->v2->v3 |
+| Parametric mouth | Torus arc length scales with |curve| (neutral = shallow near-line); rotation.z centers arc at bottom (smile) or top (frown) - one formula covers smile-through-frown |
+| Parametric brows | Mirrored per-side rotation.z tilt on the existing torus arch; browHeight moves them up/down |
+| Face-only rebuilds | CharacterManager tracks faceKey separate from headKey - expression slider drags rebuild only the face group (~10 small meshes), not the skinned skull |
+| Face UI section | PropertiesPanel gained Face section (7 sliders) above Body; writes via new setFace store action with undo support |
+| Mood-based randomizer | RandomGenerator picks from 4 weighted moods (happy/neutral/grumpy/sad) plus jitter on eye/nose/mouth dimensions - no angry-brows-with-huge-grin soup |
+
+### Files modified
+
+- src/shared/types/faceShape.ts - new
+- src/shared/types/dna.ts (v3), preset.ts, 	emplate.ts - face field
+- src/shared/dna/mutations.ts - setFace mutation, applyPreset face merge
+- src/shared/dna/migration.ts - chained migration
+- src/renderer/three/procedural/FaceFeatures.ts - buildFace(bodyShape, faceShape, mats)
+- src/renderer/three/CharacterManager.ts - faceKey diffing, rebuildFaceGroup()
+- src/renderer/stores/useCharacterStore.ts - setFace action
+- src/renderer/components/PropertiesPanel.tsx - Face section
+- src/renderer/services/RandomGenerator.ts - moods
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 199 tests passing (192 + 7 new/updated), no regressions
+
+### Current status
+
+All 19 sprints complete: fully procedural, DNA-driven character with expressions. Roadmap items remaining are user-discussed expansions: procedural clothing slots (plain t-shirts, jeans, hats, glasses; possibly archetype outfits like mage robes/elven garb as multi-sprint expansion).
+
+### Next steps
+
+Discuss and scope **procedural clothing expansion** with the user.

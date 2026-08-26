@@ -203,7 +203,7 @@ fresh project, pure procedural character, dressed only by slot placeholders.
 procedural character; Ctrl+R produces varied coherent bodies; same seed =
 same shape; save/load preserves shape (bodyShape is part of DNA).
 
-### Sprint 19 — Face Variations & Expressions
+### Sprint 19 — Face Variations & Expressions ✅ complete (2026-08-26)
 
 **Goal**: Slight parameterized variations of face features = huge personality
 value for near-zero geometry cost. The user's character, the user's mood —
@@ -212,17 +212,21 @@ including frowns if they want them.
 **Insight**: brows and mouth are already torus arcs — variation is just arc
 angle + rotation + mirror. No new geometry code paths needed.
 
-- [ ] `FaceParams` extension: `browTilt` (-1..1, angry↔sad), `browHeight`,
-      `mouthCurve` (-1..1, frown↔smile via arc flip), `mouthWidth`,
-      `eyeScale`, `eyeSpacing`, `noseSize`
-- [ ] Implement via existing torus params: `browArc` sweep length,
-      `rotation.z` tilt per side (mirrored), mouth `thetaStart` flip +
+- [x] `FaceParams` extension: `browTilt` (-1..1, sad \u2192 angry), `browHeight`,
+      `mouthCurve` (-1..1, frown\u2194smile via arc flip + arc-length scaling),
+      `mouthWidth`, `eyeScale`, `eyeSpacing`, `noseSize`
+      (implemented as shared `FaceShape` type in src/shared/types/faceShape.ts)
+- [x] Implement via existing torus params: brow arc sweep length,
+      rotation.z tilt per side (mirrored), mouth thetaStart flip +
       arc-length scaling
-- [ ] "Face" section in PropertiesPanel with the new sliders
-- [ ] Persist in CharacterDNA alongside bodyShape (same schema bump as
-      Sprint 18 or a follow-up migration)
-- [ ] RandomGenerator picks coherent expressions (e.g. angry brows rarely
-      paired with big smile)
+- [x] "Face" section in PropertiesPanel with the new sliders
+- [x] Persist in CharacterDNA (`face?: Partial<FaceShape>`, DNA v3 with
+      chained migration v1->v2->v3); Preset/Template types accept `face` too
+- [x] RandomGenerator picks coherent expressions (4 weighted moods: happy /
+      neutral / grumpy / sad, plus per-feature jitter)
+- [ ] Same variation pattern applied to other parts where cheap: head shape
+      presets (round/tall/wide watermelon variants via HeadShapeParams),
+      ear size/style (deferred - body archetypes partially cover this)
 - [ ] Same variation pattern applied to other parts where cheap: head shape
       presets (round/tall/wide watermelon variants via HeadShapeParams),
       ear size/style

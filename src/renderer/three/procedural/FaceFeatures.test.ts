@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { buildFace, type FaceMaterials } from './FaceFeatures'
 import { DEFAULT_BODY_SHAPE } from '../../../shared/types/bodyShape'
+import { DEFAULT_FACE_SHAPE, type FaceShape } from '../../../shared/types/faceShape'
 
 const mats: FaceMaterials = {
   skin: new THREE.MeshStandardMaterial(),
@@ -12,7 +13,7 @@ const mats: FaceMaterials = {
 
 describe('buildFace', () => {
   it('builds a group with eyes, brows, nose and mouth', () => {
-    const face = buildFace(DEFAULT_BODY_SHAPE, mats)
+    const face = buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats)
     let meshCount = 0
     face.group.traverse((c) => {
       if (c instanceof THREE.Mesh) meshCount++
@@ -23,7 +24,7 @@ describe('buildFace', () => {
   })
 
   it('positions features within the head-bone local volume', () => {
-    const face = buildFace(DEFAULT_BODY_SHAPE, mats)
+    const face = buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats)
     const box = new THREE.Box3().setFromObject(face.group)
     expect(box.min.y).toBeGreaterThan(-0.1)
     expect(box.max.y).toBeLessThan(0.35)
@@ -31,7 +32,7 @@ describe('buildFace', () => {
   })
 
   it('mirrors eye placement across x=0', () => {
-    const face = buildFace(DEFAULT_BODY_SHAPE, mats)
+    const face = buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats)
     const left = face.eyes[0].position
     const right = face.eyes.find((e) => e.name === 'Eye_Right')!.position
     expect(left.x).toBeCloseTo(-right.x, 6)
@@ -39,10 +40,72 @@ describe('buildFace', () => {
   })
 
   it('assigns the eye material to irises only', () => {
-    const face = buildFace(DEFAULT_BODY_SHAPE, mats)
+    const face = buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats)
     const iris = face.eyes.find((e) => e.name === 'Iris_Left')!
     const sclera = face.eyes.find((e) => e.name === 'Eye_Left')!
     expect(iris.material).toBe(mats.eye)
     expect(sclera.material).not.toBe(mats.eye)
+  })
+
+  it('mouthCurve flips the mouth from smile to frown', () => {
+    const smile = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, mouthCurve: 0.9 }, mats)
+    const frown = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, mouthCurve: -0.9 }, mats)
+    let delta = smile.mouth.rotation.z - frown.mouth.rotation.z
+    delta = Math.atan2(Math.sin(delta), Math.cos(delta))
+    expect(Math.abs(delta)).toBeCloseTo(Math.PI, 1)
+
+    const smileBox = new THREE.Box3().setFromObject(smile.mouth)
+    const frownBox = new THREE.Box3().setFromObject(frown.mouth)
+    expect(frownBox.max.y).toBeGreaterThan(smileBox.max.y)
+  })
+
+  it('neutral mouth curve is a shallow line', () => {
+    const neutral = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, mouthCurve: 0 }, mats)
+    const box = new THREE.Box3().setFromObject(neutral.mouth)
+    expect(box.max.y - box.min.y).toBeLessThan(0.09)
+  })
+
+  it('brow tilt mirrors rotation across sides', () => {
+    const tilted = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, browTilt: 0.8 }, mats)
+    const neutral = buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats)
+    const left = tilted.eyebrows.find((b) => b.name === 'Eyebrow_Left')!
+    const right = tilted.eyebrows.find((b) => b.name === 'Eyebrow_Right')!
+    const leftNeutral = neutral.eyebrows.find((b) => b.name === 'Eyebrow_Left')!.rotation.z
+    const rightNeutral = neutral.eyebrows.find((b) => b.name === 'Eyebrow_Right')!.rotation.z
+    const leftOffset = left.rotation.z - leftNeutral
+    const rightOffset = right.rotation.z - rightNeutral
+    expect(leftOffset).toBeCloseTo(-rightOffset, 6)
+    expect(Math.abs(leftOffset)).toBeGreaterThan(0.1)
+  })
+
+  it('eyeScale shrinks and grows the eyes', () => {
+    const small = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, eyeScale: 0.7 }, mats)
+    const big = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, eyeScale: 1.4 }, mats)
+    const smallBox = new THREE.Box3().setFromObject(small.eyes[0])
+    const bigBox = new THREE.Box3().setFromObject(big.eyes[0])
+    const smallSize = smallBox.max.x - smallBox.min.x
+    const bigSize = bigBox.max.x - bigBox.min.x
+    expect(bigSize).toBeGreaterThan(smallSize)
+  })
+
+  it('eyeSpacing widens the gap between eyes', () => {
+    const narrow = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, eyeSpacing: 0.8 }, mats)
+    const wide = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, eyeSpacing: 1.3 }, mats)
+    const narrowX = Math.abs(narrow.eyes[0].position.x)
+    const wideX = Math.abs(wide.eyes[0].position.x)
+    expect(wideX).toBeGreaterThan(narrowX)
+  })
+
+  it('clamps extreme face values without throwing', () => {
+    const extreme: FaceShape = {
+      eyeScale: 99,
+      eyeSpacing: -5,
+      browTilt: 12,
+      browHeight: 0,
+      mouthCurve: 42,
+      mouthWidth: -3,
+      noseSize: 100
+    }
+    expect(() => buildFace(DEFAULT_BODY_SHAPE, extreme, mats)).not.toThrow()
   })
 })
