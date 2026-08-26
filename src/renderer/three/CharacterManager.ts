@@ -236,6 +236,10 @@ export class CharacterManager {
     return this.hasBaseBody
   }
 
+  getHasBodyRendering(): boolean {
+    return this.hasBaseBody || this.proceduralMeshes.length > 0
+  }
+
   dispose(): void {
     this.mixer?.stopAllAction()
     this.unsubCharacterStore?.()
@@ -389,7 +393,6 @@ export class CharacterManager {
       const slotStore = useSlotStore.getState()
       if (slotStore.slots.length > 0) {
         this.currentDNA = dna
-        console.log('[Debug] checkInitialDNA: calling updateCharacter (not awaited)')
         this.updateCharacter(dna)
       } else {
         this.pendingDNA = dna
@@ -398,7 +401,6 @@ export class CharacterManager {
   }
 
   private async tryLoadBaseBody(dnaAssetId?: string): Promise<void> {
-    console.log('[Debug] tryLoadBaseBody start, hasBaseBody=', this.hasBaseBody, 'loadingBaseBody=', this.loadingBaseBody, 'dnaAssetId=', dnaAssetId)
     if (this.hasBaseBody || this.loadingBaseBody) { return }
     if (!dnaAssetId) {
       const dna = useCharacterStore.getState().present
@@ -425,13 +427,10 @@ export class CharacterManager {
       const skeletonRoot = this.findRootBone(gltf.scene)
       if (!skeletonRoot) { this.loadingBaseBody = false; return }
 
-      console.log('[Debug] tryLoadBaseBody: slotManager has', this.slotManager['slots'].size, 'slots attached')
       this.slotManager.dispose()
-      console.log('[Debug] lastAssetIds before clear:', JSON.stringify(this.lastAssetIds))
       const bodyId = this.lastAssetIds['body']
       this.lastAssetIds = {}
       this.lastAssetIds['body'] = bodyId
-      console.log('[Debug] clearing procedural body');
       this.clearProceduralBody()
 
       // Collect ALL bones from the scene (handles any skeleton structure)
@@ -478,7 +477,6 @@ export class CharacterManager {
         }
       })
 
-      console.log('[Debug] Base body meshes:')
       for (const mesh of this.baseBodyMeshes) {
         const mats = Array.isArray(mesh.material) ? mesh.material : [mesh.material]
         for (const m of mats) {
@@ -486,13 +484,7 @@ export class CharacterManager {
           m.polygonOffsetFactor = 0
           m.polygonOffsetUnits = 10
         }
-        const matNames = mats.map((m: THREE.Material) => `${m.name || '(unnamed)'}(po=${m.polygonOffset},f=${m.polygonOffsetFactor},u=${m.polygonOffsetUnits})`).join(', ')
-        console.log(`  mesh="${mesh.name}" material="${matNames}" numchildren=${mesh.children.length}`)
       }
-      console.log('[Debug] baseBodyFeatures:', {
-        eyebrows: this.baseBodyFeatures.eyebrows.length,
-        eyes: this.baseBodyFeatures.eyes.length
-      })
 
       this.proportionManager.setBoneMap(this.boneMap)
       this.skeletonRoot = skeletonRoot
@@ -501,7 +493,6 @@ export class CharacterManager {
 
       this.loadingBaseBody = false
       if (this.currentDNA && dnaAssetId) {
-        console.log('[Debug] re-processing slots after base body load, dnaAssetId=', dnaAssetId)
         const currentBodyId = this.lastAssetIds['body']
         this.lastAssetIds = {}
         this.lastAssetIds['body'] = currentBodyId
@@ -634,7 +625,6 @@ export class CharacterManager {
     for (const slot of slots) {
       const newAssetId = dna.slots[slot.id] ?? null
       const oldAssetId = this.lastAssetIds[slot.id] ?? null
-      console.log(`[Debug] updateCharacter: slot="${slot.id}" new="${(newAssetId ?? 'null').slice(0,8)}" old="${(oldAssetId ?? 'null').slice(0,8)}" hasBaseBody=${this.hasBaseBody} baseBodyGroup=${!!this.baseBodyGroup} boneMapSize=${this.boneMap.size}`)
 
       if (slot.id === 'body') {
         if (this.processingBodySlot) { continue }

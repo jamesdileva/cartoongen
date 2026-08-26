@@ -65,7 +65,7 @@ const Viewport = forwardRef<ViewportHandle, ViewportProps>(({ onFileDrop }, ref)
       return charManagerRef.current?.getSceneGroup() ?? null
     },
     hasBaseBody() {
-      return charManagerRef.current?.getHasBaseBody() ?? false
+      return charManagerRef.current?.getHasBodyRendering() ?? false
     },
     setLightingPreset(presetId: string) {
       const preset = allPresets.find((p) => p.id === presetId)

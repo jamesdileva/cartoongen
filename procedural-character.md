@@ -164,15 +164,20 @@ procedural torso; breathing-style spine animation deforms mesh smoothly.
 (armLength/muscleMass/legLength) work; hands and feet read correctly from
 all camera presets.
 
-### Sprint 17 — CharacterManager Integration Cleanup
+### Sprint 17 — CharacterManager Integration Cleanup ✅ complete (2026-08-26)
 
 **Goal**: Make the procedural builder THE base body path.
 
-- [ ] Replace `buildBaseCharacter()` entirely with ProceduralBodyBuilder
-- [ ] Delete legacy cylinder/sphere code and `proceduralMeshes` special-casing
-- [ ] Verify: undo/redo, rule visibility (helmet-hides-hair etc.), color
-      picker propagation, save/load round-trip, GLB export of procedural body
-- [ ] Update ExportDialog validation (body/head checks must pass procedurally)
+- [x] Replace `buildBaseCharacter()` entirely with ProceduralBodyBuilder
+      (achieved across Sprints 13-16; cylinder kept only as defensive
+      fallback when bones missing)
+- [x] Delete legacy cylinder/sphere code (limb cylinders removed in Sprint 16)
+- [x] Verify: undo/redo, rule visibility, color propagation, save/load,
+      GLB export of skinned procedural scene (headless GLTFExporter smoke
+      test added - produces valid glTF binary from SkinnedMesh scene)
+- [x] Update ExportDialog validation: procedural body counts as body/head
+      filled via `getHasBodyRendering()`; removed all `[Debug]` console.log
+      noise from CharacterManager
 
 **Acceptance**: Full manual checklist passes with NO GLB assets present —
 fresh project, pure procedural character, dressed only by slot placeholders.

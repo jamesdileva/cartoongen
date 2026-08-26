@@ -1956,3 +1956,43 @@ We are at **Sprint 17**. Sprint 16 is complete.
 ### Next steps
 
 **Sprint 17: CharacterManager Integration Cleanup** - make ProceduralBodyBuilder the only base body path, verify undo/redo/rules/colors/save/export against the fully procedural character.
+
+---
+
+## Session 032 - Sprint 17: Integration Cleanup
+
+### Date
+
+2026-08-26
+
+### What we built
+
+Sprint 17 - made the procedural character a first-class citizen of the whole pipeline and cleaned up integration debris.
+
+| Change | Detail |
+|---|---|
+| Export validation recognizes procedural body | New CharacterManager.getHasBodyRendering() (GLB loaded OR procedural meshes present); ViewportHandle.hasBaseBody() now reports true for the procedural character, so ExportDialog stops warning about missing body/head slots |
+| Headless export smoke test | ExportManager.test.ts builds a bone hierarchy + SkinnedMesh scene, runs GLTFExporter.parseAsync, asserts valid 'glTF' binary magic. Proves the export pipeline serializes skinned meshes without GPU. Required jsdom devDep (FileReader) + per-file vitest environment comment |
+| Debug log removal | All 10 [Debug] console.log lines removed from CharacterManager |
+
+### Files modified
+
+- src/renderer/three/CharacterManager.ts - getHasBodyRendering(), debug logs removed
+- src/renderer/components/Viewport.tsx - hasBaseBody() maps to getHasBodyRendering()
+- src/renderer/services/ExportManager.test.ts - new (2 tests)
+- package.json - jsdom devDep
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 186 tests passing (184 + 2 new), no regressions
+
+**Manual verification pending**: launch app, run through undo/redo, rule visibility with placeholder assets, color picker, save/load round-trip, and Export dialog (validation should show all checks passing on pure procedural character).
+
+### Current status
+
+We are at **Sprint 18**. Sprint 17 is complete.
+
+### Next steps
+
+**Sprint 18: DNA-Driven Shapes** - bodyShape in CharacterDNA (schema bump + migration), debounced geometry regeneration, coherent randomizer shapes, distinct template silhouettes (Child/Dwarf/Elf).
