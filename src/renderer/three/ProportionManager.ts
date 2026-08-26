@@ -58,8 +58,6 @@ const BONE_MORPHS: Record<string, ProportionDef[]> = {
     }
   ],
   shoulderWidth: [{ bone: 'clavicle_l', axis: 'x', range: [0.8, 1.35], mirror: 'clavicle_r' }],
-  neckWidth: [{ bone: 'neck_01', axis: 'xz', range: [0.7, 1.3] }],
-  bellySize: [{ bone: 'spine_02', axis: 'xz', range: [0.75, 1.35] }],
   headSize: [{ bone: 'Head', axis: 'y', range: [0.82, 1.22] }],
   legLength: [
     {

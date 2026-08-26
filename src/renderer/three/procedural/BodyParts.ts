@@ -12,48 +12,14 @@ export const HEAD_BONE_SEGMENTS: BoneSegment[] = [
 const CRANIUM_CENTER_Y = 1.86
 const CRANIUM_CENTER_Z = 0.005
 
-export function buildHeadGeometry(shape: BodyShape = DEFAULT_BODY_SHAPE): THREE.BufferGeometry {
-  const cranium = translateGeometry(
-    makeEllipsoid(shape.headWidth, shape.headHeight, shape.headLength, 28, 20),
-    0,
-    CRANIUM_CENTER_Y,
-    0.005
-  )
-
-  const earGeo = makeEllipsoid(0.042, 0.07, 0.05, 10, 8)
-  const leftEar = translateGeometry(earGeo.clone(), -shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
-  const rightEar = translateGeometry(earGeo, shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
-
-  const chinR = 0.07 * (1 - shape.jawChin) + 0.02
-  const chinY = 1.68 - 0.05 * shape.jawChin
-  const jawProfile: Array<[number, number]> = [
-    [shape.headWidth * 0.62, CRANIUM_CENTER_Y + 0.03],
-    [shape.headWidth * 0.6, 1.77],
-    [shape.headWidth * 0.44, 1.71],
-    [chinR, chinY]
-  ]
-  const jaw = makeLathe(jawProfile, 24)
-
-  const neck = makeSweep(
-    [
-      { center: [0, 1.53, 0], width: 0.17, height: 0.15 },
-      { center: [0, 1.66, 0.01], width: 0.18, height: 0.16 },
-      { center: [0, 1.78, 0.02], width: 0.19, height: 0.17 }
-    ],
-    14
-  )
-
-  const merged = mergeGeometries([cranium, leftEar, rightEar, jaw, neck])
-  if (!merged) {
-    throw new Error('buildHeadGeometry: mergeGeometries returned null')
-  }
-  return merged
-}
-
-export function buildHead(shape: BodyShape = DEFAULT_BODY_SHAPE): {
+export function buildHead(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  neckWidth = 0.5
+): {
   geometry: THREE.BufferGeometry
   segments: BoneSegment[]
 } {
+  const neckScale = 0.7 + neckWidth * 0.6
   const cranium = translateGeometry(
     makeEllipsoid(shape.headWidth, shape.headHeight, shape.headLength, 28, 20),
     0,
@@ -98,9 +64,9 @@ export function buildHead(shape: BodyShape = DEFAULT_BODY_SHAPE): {
   // Neck and Head bones for smooth neck-region deformation.
   const neck = makeSweep(
     [
-      { center: [0, 1.53, 0], width: 0.17, height: 0.15 },
-      { center: [0, 1.66, 0.01], width: 0.18, height: 0.16 },
-      { center: [0, 1.78, 0.02], width: 0.19, height: 0.17 }
+      { center: [0, 1.53, 0], width: 0.17 * neckScale, height: 0.15 * neckScale },
+      { center: [0, 1.66, 0.01], width: 0.18 * neckScale, height: 0.16 * neckScale },
+      { center: [0, 1.78, 0.02], width: 0.19 * neckScale, height: 0.17 * neckScale }
     ],
     14
   )
@@ -144,16 +110,21 @@ const CLAVICLE_Y = 1.47
 export function buildTorso(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
   bust = 0.15,
-  butt = 0.2
+  butt = 0.2,
+  belly = 0.5
 ): {
   geometry: THREE.BufferGeometry
   segments: BoneSegment[]
 } {
-  const stations = torsoProfile(shape).map((st) => ({
-    center: [0, st.y, 0] as [number, number, number],
-    width: st.w * 2,
-    height: st.d * 2
-  }))
+  const bellyScale = 0.75 + belly * 0.6
+  const stations = torsoProfile(shape).map((st, i) => {
+    const isWaist = i === 2 || i === 3
+    return {
+      center: [0, st.y, 0] as [number, number, number],
+      width: st.w * 2 * (isWaist ? bellyScale : 1),
+      height: st.d * 2 * (isWaist ? bellyScale : 1)
+    }
+  })
   const tube = makeSweep(stations, 20)
 
   const clavEnd = 0.36 * shape.shoulderWidth

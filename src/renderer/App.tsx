@@ -114,6 +114,16 @@ export default function App() {
     overwriteDNA(dna)
   }, [overwriteDNA])
 
+  useEffect(() => {
+    ;(window as unknown as { __app?: unknown }).__app = {
+      randomize: handleRandomize,
+      getDNA: () => useCharacterStore.getState().present
+    }
+    return () => {
+      delete (window as unknown as { __app?: unknown }).__app
+    }
+  }, [handleRandomize])
+
   const handleFileDrop = useCallback((buffer: ArrayBuffer, fileName: string) => {
     setImportData({ buffer, fileName })
     setShowImport(true)

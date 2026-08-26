@@ -4,7 +4,7 @@
   "description": "A desktop application for creating stylized game-ready 3D characters",
   "main": "./out/main/main.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "electron-vite dev -- --remote-debugging-port=9222",
     "build": "electron-vite build",
     "start": "electron-vite preview",
     "lint": "eslint .",

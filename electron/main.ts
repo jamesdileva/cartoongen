@@ -88,6 +88,9 @@ function createWindow(): void {
 }
 
 app.whenReady().then(() => {
+  if (!app.isPackaged) {
+    app.commandLine.appendSwitch('remote-debugging-port', '9222')
+  }
   initializeApp()
 
   app.on('activate', () => {

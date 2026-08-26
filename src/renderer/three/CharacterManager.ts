@@ -141,12 +141,12 @@ function clamp01(v: number): number {
 const BUST_DEFAULT = 0.15
 const BUTT_DEFAULT = 0.2
 
-function headKeyOf(shape: BodyShape): string {
-  return JSON.stringify([shape.headWidth, shape.headHeight, shape.headLength, shape.jawChin])
+function headKeyOf(shape: BodyShape, neckWidth: number): string {
+  return JSON.stringify([shape.headWidth, shape.headHeight, shape.headLength, shape.jawChin, neckWidth])
 }
 
-function torsoKeyOf(shape: BodyShape, bust: number, butt: number): string {
-  return JSON.stringify([shape.shoulderWidth, shape.chestDepth, shape.waistTaper, shape.hipWidth, bust, butt])
+function torsoKeyOf(shape: BodyShape, bust: number, butt: number, belly: number): string {
+  return JSON.stringify([shape.shoulderWidth, shape.chestDepth, shape.waistTaper, shape.hipWidth, bust, butt, belly])
 }
 
 function faceKeyOf(shape: BodyShape, face: FaceShape): string {
@@ -309,9 +309,10 @@ export class CharacterManager {
     const shape = sanitizeBodyShape(dna?.bodyShape)
     const bust = clamp01(dna?.morphs?.bust ?? BUST_DEFAULT)
     const butt = clamp01(dna?.morphs?.butt ?? BUTT_DEFAULT)
-    this.lastTorsoShapeKey = torsoKeyOf(shape, bust, butt)
+    const belly = clamp01(dna?.morphs?.bellySize ?? 0.5)
+    this.lastTorsoShapeKey = torsoKeyOf(shape, bust, butt, belly)
 
-    const geo = buildTorso(shape, bust, butt).geometry
+    const geo = buildTorso(shape, bust, butt, belly).geometry
     const mesh =
       this.bindToBones(geo, ['Root', 'Spine', 'Spine1', 'Spine2', 'LeftClavicle', 'RightClavicle'], skinMat) ??
       (() => {
@@ -341,10 +342,11 @@ export class CharacterManager {
     }
 
     const shape = sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape)
-    this.lastHeadShapeKey = headKeyOf(shape)
+    const neckWidth = clamp01(useCharacterStore.getState().present?.morphs?.neckWidth ?? 0.5)
+    this.lastHeadShapeKey = headKeyOf(shape, neckWidth)
     const skinMat = this.skinMaterial ?? this.materialManager.getMaterial('skin')
 
-    const geo = buildHead(shape).geometry
+    const geo = buildHead(shape, neckWidth).geometry
     const mesh = this.bindToBones(geo, ['Neck', 'Head'], skinMat)
     this.headMesh =
       mesh ??
@@ -793,17 +795,26 @@ export class CharacterManager {
       const shape = sanitizeBodyShape(dna.bodyShape)
       const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
       const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const neckWidth = clamp01(dna.morphs?.neckWidth ?? 0.5)
       const face = sanitizeFaceShape(dna.face)
-      const nextHeadKey = headKeyOf(shape)
-      const nextTorsoKey = torsoKeyOf(shape, bust, butt)
+      const nextHeadKey = headKeyOf(shape, neckWidth)
+      const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly)
       const nextFaceKey = faceKeyOf(shape, face)
+      const actions: string[] = []
       if (nextHeadKey !== this.lastHeadShapeKey) {
+        actions.push('head+face')
         this.rebuildHeadMesh()
       } else if (nextFaceKey !== this.lastFaceKey) {
+        actions.push('face')
         this.rebuildFaceGroup()
       }
       if (nextTorsoKey !== this.lastTorsoShapeKey) {
+        actions.push('torso')
         this.rebuildTorsoMesh()
+      }
+      if (actions.length > 0) {
+        console.log('[Rebuild]', actions.join('+'), 'faceGroup:', !!this.faceGroup, 'headMesh:', !!this.headMesh)
       }
     }
   }

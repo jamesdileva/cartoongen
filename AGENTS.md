@@ -2199,3 +2199,37 @@ User saved broken characters as files -> loaded them into a CPU simulation (scri
 
 - typecheck 0 errors; lint clean; build succeeds
 - 209 tests passing (207 + 2 new)
+
+---
+
+## Session 039 - THE Face Burial Root Cause: Ancestor xz Bone Scales
+
+### Date
+
+2026-08-26
+
+### What we found (via live CDP inspection - new debugging capability)
+
+Built a Chrome DevTools Protocol harness (scripts/debug/cdp-face.mts, cdp-sweep.mts): the app now exposes window.__ccm (CharacterManager) and window.__app (randomize/getDNA) in dev, Electron starts with --remote-debugging-port=9222 in dev. Scripts can randomize programmatically and interrogate the LIVE scene graph.
+
+### Root cause (definitive, measured live)
+
+| Issue | Root Cause | Fix |
+|---|---|---|
+| Face features swallowed inside the head on many randomizes | 
+eckWidth morph scaled Neck bone xz (0.784) and ellySize scaled Spine1 bone xz (0.924) - both are ANCESTORS of the Head bone. Compound 0.72x squashed the ENTIRE head x/z. Skull and features squashed together, but the pinched head puts midline skull verts in front of laterally-displaced eyes -> eyes occluded by the face's own central bulge | bellySize and neckWidth are now GEOMETRY params (same pattern as bust/butt): belly widens waist stations in buildTorso, neckWidth widens neck stub in buildHead. Removed from ProportionManager BONE_MORPHS so no ancestor bone ever carries xz scale. Head world x/z scale verified exactly 1.0 across 15 randomize rolls; 14/15 fully clean, 1 marginal brow-tube 9mm (scan artifact at brow ridge) |
+
+Also fixed en route: Toolbar Save button bypassed handleSave (no toast/thumbnail) - now wired through it.
+
+### Debug tooling added
+
+- window.__ccm / window.__app dev globals (Viewport/App)
+- scripts/debug/cdp-face.mts - live scene inspection (feature vs deformed skull)
+- scripts/debug/cdp-sweep.mts - programmatic randomize + verification sweep
+- scripts/debug/trace-head.mts - saved-DNA CPU pipeline reproduction
+- [Rebuild] console.log in updateCharacter (temporary, remove when stable)
+
+### Verification
+
+- typecheck 0 errors; 209 tests passing; build succeeds
+- Live CDP sweep: 15 randomizes, head x/z scale 1.000 every roll
