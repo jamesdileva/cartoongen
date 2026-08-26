@@ -13,7 +13,7 @@ import { MaterialManager } from './MaterialManager'
 import { AssetManager } from './AssetManager'
 import { SlotManager } from './SlotManager'
 import { ProportionManager } from './ProportionManager'
-import { buildHead, DEFAULT_HEAD_PARAMS } from './procedural/BodyParts'
+import { buildHead, buildTorso, DEFAULT_HEAD_PARAMS } from './procedural/BodyParts'
 import { buildFace } from './procedural/FaceFeatures'
 import referenceSkeleton from '../../shared/data/reference-skeleton.json'
 
@@ -50,6 +50,8 @@ const SKELETON: BoneDefinition = {
                   position: [0, 0.15, 0],
                   children: [{ name: 'Head', position: [0, 0.15, 0] }]
                 },
+                { name: 'LeftClavicle', position: [-0.1, 0.02, 0] },
+                { name: 'RightClavicle', position: [0.1, 0.02, 0] },
                 {
                   name: 'LeftUpperArm',
                   position: [-0.38, 0.05, 0],
@@ -195,14 +197,29 @@ export class CharacterManager {
     this.scene.add(rootBone)
     this.scene.add(helper)
 
-    const bodyGeo = new THREE.CylinderGeometry(0.35, 0.45, 0.65, 12)
-    const skinMat = this.materialManager.getMaterial('skin')
-    const bodyMesh = new THREE.Mesh(bodyGeo, skinMat)
-    bodyMesh.position.set(0, 0.9, 0)
-    this.scene.add(bodyMesh)
-    this.proceduralMeshes.push(bodyMesh)
-
     rootBone.updateMatrixWorld(true)
+
+    const skinMat = this.materialManager.getMaterial('skin')
+
+    const torsoBones = ['Root', 'Spine', 'Spine1', 'Spine2', 'LeftClavicle', 'RightClavicle']
+      .map((n) => this.boneMap.get(n))
+      .filter((b): b is THREE.Bone => !!b)
+    if (torsoBones.length === 6) {
+      const torsoGeo = buildTorso().geometry
+      const torsoInverses = torsoBones.map((b) => new THREE.Matrix4().copy(b.matrixWorld).invert())
+      const torsoSkeleton = new THREE.Skeleton(torsoBones, torsoInverses)
+      const torsoMesh = new THREE.SkinnedMesh(torsoGeo, skinMat)
+      torsoMesh.bind(torsoSkeleton)
+      this.scene.add(torsoMesh)
+      this.proceduralMeshes.push(torsoMesh)
+    } else {
+      const bodyGeo = new THREE.CylinderGeometry(0.35, 0.45, 0.65, 12)
+      const bodyMesh = new THREE.Mesh(bodyGeo, skinMat)
+      bodyMesh.position.set(0, 0.9, 0)
+      this.scene.add(bodyMesh)
+      this.proceduralMeshes.push(bodyMesh)
+    }
+
     const headBones = [this.boneMap.get('Neck'), this.boneMap.get('Head')].filter(
       (b): b is THREE.Bone => !!b
     )

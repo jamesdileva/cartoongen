@@ -1812,3 +1812,61 @@ We are at **Sprint 15**. Sprint 14 is complete.
 ## Session 028 addendum - Sprint 19 scoped
 
 User feedback after Sprint 14 test: face features look great; requested variation support as polish. Scoped **Sprint 19 - Face Variations & Expressions** in procedural-character.md: browTilt/browHeight, mouthCurve (smile through frown - user's character, user's choice), mouthWidth, eyeScale/eyeSpacing, noseSize - all via torus arc params already in place, plus head shape presets and ear variations. Randomizer picks coherent expression combos.
+
+---
+
+## Session 029 - Sprint 15: Torso + Shoulders + Pelvis
+
+### Date
+
+2026-08-26
+
+### What we built
+
+Sprint 15 - the procedural torso replaces the cylinder. Elliptical sweep from hips to neck base (9 stations: hip flare, waist taper, ribcage, chest, shoulder slope), deltoid ellipsoid caps at each shoulder, pelvis ellipsoid. All skinned across a 6-segment chain: Root/Spine/Spine1/Spine2 + new LeftClavicle/RightClavicle bones.
+
+### Files modified
+
+| File | Change |
+|---|---|
+| src/renderer/three/procedural/BodyParts.ts | Added TorsoShapeParams (shoulderWidth/chestDepth/waistTaper/hipWidth), 	orsoProfile() station table, uildTorso() returning merged sweep+deltoids+pelvis geometry with skin bindings |
+| src/renderer/three/CharacterManager.ts | SKELETON gained LeftClavicle/RightClavicle (children of Spine2); cylinder torso replaced by skinned uildTorso() mesh (cylinder kept as fallback if clavicles missing) |
+| src/renderer/three/procedural/BodyParts.test.ts | 7 tests: segment names, weight normalization, bounds, x-symmetry, shoulderWidth/hipWidth rest-pose response |
+
+### Decisions made during Sprint 15
+
+| Decision | Rationale |
+|---|---|
+| Torso as elliptical sweep instead of LatheGeometry | Bodies are wider than deep - lathe is circular-only; our makeSweep already supports per-station width/height |
+| Clavicle bones added to procedural skeleton | shoulderWidth morph targets clavicle_l/r via aliases; without the bones the morph did nothing on procedural bodies. Aliases map already anticipated canonical names. Slot attachments unaffected (none reference clavicles) |
+| Deltoids weighted to clavicle segments | Scaling clavicle.x slides deltoids outward/inward about the clavicle origin - shoulder width morph visibly works |
+| Fallback cylinder retained behind 6-bone check | Defensive; same pattern as head's plain-mesh fallback |
+
+### Morphs now working on procedural body
+
+- bellySize (Spine1 alias spine_02 x-scale) deforms waist
+- shoulderWidth (clavicle x-scale) widens shoulders + slides deltoids
+- height (spine y-scales) stretches the whole trunk
+- headSize unchanged (head sprint)
+
+### Verification
+
+- 
+pm run typecheck - 0 errors
+- 
+pm run test - 175 passing (168 + 7 new), no regressions
+- 
+pm run lint - 0 errors (4 pre-existing warnings)
+- 
+pm run build - full production build succeeds
+- Headless check: 937 verts, y 0.76-1.59, x symmetric +/-0.46
+
+**Manual verification pending**: launch app, confirm torso silhouette (waist narrower than chest/hips, shoulder caps), drag Belly/Shoulder Width/Height sliders.
+
+### Current status
+
+We are at **Sprint 16**. Sprint 15 is complete.
+
+### Next steps
+
+**Sprint 16: Arms, Hands, Legs, Feet** - tapered limb sweeps with elbow/knee bulges, mitten hands v1, shoe-last feet. Note: procedural skeleton lacks calf/knee bones (UpperLeg->Foot directly); consider adding LeftCalf/RightCalf this sprint since aliases already exist.

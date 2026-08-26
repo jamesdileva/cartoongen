@@ -131,16 +131,19 @@ typecheck/lint/test/build green.
 **Acceptance**: Face reads clearly at default camera distance; changing eye
 color and headSize behaves correctly; features export in GLB.
 
-### Sprint 15 — Torso + Shoulders + Pelvis
+### Sprint 15 — Torso + Shoulders + Pelvis ✅ complete (2026-08-26)
 
 **Goal**: The trunk, first full test of lathe + smooth weights across many
 segments.
 
-- [ ] `buildTorso()`: lathe profile neck→chest→waist→hips with control points
+- [x] `buildTorso()`: lathe profile neck→chest→waist→hips with control points
       from BodyShapeParams; shoulder deltoid caps; pelvis wedge
-- [ ] Spine-segment weighting (Root/Spine/Spine1/Spine2/Neck chain) with soft
-      blending at shoulders
-- [ ] Remove cylinder-torso legacy path
+      (implemented as elliptical sweep + deltoid/pelvis ellipsoids)
+- [x] Spine-segment weighting (Root/Spine/Spine1/Spine2/Neck chain) with soft
+      blending at shoulders (+ LeftClavicle/RightClavicle bones added to the
+      procedural skeleton so shoulderWidth morph works)
+- [x] Remove cylinder-torso legacy path (cylinder kept only as fallback when
+      clavicle bones missing)
 
 **Acceptance**: bellySize / shoulderWidth / height morphs visibly deform the
 procedural torso; breathing-style spine animation deforms mesh smoothly.

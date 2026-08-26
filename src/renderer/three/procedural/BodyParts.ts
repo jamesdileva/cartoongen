@@ -73,3 +73,87 @@ export function buildHead(params: HeadShapeParams = DEFAULT_HEAD_PARAMS): {
   applySkinAttributes(geometry, binding)
   return { geometry, segments: HEAD_BONE_SEGMENTS }
 }
+
+export interface TorsoShapeParams {
+  shoulderWidth: number
+  chestDepth: number
+  waistTaper: number
+  hipWidth: number
+}
+
+export const DEFAULT_TORSO_PARAMS: TorsoShapeParams = {
+  shoulderWidth: 1,
+  chestDepth: 1,
+  waistTaper: 1,
+  hipWidth: 1
+}
+
+interface TorsoStation {
+  y: number
+  w: number
+  d: number
+}
+
+function torsoProfile(p: TorsoShapeParams): TorsoStation[] {
+  return [
+    { y: 0.86, w: 0.3 * p.hipWidth, d: 0.215 },
+    { y: 0.96, w: 0.29 * p.hipWidth, d: 0.205 },
+    { y: 1.06, w: 0.255 * p.waistTaper, d: 0.19 },
+    { y: 1.14, w: 0.26 * p.waistTaper, d: 0.195 },
+    { y: 1.24, w: 0.285, d: 0.225 * p.chestDepth },
+    { y: 1.36, w: 0.3, d: 0.225 * p.chestDepth },
+    { y: 1.44, w: 0.305 * p.shoulderWidth, d: 0.205 },
+    { y: 1.52, w: 0.235 * p.shoulderWidth, d: 0.165 },
+    { y: 1.585, w: 0.14, d: 0.13 }
+  ]
+}
+
+const CLAVICLE_ORIGIN_X = 0.1
+const CLAVICLE_Y = 1.47
+
+export function buildTorso(params: TorsoShapeParams = DEFAULT_TORSO_PARAMS): {
+  geometry: THREE.BufferGeometry
+  segments: BoneSegment[]
+} {
+  const stations = torsoProfile(params).map((s) => ({
+    center: [0, s.y, 0] as [number, number, number],
+    width: s.w * 2,
+    height: s.d * 2
+  }))
+  const tube = makeSweep(stations, 20)
+
+  const clavEnd = 0.36 * params.shoulderWidth
+  const deltoidGeo = makeEllipsoid(0.095, 0.115, 0.1, 16, 12)
+  const leftDeltoid = translateGeometry(deltoidGeo.clone(), -(clavEnd + 0.005), CLAVICLE_Y - 0.005, 0)
+  const rightDeltoid = translateGeometry(deltoidGeo, clavEnd + 0.005, CLAVICLE_Y - 0.005, 0)
+
+  const pelvisGeo = makeEllipsoid(0.32 * params.hipWidth, 0.14, 0.23, 20, 14)
+  const pelvis = translateGeometry(pelvisGeo, 0, 0.9, 0)
+
+  const merged = mergeGeometries([tube, leftDeltoid, rightDeltoid, pelvis])
+  if (!merged) {
+    throw new Error('buildTorso: mergeGeometries returned null')
+  }
+
+  const segments: BoneSegment[] = [
+    { name: 'Root', start: [0, 0.86, 0], end: [0, 1.15, 0] },
+    { name: 'Spine', start: [0, 1.15, 0], end: [0, 1.3, 0] },
+    { name: 'Spine1', start: [0, 1.3, 0], end: [0, 1.45, 0] },
+    { name: 'Spine2', start: [0, 1.45, 0], end: [0, 1.6, 0] },
+    {
+      name: 'LeftClavicle',
+      start: [-CLAVICLE_ORIGIN_X, CLAVICLE_Y, 0],
+      end: [-(clavEnd + 0.02), CLAVICLE_Y - 0.01, 0]
+    },
+    {
+      name: 'RightClavicle',
+      start: [CLAVICLE_ORIGIN_X, CLAVICLE_Y, 0],
+      end: [clavEnd + 0.02, CLAVICLE_Y - 0.01, 0]
+    }
+  ]
+
+  const binding = computeSkinBindings(merged.attributes.position.array as Float32Array, segments)
+  applySkinAttributes(merged, binding)
+
+  return { geometry: merged, segments }
+}
