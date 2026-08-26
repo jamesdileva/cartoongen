@@ -94,18 +94,18 @@ rule visibility, export) keeps working because:
 
 ## Sprint definitions
 
-### Sprint 13 — Geometry Kernel + Head ✅ starting now
+### Sprint 13 — Geometry Kernel + Head ✅ complete (2026-08-25)
 
 **Goal**: The three parametric primitives + weight math, and a "watermelon"
 head rendered and skinned.
 
-- [ ] `GeometryKernel.ts`: elliptical tapered sweep, lathe-with-binding,
+- [x] `GeometryKernel.ts`: elliptical tapered sweep, lathe-with-binding,
       ellipsoid
-- [ ] `SkinWeights.ts` + unit tests (distance function, falloff, normalization,
+- [x] `SkinWeights.ts` + unit tests (distance function, falloff, normalization,
       4-influence cap, degenerate cases)
-- [ ] `BodyParts.buildHead()`: cranium ellipsoid (scaled sphere), jaw as lathe
+- [x] `BodyParts.buildHead()`: cranium ellipsoid (scaled sphere), jaw as lathe
       blended into cranium, ear bumps, neck stub — all skinned to Head/Neck
-- [ ] Integrate into CharacterManager alongside existing body (head replaces
+- [x] Integrate into CharacterManager alongside existing body (head replaces
       the sphere; rest unchanged)
 
 **Reference**: watermelon = ellipsoid roughly 1.15 wide : 1.0 tall : 1.05 deep

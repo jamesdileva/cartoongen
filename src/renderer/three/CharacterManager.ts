@@ -13,6 +13,7 @@ import { MaterialManager } from './MaterialManager'
 import { AssetManager } from './AssetManager'
 import { SlotManager } from './SlotManager'
 import { ProportionManager } from './ProportionManager'
+import { buildHead } from './procedural/BodyParts'
 import referenceSkeleton from '../../shared/data/reference-skeleton.json'
 
 const gltfLoader = new GLTFLoader()
@@ -197,9 +198,19 @@ export class CharacterManager {
     this.scene.add(bodyMesh)
     this.proceduralMeshes.push(bodyMesh)
 
-    const headGeo = new THREE.SphereGeometry(0.22, 16, 16)
-    this.headMesh = new THREE.Mesh(headGeo, skinMat)
-    this.headMesh.position.set(0, 1.75, 0)
+    rootBone.updateMatrixWorld(true)
+    const headBones = [this.boneMap.get('Neck'), this.boneMap.get('Head')].filter(
+      (b): b is THREE.Bone => !!b
+    )
+    const headGeo = buildHead().geometry
+    if (headBones.length === 2) {
+      const inverses = headBones.map((b) => new THREE.Matrix4().copy(b.matrixWorld).invert())
+      const skeleton = new THREE.Skeleton(headBones, inverses)
+      this.headMesh = new THREE.SkinnedMesh(headGeo, skinMat)
+      this.headMesh.bind(skeleton)
+    } else {
+      this.headMesh = new THREE.Mesh(headGeo, skinMat)
+    }
     this.scene.add(this.headMesh)
     this.proceduralMeshes.push(this.headMesh)
 

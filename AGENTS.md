@@ -1656,3 +1656,70 @@ GeometryKernel (elliptical sweep / lathe / ellipsoid), SkinWeights math + tests,
 ### Current status
 
 Sprint 13 in progress.
+
+---
+
+## Session 026 — Sprint 13: Geometry Kernel + Procedural Head
+
+### Date
+
+2026-08-25
+
+### What we built
+
+Sprint 13 — the procedural geometry foundation. Three parametric primitives in a new src/renderer/three/procedural/ module, pure-math skin weight computation with unit tests, and a watermelon head (cranium ellipsoid + jaw lathe + ears + neck sweep) that is genuinely skinned to the Neck/Head bones - the first procedural mesh in the app that deforms via the skeleton.
+
+### Files created
+
+| File | Purpose |
+|---|---|
+| src/renderer/three/procedural/GeometryKernel.ts | makeEllipsoid (scaled sphere), makeLathe (profile revolve), makeSweep (elliptical tapered tube along station centers, optional end caps) |
+| src/renderer/three/procedural/SkinWeights.ts | Pure math: point-to-segment distance, inverse-distance falloff weights (up to 4 influences, sharpness parameter), plus pplySkinAttributes buffer conversion |
+| src/renderer/three/procedural/BodyParts.ts | uildHead() - cranium ellipsoid (0.25 x 0.22 x 0.26 at y=1.86), jaw lathe with chin parameter, ear bumps, neck stub; HEAD_BONE_SEGMENTS define Neck (1.55-1.75) and Head (1.75-2.08) capsules |
+| GeometryKernel.test.ts / SkinWeights.test.ts | 19 tests: bounds, index validity, cap vertices, degenerate frames, weight normalization, joint blending, sharpness behavior |
+
+### Files modified
+
+| File | Change |
+|---|---|
+| src/renderer/three/CharacterManager.ts | uildBaseCharacter() now creates the head as a THREE.SkinnedMesh bound to Neck+Head bones (inverses from rest-pose world matrices); falls back to plain Mesh if bones missing |
+| procedural-character.md | Sprint 13 marked complete |
+
+### Decisions made during Sprint 13
+
+| Decision | Rationale |
+|---|---|
+| Kernel produces plain geometry; SkinWeights computes bindings from final vertex positions | Simpler than annotating verts during generation; weights depend only on position vs bone capsules so any future part builder gets skinning for free |
+| Head authored in world coordinates, mesh transform identity | Skinning math (boneWorld * boneInverse * vertex) reduces to identity at rest pose; no local/world confusion |
+| Two bone capsules for the whole head region (Neck + Head) | Enough for Sprint 13; more segments can be added per-part later without changing the API |
+| Jaw as separate lathe overlapped into cranium (no boolean merge) | Visual seam acceptable for cartoon style; keeps parts parametric and cheap to regenerate |
+| mergeGeometries from BufferGeometryUtils for one draw call | All sub-parts share identical attributes (position/normal/uv) |
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| makeSweep produced all-NaN positions when path was horizontal (and latent NaN everywhere) | Ring loop destructured center from raw station (array tuple) and read .x; now uses computed Vector3 list |
+| Sharpness test used a point lying ON the head bone axis (distance 0, weights saturated ~1.0 regardless of sharpness) | Test point moved off-axis to [0.3, 1.6, 0] |
+
+### Verification
+
+- 
+pm run typecheck - 0 errors
+- 
+pm run lint - 0 errors (4 pre-existing warnings in unrelated files)
+- 
+pm run test - 164 tests passing (145 existing + 19 new), no regressions
+- 
+pm run build - full production build succeeds
+- Headless geometry check: 949 verts, bounds y 1.524-2.080, 0 weight-sum violations
+
+### Current status
+
+We are at **Sprint 14**. Sprint 13 is complete.
+
+**Manual verification still needed (requires GPU/Electron)**: launch app without base body asset, confirm watermelon head renders instead of sphere, drag headSize slider and confirm smooth skinned deformation.
+
+### Next steps
+
+**Sprint 14: Face Features** - eyes (sclera+iris+pupil), brow ridges, nose wedge, mouth, placed via head shape params.
