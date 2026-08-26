@@ -1808,3 +1808,7 @@ We are at **Sprint 15**. Sprint 14 is complete.
 ### Next steps
 
 **Sprint 15: Torso** - lathe torso neck->chest->waist->hips with shoulder deltoids + pelvis, spine-chain skinning, remove cylinder legacy path.
+
+## Session 028 addendum - Sprint 19 scoped
+
+User feedback after Sprint 14 test: face features look great; requested variation support as polish. Scoped **Sprint 19 - Face Variations & Expressions** in procedural-character.md: browTilt/browHeight, mouthCurve (smile through frown - user's character, user's choice), mouthWidth, eyeScale/eyeSpacing, noseSize - all via torus arc params already in place, plus head shape presets and ear variations. Randomizer picks coherent expression combos.
