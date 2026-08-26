@@ -102,9 +102,14 @@ export function buildFace(
   const mouth = new THREE.Mesh(new THREE.TorusGeometry(radius, 0.012, 8, 20, arcLen), mats.mouth)
   mouth.name = 'Mouth'
   mouth.rotation.z = curve >= 0 ? 1.5 * Math.PI - arcLen / 2 : 0.5 * Math.PI - arcLen / 2
-  mouth.rotation.x = -0.15
   const mouthWorldY = CRANIUM_CENTER_Y - H * 0.48
-  mouth.position.set(0, mouthWorldY - HEAD_BONE_Y, surfaceZ(bodyShape, 0, mouthWorldY) + 0.004)
+  const surfMid = surfaceZ(bodyShape, 0, mouthWorldY)
+  // A frown arches UP into deeper skull latitudes, a smile dips DOWN into
+  // shallower ones - tilt the arc so its extreme point follows the surface.
+  const extremeWorldY = mouthWorldY + (curve >= 0 ? -radius : radius)
+  const surfExtreme = surfaceZ(bodyShape, 0, extremeWorldY)
+  mouth.rotation.x = Math.atan((surfExtreme - surfMid) / radius)
+  mouth.position.set(0, mouthWorldY - HEAD_BONE_Y, surfMid + 0.004)
   group.add(mouth)
 
   return { group, eyes, eyebrows, mouth }

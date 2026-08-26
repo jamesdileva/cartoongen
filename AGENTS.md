@@ -2233,3 +2233,21 @@ Also fixed en route: Toolbar Save button bypassed handleSave (no toast/thumbnail
 
 - typecheck 0 errors; 209 tests passing; build succeeds
 - Live CDP sweep: 15 randomizes, head x/z scale 1.000 every roll
+
+---
+
+## Session 039 addendum - Disappearing Frowns (Live Capture Reproduction)
+
+### Date
+
+2026-08-26
+
+### What we found (user live-captured a no-mouth character: scripts/debug/nomouth.dna.json + .png)
+
+| Issue | Root Cause | Fix |
+|---|---|---|
+| Mouth disappears on some randomizes | mouthCurve < 0 renders a FROWN (upper-half torus arch) whose apex rises ~R above the mouth anchor - into DEEPER skull latitudes. Mouth depth was computed only at the anchor latitude, so the arch apex ended up ~2cm inside the skull. Smiles dip toward the shallow chin and never buried - explaining the randomness (mood-correlated) | Mouth now TILTS to follow facial curvature: rotation.x = atan((surfExtreme - surfMid) / R) - frown apex swings forward out of the skull, smile bottom dips forward around the chin curve. Ends stay anchored on the surface |
+
+New capture tooling: scripts/debug/cdp-capture.mts grabs screenshot + DNA + metrics from the live app on demand (no save needed).
+
+Regression tests: frown apex clears skull across extreme shapes; smile bottom clears skull. 211 tests passing.

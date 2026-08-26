@@ -133,4 +133,43 @@ describe('buildFace', () => {
     const tall = buildFace({ ...DEFAULT_BODY_SHAPE, headHeight: 0.29 }, DEFAULT_FACE_SHAPE, mats)
     expect(tall.eyes[0].position.y).toBeGreaterThan(normal.eyes[0].position.y)
   })
+
+  it('frown apex stays outside the skull across extreme shapes', () => {
+    const CY = 1.86
+    const CZ = 0.005
+    const shapes = [
+      DEFAULT_BODY_SHAPE,
+      { ...DEFAULT_BODY_SHAPE, headLength: 0.18 },
+      { ...DEFAULT_BODY_SHAPE, headHeight: 0.28 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headLength: 0.19 }
+    ]
+    for (const shape of shapes) {
+      const frown = buildFace(shape, { ...DEFAULT_FACE_SHAPE, mouthCurve: -1 }, mats)
+      const m = frown.mouth
+      // apex of the frown arch: local (0, +R, 0) rotated by rotation.x
+      const R = 0.06 * 1
+      const apexLocalY = m.position.y + R * Math.cos(m.rotation.x)
+      const apexZ = m.position.z + R * Math.sin(m.rotation.x)
+      const apexWorldY = apexLocalY + 1.75
+      const ny = (apexWorldY - CY) / shape.headHeight
+      const surf = CZ + shape.headLength * Math.sqrt(Math.max(1 - ny * ny, 0))
+      expect(apexZ).toBeGreaterThanOrEqual(surf - 0.002)
+      // ends of the arc stay anchored near the surface too
+      const endWorldY = m.position.y + 1.75
+      const nyEnd = (endWorldY - CY) / shape.headHeight
+      const surfEnd = CZ + shape.headLength * Math.sqrt(Math.max(1 - nyEnd * nyEnd, 0))
+      expect(m.position.z).toBeGreaterThanOrEqual(surfEnd - 0.002)
+    }
+  })
+
+  it('smile bottom stays outside the skull', () => {
+    const smile = buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, mouthCurve: 1 }, mats)
+    const m = smile.mouth
+    const R = 0.06
+    const bottomY = m.position.y - R * Math.cos(m.rotation.x)
+    const bottomZ = m.position.z - R * Math.sin(m.rotation.x)
+    const ny = (bottomY + 1.75 - 1.86) / DEFAULT_BODY_SHAPE.headHeight
+    const surf = 0.005 + DEFAULT_BODY_SHAPE.headLength * Math.sqrt(Math.max(1 - ny * ny, 0))
+    expect(bottomZ).toBeGreaterThanOrEqual(surf - 0.002)
+  })
 })
