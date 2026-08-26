@@ -69,7 +69,7 @@ export function makeSweep(
 
   for (let i = 0; i < ringCount; i++) {
     const tangent = tangents[i]
-    const refUp = Math.abs(tangent.y) > 0.999 ? new THREE.Vector3(1, 0, 0) : new THREE.Vector3(0, 1, 0)
+    const refUp = Math.abs(tangent.y) > 0.999 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0)
     const side = new THREE.Vector3().crossVectors(tangent, refUp).normalize()
     const up2 = new THREE.Vector3().crossVectors(side, tangent).normalize()
     const c = centers[i]

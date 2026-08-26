@@ -1870,3 +1870,45 @@ We are at **Sprint 16**. Sprint 15 is complete.
 ### Next steps
 
 **Sprint 16: Arms, Hands, Legs, Feet** - tapered limb sweeps with elbow/knee bulges, mitten hands v1, shoe-last feet. Note: procedural skeleton lacks calf/knee bones (UpperLeg->Foot directly); consider adding LeftCalf/RightCalf this sprint since aliases already exist.
+
+---
+
+## Session 030 - Sprint 15 addendum: Bust/Butt Dials + Sweep Frame Fix
+
+### Date
+
+2026-08-26
+
+### What we built
+
+User requested female body capability (curvature, bust/butt fill). Added two new geometry-driven dials:
+
+- TorsoShapeParams gained ust and utt (0..1). Bust = ellipsoid pair at chest (y 1.335) projected forward; butt = glute ellipsoid pair at pelvis rear. Both scale with existing chestDepth/hipWidth params.
+- CharacterManager now rebuilds the torso mesh when bust/butt morphs change in DNA (uildTorsoMesh() extracted, caches rest-pose bone inverses so rebuilds after height/belly scaling bind correctly).
+- PropertiesPanel shows Bust + Butt sliders; RandomGenerator includes them skewed low for coherent randomization.
+
+### Critical bug found: makeSweep frame swap
+
+| Bug | Root Cause | Fix |
+|---|---|---|
+| Torso rendered 90-deg rotated since Sprint 15 (deep instead of wide) | For vertical paths, makeSweep chose refUp=(1,0,0), which put the width axis on -Z and height axis on X - width/depth swapped | refUp changed to (0,0,1) for vertical tangents: width maps to X, height to Z as intended |
+
+The head's neck sweep was also affected but near-circular so invisible. Verified headlessly: bust 0->1 moves maxZ 0.230 -> 0.272.
+
+### Files modified
+
+- src/renderer/three/procedural/BodyParts.ts - bust/butt params + ellipsoid pairs
+- src/renderer/three/procedural/GeometryKernel.ts - vertical-path frame fix
+- src/renderer/three/CharacterManager.ts - buildTorsoMesh/removeTorsoMesh with cached rest inverses, bust/butt change detection in updateCharacter
+- src/renderer/three/ProportionManager.ts - PROPORTION_MORPHS gained bust/butt entries (geometry-handled, not bone-scaled)
+- src/renderer/services/RandomGenerator.ts - randomized bust (pow 1.6 skew low) / butt (0.2 base)
+- BodyParts.test.ts - +2 tests (bust front projection, butt rear projection)
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 177 tests passing (175 + 2 new), no regressions
+
+### Current status
+
+We are at **Sprint 16**. Female silhouette dials are in ahead of Sprint 18's full body-shape DNA.

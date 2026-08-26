@@ -96,4 +96,36 @@ describe('buildTorso', () => {
     const broad = pelvisExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, hipWidth: 1.2 }).geometry)
     expect(broad).toBeGreaterThan(slim)
   })
+
+  it('bust param extends chest front projection', () => {
+    const flat = zExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, bust: 0 }).geometry, 1.25, 1.42)
+    const full = zExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, bust: 1 }).geometry, 1.25, 1.42)
+    expect(full).toBeGreaterThan(flat)
+  })
+
+  it('butt param extends rear projection', () => {
+    const flat = -zMin(buildTorso({ ...DEFAULT_TORSO_PARAMS, butt: 0 }).geometry, 0.85, 1.05)
+    const full = -zMin(buildTorso({ ...DEFAULT_TORSO_PARAMS, butt: 1 }).geometry, 0.85, 1.05)
+    expect(full).toBeGreaterThan(flat)
+  })
 })
+
+function zExtent(geometry: THREE.BufferGeometry, yMin: number, yMax: number): number {
+  const pos = geometry.attributes.position as THREE.BufferAttribute
+  let max = -Infinity
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i)
+    if (y >= yMin && y <= yMax) max = Math.max(max, pos.getZ(i))
+  }
+  return max
+}
+
+function zMin(geometry: THREE.BufferGeometry, yMin: number, yMax: number): number {
+  const pos = geometry.attributes.position as THREE.BufferAttribute
+  let min = Infinity
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i)
+    if (y >= yMin && y <= yMax) min = Math.min(min, pos.getZ(i))
+  }
+  return min
+}

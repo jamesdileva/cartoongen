@@ -13,7 +13,7 @@ import { MaterialManager } from './MaterialManager'
 import { AssetManager } from './AssetManager'
 import { SlotManager } from './SlotManager'
 import { ProportionManager } from './ProportionManager'
-import { buildHead, buildTorso, DEFAULT_HEAD_PARAMS } from './procedural/BodyParts'
+import { buildHead, buildTorso, DEFAULT_TORSO_PARAMS, DEFAULT_HEAD_PARAMS } from './procedural/BodyParts'
 import { buildFace } from './procedural/FaceFeatures'
 import referenceSkeleton from '../../shared/data/reference-skeleton.json'
 
@@ -114,6 +114,10 @@ function collectBones(bone: THREE.Bone, map: Map<string, THREE.Bone>): void {
   }
 }
 
+function clamp01(v: number): number {
+  return Math.max(0, Math.min(1, v))
+}
+
 export class CharacterManager {
   private scene = new THREE.Group()
   private boneMap = new Map<string, THREE.Bone>()
@@ -143,6 +147,53 @@ export class CharacterManager {
   private processingBodySlot = false
   private skeletonRoot: THREE.Bone | null = null
   private bodyClipPlane: THREE.Plane | null = null
+  private skinMaterial: THREE.MeshStandardMaterial | null = null
+  private torsoRestInverses: THREE.Matrix4[] | null = null
+  private torsoMesh: THREE.SkinnedMesh | THREE.Mesh | null = null
+  private lastTorsoShape: { bust: number; butt: number } | null = null
+
+  private buildTorsoMesh(rootBone: THREE.Bone): void {
+    this.removeTorsoMesh()
+    const skinMat = this.skinMaterial ?? this.materialManager.getMaterial('skin')
+    const torsoBones = ['Root', 'Spine', 'Spine1', 'Spine2', 'LeftClavicle', 'RightClavicle']
+      .map((n) => this.boneMap.get(n))
+      .filter((b): b is THREE.Bone => !!b)
+    if (torsoBones.length === 6) {
+      rootBone.updateMatrixWorld(true)
+      if (!this.torsoRestInverses || this.torsoRestInverses.length !== 6) {
+        this.torsoRestInverses = torsoBones.map((b) =>
+          new THREE.Matrix4().copy(b.matrixWorld).invert()
+        )
+      }
+      const dna = useCharacterStore.getState().present
+      const bust = clamp01(dna?.morphs?.bust ?? DEFAULT_TORSO_PARAMS.bust)
+      const butt = clamp01(dna?.morphs?.butt ?? DEFAULT_TORSO_PARAMS.butt)
+      this.lastTorsoShape = { bust, butt }
+      const geo = buildTorso({ ...DEFAULT_TORSO_PARAMS, bust, butt }).geometry
+      const skeleton = new THREE.Skeleton(
+        torsoBones,
+        this.torsoRestInverses.map((m) => m.clone())
+      )
+      const mesh = new THREE.SkinnedMesh(geo, skinMat)
+      mesh.bind(skeleton)
+      this.torsoMesh = mesh
+    } else {
+      const bodyGeo = new THREE.CylinderGeometry(0.35, 0.45, 0.65, 12)
+      const mesh = new THREE.Mesh(bodyGeo, skinMat)
+      mesh.position.set(0, 0.9, 0)
+      this.torsoMesh = mesh
+    }
+    this.scene.add(this.torsoMesh)
+    this.proceduralMeshes.push(this.torsoMesh)
+  }
+
+  private removeTorsoMesh(): void {
+    if (!this.torsoMesh) return
+    this.torsoMesh.geometry.dispose()
+    this.torsoMesh.removeFromParent()
+    this.proceduralMeshes = this.proceduralMeshes.filter((m) => m !== this.torsoMesh)
+    this.torsoMesh = null
+  }
 
   constructor() {
     this.buildBaseCharacter()
@@ -188,6 +239,9 @@ export class CharacterManager {
   }
 
   private buildBaseCharacter(): void {
+    this.torsoMesh = null
+    this.torsoRestInverses = null
+    this.lastTorsoShape = null
     const rootBone = buildSkeleton(SKELETON)
     collectBones(rootBone, this.boneMap)
 
@@ -200,25 +254,9 @@ export class CharacterManager {
     rootBone.updateMatrixWorld(true)
 
     const skinMat = this.materialManager.getMaterial('skin')
+    this.skinMaterial = skinMat
 
-    const torsoBones = ['Root', 'Spine', 'Spine1', 'Spine2', 'LeftClavicle', 'RightClavicle']
-      .map((n) => this.boneMap.get(n))
-      .filter((b): b is THREE.Bone => !!b)
-    if (torsoBones.length === 6) {
-      const torsoGeo = buildTorso().geometry
-      const torsoInverses = torsoBones.map((b) => new THREE.Matrix4().copy(b.matrixWorld).invert())
-      const torsoSkeleton = new THREE.Skeleton(torsoBones, torsoInverses)
-      const torsoMesh = new THREE.SkinnedMesh(torsoGeo, skinMat)
-      torsoMesh.bind(torsoSkeleton)
-      this.scene.add(torsoMesh)
-      this.proceduralMeshes.push(torsoMesh)
-    } else {
-      const bodyGeo = new THREE.CylinderGeometry(0.35, 0.45, 0.65, 12)
-      const bodyMesh = new THREE.Mesh(bodyGeo, skinMat)
-      bodyMesh.position.set(0, 0.9, 0)
-      this.scene.add(bodyMesh)
-      this.proceduralMeshes.push(bodyMesh)
-    }
+    this.buildTorsoMesh(rootBone)
 
     const headBones = [this.boneMap.get('Neck'), this.boneMap.get('Head')].filter(
       (b): b is THREE.Bone => !!b
@@ -507,6 +545,7 @@ export class CharacterManager {
       child.removeFromParent()
     }
     this.headMesh = null
+    this.torsoMesh = null
     this.proceduralMeshes = []
   }
 
@@ -683,6 +722,19 @@ export class CharacterManager {
     this.updateBodyVisibility(dna)
 
     this.proportionManager.applyProportions(dna.morphs)
+
+    if (!this.hasBaseBody && this.boneMap.get('Root')) {
+      const bust = dna.morphs?.bust
+      const butt = dna.morphs?.butt
+      if (
+        (bust !== undefined || butt !== undefined) &&
+        (!this.lastTorsoShape ||
+          clamp01(bust ?? this.lastTorsoShape.bust) !== this.lastTorsoShape.bust ||
+          clamp01(butt ?? this.lastTorsoShape.butt) !== this.lastTorsoShape.butt)
+      ) {
+        this.buildTorsoMesh(this.boneMap.get('Root')!)
+      }
+    }
   }
 
   private COVERAGE_SLOTS = new Set(['shirt', 'pants', 'shoes', 'gloves', 'helmet'])

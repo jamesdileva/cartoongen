@@ -102,6 +102,10 @@ export function generateRandomDNA(params: RandomGeneratorParams): CharacterDNA {
     dna.morphs[key] = Math.round(rng.next() * 100) / 100
   }
 
+  // bust/butt skewed low so most random bodies stay neutral
+  dna.morphs.bust = Math.round(Math.pow(rng.next(), 1.6) * 100) / 100
+  dna.morphs.butt = Math.round((0.2 + 0.8 * Math.pow(rng.next(), 1.4)) * 100) / 100
+
   for (const matId of MATERIAL_IDS) {
     const palette = params.palettes[matId]
     if (palette && palette.colors.length > 0) {

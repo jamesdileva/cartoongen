@@ -79,13 +79,17 @@ export interface TorsoShapeParams {
   chestDepth: number
   waistTaper: number
   hipWidth: number
+  bust: number
+  butt: number
 }
 
 export const DEFAULT_TORSO_PARAMS: TorsoShapeParams = {
   shoulderWidth: 1,
   chestDepth: 1,
   waistTaper: 1,
-  hipWidth: 1
+  hipWidth: 1,
+  bust: 0.15,
+  butt: 0.2
 }
 
 interface TorsoStation {
@@ -130,7 +134,28 @@ export function buildTorso(params: TorsoShapeParams = DEFAULT_TORSO_PARAMS): {
   const pelvisGeo = makeEllipsoid(0.32 * params.hipWidth, 0.14, 0.23, 20, 14)
   const pelvis = translateGeometry(pelvisGeo, 0, 0.9, 0)
 
-  const merged = mergeGeometries([tube, leftDeltoid, rightDeltoid, pelvis])
+  const bustR = 0.02 + 0.075 * params.bust
+  const bustGeo = makeEllipsoid(bustR, bustR * 0.92, bustR * 0.78, 14, 10)
+  const leftBust = translateGeometry(
+    bustGeo.clone(),
+    -0.085 - 0.03 * params.bust,
+    1.335,
+    (0.155 + 0.045 * params.bust) * params.chestDepth
+  )
+  const rightBust = translateGeometry(
+    bustGeo,
+    0.085 + 0.03 * params.bust,
+    1.335,
+    (0.155 + 0.045 * params.bust) * params.chestDepth
+  )
+
+  const buttBase = 0.055 * params.hipWidth
+  const buttR = buttBase + 0.065 * params.butt
+  const buttGeo = makeEllipsoid(buttR * 1.15, buttR, buttR, 14, 10)
+  const leftButt = translateGeometry(buttGeo.clone(), -0.095 * params.hipWidth, 0.925, -(0.13 + 0.055 * params.butt))
+  const rightButt = translateGeometry(buttGeo, 0.095 * params.hipWidth, 0.925, -(0.13 + 0.055 * params.butt))
+
+  const merged = mergeGeometries([tube, leftDeltoid, rightDeltoid, pelvis, leftBust, rightBust, leftButt, rightButt])
   if (!merged) {
     throw new Error('buildTorso: mergeGeometries returned null')
   }

@@ -27,7 +27,9 @@ export const PROPORTION_MORPHS: Array<{ name: string; label: string }> = [
   { name: 'headSize', label: 'Head Size' },
   { name: 'legLength', label: 'Leg Length' },
   { name: 'armLength', label: 'Arm Length' },
-  { name: 'muscleMass', label: 'Muscle Mass' }
+  { name: 'muscleMass', label: 'Muscle Mass' },
+  { name: 'bust', label: 'Bust' },
+  { name: 'butt', label: 'Butt' }
 ]
 
 const ref = referenceSkeleton as { aliases: Record<string, string> }
