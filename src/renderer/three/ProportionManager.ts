@@ -3,7 +3,7 @@ import referenceSkeleton from '../../shared/data/reference-skeleton.json'
 
 interface BoneScaleDef {
   bone: string
-  axis: 'x' | 'y' | 'z'
+  axis: 'x' | 'y' | 'z' | 'xz'
   range: [number, number]
   mirror?: string
   mirrorAlias?: string
@@ -13,7 +13,7 @@ interface BoneScaleDef {
 
 interface MultiBoneScaleDef {
   bones: string[]
-  axis: 'x' | 'y' | 'z'
+  axis: 'x' | 'y' | 'z' | 'xz'
   range: [number, number]
 }
 
@@ -43,14 +43,14 @@ const BONE_MORPHS: Record<string, ProportionDef> = {
       'calf_l', 'calf_r'
     ],
     axis: 'y',
-    range: [0.85, 1.15]
+    range: [0.88, 1.12]
   },
-  shoulderWidth: { bone: 'clavicle_l', axis: 'x', range: [0.5, 1.8], mirror: 'clavicle_r' },
-  neckWidth: { bone: 'neck_01', axis: 'x', range: [0.6, 1.4] },
-  bellySize: { bone: 'spine_02', axis: 'x', range: [0.7, 1.5] },
-  headSize: { bone: 'Head', axis: 'y', range: [0.8, 1.3] },
-  legLength: { bone: 'thigh_l', axis: 'y', range: [0.7, 1.3], mirror: 'thigh_r' },
-  armLength: { bone: 'lowerarm_l', axis: 'y', range: [0.8, 1.3], mirror: 'lowerarm_r' },
+  shoulderWidth: { bone: 'clavicle_l', axis: 'x', range: [0.8, 1.35], mirror: 'clavicle_r' },
+  neckWidth: { bone: 'neck_01', axis: 'xz', range: [0.7, 1.3] },
+  bellySize: { bone: 'spine_02', axis: 'xz', range: [0.75, 1.35] },
+  headSize: { bone: 'Head', axis: 'y', range: [0.82, 1.22] },
+  legLength: { bone: 'thigh_l', axis: 'y', range: [0.75, 1.25], mirror: 'thigh_r' },
+  armLength: { bone: 'lowerarm_l', axis: 'y', range: [0.8, 1.25], mirror: 'lowerarm_r' },
   muscleMass: {
     bones: [
       'upperarm_l',
@@ -60,7 +60,7 @@ const BONE_MORPHS: Record<string, ProportionDef> = {
       'thigh_l',
       'thigh_r'
     ],
-    axis: 'x',
+    axis: 'xz',
     range: [0.8, 1.3]
   }
 }
@@ -151,8 +151,12 @@ export class ProportionManager {
   }
 }
 
-function applyAxisScale(bone: THREE.Bone, axis: 'x' | 'y' | 'z', scale: number): void {
+function applyAxisScale(bone: THREE.Bone, axis: 'x' | 'y' | 'z' | 'xz', scale: number): void {
   if (axis === 'x') bone.scale.x = scale
   else if (axis === 'y') bone.scale.y = scale
-  else bone.scale.z = scale
+  else if (axis === 'z') bone.scale.z = scale
+  else {
+    bone.scale.x = scale
+    bone.scale.z = scale
+  }
 }

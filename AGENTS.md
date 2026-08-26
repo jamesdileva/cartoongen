@@ -2138,3 +2138,33 @@ Regression tests added to BodyParts.test.ts: cranium fully Head-bound (structura
 
 - typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
 - 203 tests passing (201 + 2 new)
+
+---
+
+## Session 037 - Randomizer Extremes: Morph Range Bounds + Muscle Axis Fix
+
+### Date
+
+2026-08-26
+
+### What we fixed (user reports: flying-squirrel bodies, faces still dropping on randomize)
+
+| # | Issue | Root Cause | Fix |
+|---|-------|------------|-----|
+| 1 | Flying squirrel body | shoulderWidth morph range [0.5,1.8] multiplied by bodyShape.shoulderWidth (up to 1.5) - clavicle x-scale up to 2.7x slid deltoid ellipsoids (built into torso mesh at clavEnd) far outside the arm sweeps (arms hang off Spine2, unlinked from clavicles). Plus bellySize x1.5 stacking on waist shape | Tightened all morph ranges: shoulderWidth [0.8,1.35], bellySize [0.75,1.35] (also now xz for symmetric thickness), height [0.88,1.12], headSize [0.82,1.22], legLength/armLength narrowed; sanitizeBodyShape torso ranges [0.75,1.3], head dims tightened. Worst deltoid x dropped 0.678 -> 0.536 (inside arm span). Verified over 2000 seeds via scripts/debug/repro-random.mts |
+| 2 | Muscle mass stretched arms vertically instead of thicker | muscleMass scaled bone-local X; procedural arm chains are rotated 90-deg so local X maps to world vertical | New 'xz' axis option in ProportionManager scales both thickness axes - correct for rotated procedural rigs AND y-aligned GLB rigs. Applied to muscleMass, neckWidth, bellySize |
+| 3 | Faces dropping (residual) | Structural drift was fixed in Session 036 (cranium 100% Head-bound); remaining sightings were extreme combos: headSize 1.3 + squashed spine wedged the whole head unit between shoulders, face at neck level | headSize ceiling lowered to 1.22 keeps big-head comedy without neck-level sink; sunken combos now rare and mild |
+
+### Files modified
+
+- src/renderer/three/ProportionManager.ts - new ranges, 'xz' axis support
+- src/shared/types/bodyShape.ts - tighter sanitize ranges
+- src/renderer/three/ProportionManager.test.ts - new (4 tests)
+- scripts/debug/repro-random.mts - seed sweep repro tool
+
+### Verification
+
+- typecheck 0 errors; lint clean (4 pre-existing); build succeeds
+- 207 tests passing (203 + 4 new)
+
+**Note for user**: if a weird body still appears, Save the character immediately and report the name - the saved DNA JSON gives an exact reproduction.

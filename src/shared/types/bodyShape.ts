@@ -25,14 +25,14 @@ export function mergeBodyShape(partial?: Partial<BodyShape>): BodyShape {
 }
 
 const SHAPE_RANGES: Record<keyof BodyShape, [number, number]> = {
-  headWidth: [0.15, 0.35],
-  headHeight: [0.14, 0.3],
-  headLength: [0.16, 0.36],
+  headWidth: [0.18, 0.31],
+  headHeight: [0.16, 0.28],
+  headLength: [0.18, 0.32],
   jawChin: [0, 1],
-  shoulderWidth: [0.6, 1.5],
-  chestDepth: [0.6, 1.5],
-  waistTaper: [0.6, 1.5],
-  hipWidth: [0.6, 1.5]
+  shoulderWidth: [0.75, 1.3],
+  chestDepth: [0.75, 1.3],
+  waistTaper: [0.75, 1.3],
+  hipWidth: [0.75, 1.3]
 }
 
 export function sanitizeBodyShape(partial?: Partial<BodyShape>): BodyShape {
