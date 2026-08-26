@@ -1,0 +1,114 @@
+[
+  {
+    "id": "body",
+    "label": "Body",
+    "boneAttachment": "Root",
+    "layer": 0,
+    "allowedTags": ["body"],
+    "maxAssets": 1
+  },
+  {
+    "id": "head",
+    "label": "Head",
+    "boneAttachment": "Head",
+    "layer": 0,
+    "allowedTags": ["head"],
+    "maxAssets": 1
+  },
+  {
+    "id": "hair",
+    "label": "Hair",
+    "boneAttachment": "Head",
+    "layer": 10,
+    "allowedTags": ["hair"],
+    "maxAssets": 1
+  },
+  {
+    "id": "helmet",
+    "label": "Helmet",
+    "boneAttachment": "Head",
+    "layer": 20,
+    "allowedTags": ["helmet", "hat"],
+    "maxAssets": 1
+  },
+  {
+    "id": "eyebrows",
+    "label": "Eyebrows",
+    "boneAttachment": "Head",
+    "layer": 5,
+    "allowedTags": ["eyebrows"],
+    "maxAssets": 1
+  },
+  {
+    "id": "eyes",
+    "label": "Eyes",
+    "boneAttachment": "Head",
+    "layer": 5,
+    "allowedTags": ["eyes"],
+    "maxAssets": 1
+  },
+  {
+    "id": "mouth",
+    "label": "Mouth",
+    "boneAttachment": "Head",
+    "layer": 5,
+    "allowedTags": ["mouth"],
+    "maxAssets": 1
+  },
+  {
+    "id": "beard",
+    "label": "Beard",
+    "boneAttachment": "Head",
+    "layer": 10,
+    "allowedTags": ["beard"],
+    "maxAssets": 1
+  },
+  {
+    "id": "shirt",
+    "label": "Shirt",
+    "boneAttachment": "Spine1",
+    "layer": 10,
+    "allowedTags": ["shirt", "chest"],
+    "maxAssets": 1
+  },
+  {
+    "id": "pants",
+    "label": "Pants",
+    "boneAttachment": "Hip",
+    "layer": 10,
+    "allowedTags": ["pants", "legs"],
+    "maxAssets": 1
+  },
+  {
+    "id": "shoes",
+    "label": "Shoes",
+    "boneAttachment": "Foot",
+    "layer": 10,
+    "allowedTags": ["shoes", "feet"],
+    "maxAssets": 1
+  },
+  {
+    "id": "gloves",
+    "label": "Gloves",
+    "boneAttachment": "Hand",
+    "layer": 10,
+    "allowedTags": ["gloves", "hands"],
+    "maxAssets": 1
+  },
+  {
+    "id": "cape",
+    "label": "Cape",
+    "boneAttachment": "Spine2",
+    "layer": 30,
+    "allowedTags": ["cape", "back"],
+    "maxAssets": 1
+  },
+  {
+    "id": "wings",
+    "label": "Wings",
+    "boneAttachment": "Spine2",
+    "layer": 30,
+    "allowedTags": ["wings"],
+    "maxAssets": 1
+  }
+]

@@ -1,0 +1,89 @@
+[
+  {
+    "id": "knight",
+    "name": "Knight",
+    "description": "Steel armor, deep red cloth, and heroic proportions",
+    "icon": "\u2694\uFE0F",
+    "morphs": {
+      "shoulderWidth": 0.8,
+      "neckWidth": 0.7,
+      "height": 0.5,
+      "muscleMass": 0.7,
+      "headSize": 0.5
+    },
+    "colors": {
+      "metal": "#a0a0a0",
+      "cloth": "#cc0000",
+      "leather": "#5d4037",
+      "skin": "#f5d0a9",
+      "hair": "#4a3728",
+      "eye": "#5a8aac"
+    }
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "description": "Mystical blues and purples with slender proportions",
+    "icon": "\uD83E\uDDD9",
+    "morphs": { "shoulderWidth": 0.3, "neckWidth": 0.4, "height": 0.55, "headSize": 0.45 },
+    "colors": {
+      "cloth": "#6b3fa0",
+      "metal": "#c0c0c0",
+      "leather": "#4e342e",
+      "skin": "#fce4c8",
+      "hair": "#443322",
+      "eye": "#4a7a9c"
+    }
+  },
+  {
+    "id": "farmer",
+    "name": "Farmer",
+    "description": "Rustic earth tones and sturdy proportions",
+    "icon": "\uD83C\uDF3E",
+    "morphs": { "shoulderWidth": 0.6, "neckWidth": 0.5, "height": 0.4, "bellySize": 0.6 },
+    "colors": {
+      "cloth": "#8b4513",
+      "metal": "#808080",
+      "leather": "#3e2723",
+      "skin": "#e0b890",
+      "hair": "#3e2d1f",
+      "eye": "#6b4a2a"
+    }
+  },
+  {
+    "id": "rogue",
+    "name": "Rogue",
+    "description": "Dark stealthy tones with lean proportions",
+    "icon": "\uD83D\uDDE1\uFE0F",
+    "morphs": { "shoulderWidth": 0.4, "neckWidth": 0.3, "height": 0.45, "muscleMass": 0.35 },
+    "colors": {
+      "cloth": "#404040",
+      "metal": "#606060",
+      "leather": "#2c1810",
+      "skin": "#e8c090",
+      "hair": "#1a0f00",
+      "eye": "#5a8a5a"
+    }
+  },
+  {
+    "id": "barbarian",
+    "name": "Barbarian",
+    "description": "Fierce warm tones and powerful proportions",
+    "icon": "\uD83D\uDC7E",
+    "morphs": {
+      "shoulderWidth": 1.0,
+      "neckWidth": 0.9,
+      "height": 0.5,
+      "bellySize": 0.4,
+      "muscleMass": 1.0
+    },
+    "colors": {
+      "cloth": "#8b0000",
+      "metal": "#b8860b",
+      "leather": "#5d4037",
+      "skin": "#c18f60",
+      "hair": "#ff6600",
+      "eye": "#4a7a4a"
+    }
+  }
+]

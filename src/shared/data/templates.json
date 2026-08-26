@@ -1,0 +1,74 @@
+[
+  {
+    "id": "stylized-male",
+    "name": "Stylized Male",
+    "description": "Broad shoulders, average height, strong jaw",
+    "icon": "\uD83E\uDDD4\u200D\u2642\uFE0F",
+    "morphs": {
+      "shoulderWidth": 0.6,
+      "neckWidth": 0.5,
+      "height": 0.5,
+      "headSize": 0.45,
+      "muscleMass": 0.55
+    },
+    "colors": { "skin": "#f5d0a9", "hair": "#4a3728", "eye": "#5a8aac" }
+  },
+  {
+    "id": "stylized-female",
+    "name": "Stylized Female",
+    "description": "Narrower shoulders, elegant proportions",
+    "icon": "\uD83E\uDDD4\u200D\u2640\uFE0F",
+    "morphs": {
+      "shoulderWidth": 0.3,
+      "neckWidth": 0.3,
+      "height": 0.45,
+      "headSize": 0.4,
+      "bellySize": 0.3
+    },
+    "colors": { "skin": "#fce4c8", "hair": "#5c4a3a", "eye": "#6a9abc" }
+  },
+  {
+    "id": "child",
+    "name": "Child",
+    "description": "Smaller frame, larger head proportions",
+    "icon": "\uD83E\uDDD2",
+    "morphs": {
+      "shoulderWidth": 0.2,
+      "neckWidth": 0.25,
+      "height": 0.2,
+      "headSize": 0.25,
+      "legLength": 0.15
+    },
+    "colors": { "skin": "#fce4c8", "hair": "#8b7355", "eye": "#7aaacc" }
+  },
+  {
+    "id": "dwarf",
+    "name": "Dwarf",
+    "description": "Stocky build, wide frame, sturdy",
+    "icon": "\uD83E\uDDCC",
+    "morphs": {
+      "shoulderWidth": 0.9,
+      "neckWidth": 0.8,
+      "height": 0.15,
+      "headSize": 0.7,
+      "bellySize": 0.7,
+      "muscleMass": 0.8
+    },
+    "colors": { "skin": "#dbb080", "hair": "#6e5c4c", "eye": "#5a8a5a" }
+  },
+  {
+    "id": "elf",
+    "name": "Elf",
+    "description": "Tall, slender, elegant features",
+    "icon": "\uD83E\uDDDD",
+    "morphs": {
+      "shoulderWidth": 0.35,
+      "neckWidth": 0.35,
+      "height": 0.85,
+      "headSize": 0.35,
+      "legLength": 0.8,
+      "armLength": 0.7
+    },
+    "colors": { "skin": "#ffe0b0", "hair": "#a08060", "eye": "#6a9abc" }
+  }
+]

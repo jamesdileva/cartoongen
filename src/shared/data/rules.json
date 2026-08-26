@@ -1,0 +1,36 @@
+[
+  {
+    "id": "full-helmet-hides-face",
+    "description": "Full face helmet hides eyebrows, eyes, and mouth",
+    "trigger": { "slotId": "helmet", "tag": "full_face" },
+    "actions": [
+      { "type": "hide_slot", "target": "eyebrows" },
+      { "type": "hide_slot", "target": "eyes" },
+      { "type": "hide_slot", "target": "mouth" }
+    ]
+  },
+  {
+    "id": "full-helmet-clips-beard",
+    "description": "Beard clips through full-face helmet",
+    "trigger": { "slotId": "helmet", "tag": "full_face" },
+    "conditions": [{ "slotId": "beard", "equipped": true }],
+    "actions": [{ "type": "warn", "message": "Beard may clip through full-face helmet" }]
+  },
+  {
+    "id": "heavy-armor-disables-cape",
+    "description": "Heavy armor disables cape (bulk conflict)",
+    "trigger": { "slotId": "shirt", "tag": "heavy_armor" },
+    "conditions": [{ "slotId": "cape", "equipped": true }],
+    "actions": [
+      { "type": "disable_slot", "target": "cape" },
+      { "type": "warn", "message": "Cape is hidden by heavy armor" }
+    ]
+  },
+  {
+    "id": "beard-and-helmet-warn",
+    "description": "Beard may clip through helmet",
+    "trigger": { "slotId": "helmet" },
+    "conditions": [{ "slotId": "beard", "equipped": true }],
+    "actions": [{ "type": "warn", "message": "Beard may clip through helmet" }]
+  }
+]

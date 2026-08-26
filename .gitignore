@@ -1,0 +1,17 @@
+node_modules/
+out/
+dist/
+.vite/
+.opencode/
+
+# Regenerable binary assets (see scripts/import-all-assets.mjs,
+# scripts/setup-base-body.mjs and AGENTS.md Sessions 014/022)
+assets/
+imported-project/
+test-project/
+app-state.json
+*.glb
+*.gltf
+*.log
+.DS_Store
+Thumbs.db

@@ -1,0 +1,37 @@
+[
+  {
+    "id": "glb-standard",
+    "name": "GLB Standard",
+    "description": "Standard GLB with embedded textures",
+    "binary": true,
+    "embedImages": true
+  },
+  {
+    "id": "unity",
+    "name": "Unity (GLB)",
+    "description": "GLB for Unity import (Y-up, embedded textures)",
+    "binary": true,
+    "embedImages": true
+  },
+  {
+    "id": "godot",
+    "name": "Godot (GLB)",
+    "description": "GLB for Godot import (Y-up, embedded textures)",
+    "binary": true,
+    "embedImages": true
+  },
+  {
+    "id": "mixamo",
+    "name": "Mixamo (GLB)",
+    "description": "GLB for Mixamo auto-rigging",
+    "binary": true,
+    "embedImages": true
+  },
+  {
+    "id": "gltf-debug",
+    "name": "GLTF Debug (JSON)",
+    "description": "Human-readable GLTF JSON for debugging",
+    "binary": false,
+    "embedImages": true
+  }
+]
