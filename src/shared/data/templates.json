@@ -9,23 +9,41 @@
       "neckWidth": 0.5,
       "height": 0.5,
       "headSize": 0.45,
-      "muscleMass": 0.55
+      "muscleMass": 0.55,
+      "bust": 0.1,
+      "butt": 0.25
     },
-    "colors": { "skin": "#f5d0a9", "hair": "#4a3728", "eye": "#5a8aac" }
+    "colors": { "skin": "#f5d0a9", "hair": "#4a3728", "eye": "#5a8aac" },
+    "bodyShape": {
+      "shoulderWidth": 1.08,
+      "chestDepth": 1.05,
+      "waistTaper": 1.0,
+      "hipWidth": 0.96,
+      "jawChin": 0.55
+    }
   },
   {
     "id": "stylized-female",
     "name": "Stylized Female",
-    "description": "Narrower shoulders, elegant proportions",
+    "description": "Narrower shoulders, wider hips, elegant proportions",
     "icon": "\uD83E\uDDD4\u200D\u2640\uFE0F",
     "morphs": {
       "shoulderWidth": 0.3,
       "neckWidth": 0.3,
       "height": 0.45,
       "headSize": 0.4,
-      "bellySize": 0.3
+      "bellySize": 0.3,
+      "bust": 0.7,
+      "butt": 0.7
     },
-    "colors": { "skin": "#fce4c8", "hair": "#5c4a3a", "eye": "#6a9abc" }
+    "colors": { "skin": "#fce4c8", "hair": "#5c4a3a", "eye": "#6a9abc" },
+    "bodyShape": {
+      "shoulderWidth": 0.92,
+      "chestDepth": 0.94,
+      "waistTaper": 0.86,
+      "hipWidth": 1.12,
+      "jawChin": 0.2
+    }
   },
   {
     "id": "child",
@@ -39,7 +57,17 @@
       "headSize": 0.25,
       "legLength": 0.15
     },
-    "colors": { "skin": "#fce4c8", "hair": "#8b7355", "eye": "#7aaacc" }
+    "colors": { "skin": "#fce4c8", "hair": "#8b7355", "eye": "#7aaacc" },
+    "bodyShape": {
+      "headWidth": 0.3,
+      "headHeight": 0.27,
+      "headLength": 0.31,
+      "jawChin": 0.05,
+      "shoulderWidth": 0.78,
+      "chestDepth": 0.85,
+      "waistTaper": 1.05,
+      "hipWidth": 0.85
+    }
   },
   {
     "id": "dwarf",
@@ -52,9 +80,21 @@
       "height": 0.15,
       "headSize": 0.7,
       "bellySize": 0.7,
-      "muscleMass": 0.8
+      "muscleMass": 0.8,
+      "bust": 0.15,
+      "butt": 0.5
     },
-    "colors": { "skin": "#dbb080", "hair": "#6e5c4c", "eye": "#5a8a5a" }
+    "colors": { "skin": "#dbb080", "hair": "#6e5c4c", "eye": "#5a8a5a" },
+    "bodyShape": {
+      "headWidth": 0.28,
+      "headHeight": 0.21,
+      "headLength": 0.28,
+      "jawChin": 0.6,
+      "shoulderWidth": 1.18,
+      "chestDepth": 1.15,
+      "waistTaper": 1.22,
+      "hipWidth": 1.15
+    }
   },
   {
     "id": "elf",
@@ -67,8 +107,20 @@
       "height": 0.85,
       "headSize": 0.35,
       "legLength": 0.8,
-      "armLength": 0.7
+      "armLength": 0.7,
+      "bust": 0.25,
+      "butt": 0.3
     },
-    "colors": { "skin": "#ffe0b0", "hair": "#a08060", "eye": "#6a9abc" }
+    "colors": { "skin": "#ffe0b0", "hair": "#a08060", "eye": "#6a9abc" },
+    "bodyShape": {
+      "headWidth": 0.23,
+      "headHeight": 0.24,
+      "headLength": 0.25,
+      "jawChin": 0.75,
+      "shoulderWidth": 0.88,
+      "chestDepth": 0.85,
+      "waistTaper": 0.82,
+      "hipWidth": 0.92
+    }
   }
 ]

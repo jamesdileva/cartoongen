@@ -182,23 +182,26 @@ all camera presets.
 **Acceptance**: Full manual checklist passes with NO GLB assets present —
 fresh project, pure procedural character, dressed only by slot placeholders.
 
-### Sprint 18 — DNA-Driven Shapes
+### Sprint 18 — DNA-Driven Shapes ✅ complete (2026-08-26)
 
 **Goal**: Shape becomes data. Randomizer and templates gain real variety.
 
-- [ ] Add `bodyShape?: BodyShapeParams` to CharacterDNA (version bump +
-      migration fills defaults)
-- [ ] Procedural regeneration on shape change (debounced; geometry rebuild
-      target < 50ms)
-- [ ] RandomGenerator emits coherent random shapes (correlated params — tall
-      characters get longer legs, not random noise soup)
-- [ ] Templates get distinct silhouettes: Child (big head ratio), Dwarf
-      (wide/torso-short), Elf (slender/tall)
-- [ ] Presets may carry shape hints
+- [x] Add `bodyShape?: Partial<BodyShape>` to CharacterDNA (version bump to 2 +
+      migration; renderer sanitizes/clamps via `sanitizeBodyShape`)
+- [x] Procedural regeneration on shape change (head/face and torso rebuilt
+      independently via shape-key comparison; rebuilds bind against cached
+      rest-pose inverses)
+- [x] RandomGenerator emits coherent random shapes (3 archetypes - slim /
+      average / stocky - plus per-field noise; bust correlates with hip width)
+- [x] Templates get distinct silhouettes: Child (big head ratio), Dwarf
+      (wide/torso-short), Elf (slender/tall), Stylized Female (narrow
+      shoulders, wide hips, bust/butt morphs)
+- [x] Presets may carry shape hints (`Preset.bodyShape`, merged by
+      `applyPreset` over defaults + existing DNA)
 
-**Acceptance**: Ctrl+N → Child template produces visibly child-proportioned
+**Acceptance met**: Ctrl+N → Child template produces visibly child-proportioned
 procedural character; Ctrl+R produces varied coherent bodies; same seed =
-same shape; save/load preserves shape.
+same shape; save/load preserves shape (bodyShape is part of DNA).
 
 ### Sprint 19 — Face Variations & Expressions
 

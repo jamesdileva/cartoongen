@@ -2,20 +2,7 @@ import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import { makeEllipsoid, makeLathe, makeSweep, translateGeometry } from './GeometryKernel'
 import { applySkinAttributes, computeSkinBindings, type BoneSegment } from './SkinWeights'
-
-export interface HeadShapeParams {
-  headWidth: number
-  headHeight: number
-  headLength: number
-  jawChin: number
-}
-
-export const DEFAULT_HEAD_PARAMS: HeadShapeParams = {
-  headWidth: 0.25,
-  headHeight: 0.22,
-  headLength: 0.26,
-  jawChin: 0.35
-}
+import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
 
 export const HEAD_BONE_SEGMENTS: BoneSegment[] = [
   { name: 'Neck', start: [0, 1.55, 0], end: [0, 1.75, 0] },
@@ -24,26 +11,24 @@ export const HEAD_BONE_SEGMENTS: BoneSegment[] = [
 
 const CRANIUM_CENTER_Y = 1.86
 
-export function buildHeadGeometry(params: HeadShapeParams = DEFAULT_HEAD_PARAMS): THREE.BufferGeometry {
-  const { headWidth, headHeight, headLength, jawChin } = params
-
+export function buildHeadGeometry(shape: BodyShape = DEFAULT_BODY_SHAPE): THREE.BufferGeometry {
   const cranium = translateGeometry(
-    makeEllipsoid(headWidth, headHeight, headLength, 28, 20),
+    makeEllipsoid(shape.headWidth, shape.headHeight, shape.headLength, 28, 20),
     0,
     CRANIUM_CENTER_Y,
     0.005
   )
 
   const earGeo = makeEllipsoid(0.042, 0.07, 0.05, 10, 8)
-  const leftEar = translateGeometry(earGeo.clone(), -headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
-  const rightEar = translateGeometry(earGeo, headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
+  const leftEar = translateGeometry(earGeo.clone(), -shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
+  const rightEar = translateGeometry(earGeo, shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
 
-  const chinR = 0.07 * (1 - jawChin) + 0.02
-  const chinY = 1.68 - 0.05 * jawChin
+  const chinR = 0.07 * (1 - shape.jawChin) + 0.02
+  const chinY = 1.68 - 0.05 * shape.jawChin
   const jawProfile: Array<[number, number]> = [
-    [headWidth * 0.62, CRANIUM_CENTER_Y + 0.03],
-    [headWidth * 0.6, 1.77],
-    [headWidth * 0.44, 1.71],
+    [shape.headWidth * 0.62, CRANIUM_CENTER_Y + 0.03],
+    [shape.headWidth * 0.6, 1.77],
+    [shape.headWidth * 0.44, 1.71],
     [chinR, chinY]
   ]
   const jaw = makeLathe(jawProfile, 24)
@@ -64,32 +49,14 @@ export function buildHeadGeometry(params: HeadShapeParams = DEFAULT_HEAD_PARAMS)
   return merged
 }
 
-export function buildHead(params: HeadShapeParams = DEFAULT_HEAD_PARAMS): {
+export function buildHead(shape: BodyShape = DEFAULT_BODY_SHAPE): {
   geometry: THREE.BufferGeometry
   segments: BoneSegment[]
 } {
-  const geometry = buildHeadGeometry(params)
+  const geometry = buildHeadGeometry(shape)
   const binding = computeSkinBindings(geometry.attributes.position.array as Float32Array, HEAD_BONE_SEGMENTS)
   applySkinAttributes(geometry, binding)
   return { geometry, segments: HEAD_BONE_SEGMENTS }
-}
-
-export interface TorsoShapeParams {
-  shoulderWidth: number
-  chestDepth: number
-  waistTaper: number
-  hipWidth: number
-  bust: number
-  butt: number
-}
-
-export const DEFAULT_TORSO_PARAMS: TorsoShapeParams = {
-  shoulderWidth: 1,
-  chestDepth: 1,
-  waistTaper: 1,
-  hipWidth: 1,
-  bust: 0.15,
-  butt: 0.2
 }
 
 interface TorsoStation {
@@ -98,16 +65,16 @@ interface TorsoStation {
   d: number
 }
 
-function torsoProfile(p: TorsoShapeParams): TorsoStation[] {
+function torsoProfile(s: BodyShape): TorsoStation[] {
   return [
-    { y: 0.86, w: 0.3 * p.hipWidth, d: 0.215 },
-    { y: 0.96, w: 0.29 * p.hipWidth, d: 0.205 },
-    { y: 1.06, w: 0.255 * p.waistTaper, d: 0.19 },
-    { y: 1.14, w: 0.26 * p.waistTaper, d: 0.195 },
-    { y: 1.24, w: 0.285, d: 0.225 * p.chestDepth },
-    { y: 1.36, w: 0.3, d: 0.225 * p.chestDepth },
-    { y: 1.44, w: 0.305 * p.shoulderWidth, d: 0.205 },
-    { y: 1.52, w: 0.235 * p.shoulderWidth, d: 0.165 },
+    { y: 0.86, w: 0.3 * s.hipWidth, d: 0.215 },
+    { y: 0.96, w: 0.29 * s.hipWidth, d: 0.205 },
+    { y: 1.06, w: 0.255 * s.waistTaper, d: 0.19 },
+    { y: 1.14, w: 0.26 * s.waistTaper, d: 0.195 },
+    { y: 1.24, w: 0.285, d: 0.225 * s.chestDepth },
+    { y: 1.36, w: 0.3, d: 0.225 * s.chestDepth },
+    { y: 1.44, w: 0.305 * s.shoulderWidth, d: 0.205 },
+    { y: 1.52, w: 0.235 * s.shoulderWidth, d: 0.165 },
     { y: 1.585, w: 0.14, d: 0.13 }
   ]
 }
@@ -115,45 +82,49 @@ function torsoProfile(p: TorsoShapeParams): TorsoStation[] {
 const CLAVICLE_ORIGIN_X = 0.1
 const CLAVICLE_Y = 1.47
 
-export function buildTorso(params: TorsoShapeParams = DEFAULT_TORSO_PARAMS): {
+export function buildTorso(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = 0.15,
+  butt = 0.2
+): {
   geometry: THREE.BufferGeometry
   segments: BoneSegment[]
 } {
-  const stations = torsoProfile(params).map((s) => ({
-    center: [0, s.y, 0] as [number, number, number],
-    width: s.w * 2,
-    height: s.d * 2
+  const stations = torsoProfile(shape).map((st) => ({
+    center: [0, st.y, 0] as [number, number, number],
+    width: st.w * 2,
+    height: st.d * 2
   }))
   const tube = makeSweep(stations, 20)
 
-  const clavEnd = 0.36 * params.shoulderWidth
+  const clavEnd = 0.36 * shape.shoulderWidth
   const deltoidGeo = makeEllipsoid(0.095, 0.115, 0.1, 16, 12)
   const leftDeltoid = translateGeometry(deltoidGeo.clone(), -(clavEnd + 0.005), CLAVICLE_Y - 0.005, 0)
   const rightDeltoid = translateGeometry(deltoidGeo, clavEnd + 0.005, CLAVICLE_Y - 0.005, 0)
 
-  const pelvisGeo = makeEllipsoid(0.32 * params.hipWidth, 0.14, 0.23, 20, 14)
+  const pelvisGeo = makeEllipsoid(0.32 * shape.hipWidth, 0.14, 0.23, 20, 14)
   const pelvis = translateGeometry(pelvisGeo, 0, 0.9, 0)
 
-  const bustR = 0.02 + 0.075 * params.bust
+  const bustR = 0.02 + 0.075 * bust
   const bustGeo = makeEllipsoid(bustR, bustR * 0.92, bustR * 0.78, 14, 10)
   const leftBust = translateGeometry(
     bustGeo.clone(),
-    -0.085 - 0.03 * params.bust,
+    -0.085 - 0.03 * bust,
     1.335,
-    (0.155 + 0.045 * params.bust) * params.chestDepth
+    (0.155 + 0.045 * bust) * shape.chestDepth
   )
   const rightBust = translateGeometry(
     bustGeo,
-    0.085 + 0.03 * params.bust,
+    0.085 + 0.03 * bust,
     1.335,
-    (0.155 + 0.045 * params.bust) * params.chestDepth
+    (0.155 + 0.045 * bust) * shape.chestDepth
   )
 
-  const buttBase = 0.055 * params.hipWidth
-  const buttR = buttBase + 0.065 * params.butt
+  const buttBase = 0.055 * shape.hipWidth
+  const buttR = buttBase + 0.065 * butt
   const buttGeo = makeEllipsoid(buttR * 1.15, buttR, buttR, 14, 10)
-  const leftButt = translateGeometry(buttGeo.clone(), -0.095 * params.hipWidth, 0.925, -(0.13 + 0.055 * params.butt))
-  const rightButt = translateGeometry(buttGeo, 0.095 * params.hipWidth, 0.925, -(0.13 + 0.055 * params.butt))
+  const leftButt = translateGeometry(buttGeo.clone(), -0.095 * shape.hipWidth, 0.925, -(0.13 + 0.055 * butt))
+  const rightButt = translateGeometry(buttGeo, 0.095 * shape.hipWidth, 0.925, -(0.13 + 0.055 * butt))
 
   const merged = mergeGeometries([tube, leftDeltoid, rightDeltoid, pelvis, leftBust, rightBust, leftButt, rightButt])
   if (!merged) {

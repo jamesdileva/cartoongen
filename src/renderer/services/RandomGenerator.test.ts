@@ -63,6 +63,26 @@ describe('generateRandomDNA', () => {
     }
   })
 
+  it('emits a coherent body shape within sane bounds', () => {
+    const dna = generateRandomDNA({ seed: 'shape', slots: testSlots, assets: testAssets, palettes: testPalettes, rules: testRules })
+    expect(dna.bodyShape).toBeDefined()
+    for (const [key, val] of Object.entries(dna.bodyShape!)) {
+      if (key === 'jawChin') {
+        expect(val).toBeGreaterThanOrEqual(0)
+        expect(val).toBeLessThanOrEqual(1)
+      } else {
+        expect(val).toBeGreaterThan(0.1)
+        expect(val).toBeLessThan(1.4)
+      }
+    }
+  })
+
+  it('produces deterministic body shapes for same seed', () => {
+    const a = generateRandomDNA({ seed: 'repeatable', slots: testSlots, assets: testAssets, palettes: testPalettes, rules: testRules })
+    const b = generateRandomDNA({ seed: 'repeatable', slots: testSlots, assets: testAssets, palettes: testPalettes, rules: testRules })
+    expect(a.bodyShape).toEqual(b.bodyShape)
+  })
+
   it('picks colors from available palettes', () => {
     const dna = generateRandomDNA({ seed: 'test', slots: testSlots, assets: testAssets, palettes: testPalettes, rules: testRules })
     for (const [matId, hex] of Object.entries(dna.colors)) {

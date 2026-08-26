@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import { createDNA, setSlot, setMorph, setColor, applyPreset } from './mutations'
+import { CURRENT_DNA_VERSION } from '../types/dna'
 import type { CharacterDNA } from '../types/dna'
 import type { Preset } from '../types/preset'
 
@@ -11,7 +12,7 @@ describe('createDNA', () => {
   it('creates a valid DNA with given name', () => {
     const dna = createDNA('Hero')
     expect(dna.name).toBe('Hero')
-    expect(dna.version).toBe(1)
+    expect(dna.version).toBe(CURRENT_DNA_VERSION)
     expect(dna.slots).toEqual({})
     expect(dna.morphs).toEqual({})
     expect(dna.colors).toEqual({})
@@ -224,5 +225,31 @@ describe('composed mutations', () => {
     expect(dna.slots.hair).toBe('ponytail_01')
     expect(dna.colors.skin).toBe('#F1D0B8')
     expect(dna.morphs.eyeSize).toBe(0.7)
+  })
+})
+
+describe('applyPreset bodyShape', () => {
+  it('merges preset bodyShape over defaults and existing dna', () => {
+    const base = setMorph(createDNA('Hero'), 'height', 0.7)
+    const result = applyPreset(base, {
+      id: 't', name: 'T', description: '', icon: '',
+      morphs: { height: 0.2 },
+      bodyShape: { shoulderWidth: 1.18, hipWidth: 1.15 }
+    })
+    expect(result.morphs.height).toBe(0.2)
+    expect(result.bodyShape).toEqual({
+      headWidth: 0.25, headHeight: 0.22, headLength: 0.26, jawChin: 0.35,
+      shoulderWidth: 1.18, chestDepth: 1, waistTaper: 1, hipWidth: 1.15
+    })
+  })
+
+  it('preserves existing bodyShape fields not overridden by preset', () => {
+    const base = { ...createDNA('Hero'), bodyShape: { hipWidth: 1.3 } }
+    const result = applyPreset(base, {
+      id: 't', name: 'T', description: '', icon: '',
+      bodyShape: { shoulderWidth: 0.9 }
+    })
+    expect(result.bodyShape?.hipWidth).toBe(1.3)
+    expect(result.bodyShape?.shoulderWidth).toBe(0.9)
   })
 })

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { buildFace, type FaceMaterials } from './FaceFeatures'
+import { DEFAULT_BODY_SHAPE } from '../../../shared/types/bodyShape'
 
 const mats: FaceMaterials = {
   skin: new THREE.MeshStandardMaterial(),
@@ -11,7 +12,7 @@ const mats: FaceMaterials = {
 
 describe('buildFace', () => {
   it('builds a group with eyes, brows, nose and mouth', () => {
-    const face = buildFace(undefined, mats)
+    const face = buildFace(DEFAULT_BODY_SHAPE, mats)
     let meshCount = 0
     face.group.traverse((c) => {
       if (c instanceof THREE.Mesh) meshCount++
@@ -22,7 +23,7 @@ describe('buildFace', () => {
   })
 
   it('positions features within the head-bone local volume', () => {
-    const face = buildFace(undefined, mats)
+    const face = buildFace(DEFAULT_BODY_SHAPE, mats)
     const box = new THREE.Box3().setFromObject(face.group)
     expect(box.min.y).toBeGreaterThan(-0.1)
     expect(box.max.y).toBeLessThan(0.35)
@@ -30,7 +31,7 @@ describe('buildFace', () => {
   })
 
   it('mirrors eye placement across x=0', () => {
-    const face = buildFace(undefined, mats)
+    const face = buildFace(DEFAULT_BODY_SHAPE, mats)
     const left = face.eyes[0].position
     const right = face.eyes.find((e) => e.name === 'Eye_Right')!.position
     expect(left.x).toBeCloseTo(-right.x, 6)
@@ -38,7 +39,7 @@ describe('buildFace', () => {
   })
 
   it('assigns the eye material to irises only', () => {
-    const face = buildFace(undefined, mats)
+    const face = buildFace(DEFAULT_BODY_SHAPE, mats)
     const iris = face.eyes.find((e) => e.name === 'Iris_Left')!
     const sclera = face.eyes.find((e) => e.name === 'Eye_Left')!
     expect(iris.material).toBe(mats.eye)

@@ -1,3 +1,5 @@
+import type { BodyShape } from './bodyShape'
+
 export interface Template {
   id: string
   name: string
@@ -5,4 +7,5 @@ export interface Template {
   icon: string
   morphs: Record<string, number>
   colors: Record<string, string>
+  bodyShape?: Partial<BodyShape>
 }

@@ -1996,3 +1996,48 @@ We are at **Sprint 18**. Sprint 17 is complete.
 ### Next steps
 
 **Sprint 18: DNA-Driven Shapes** - bodyShape in CharacterDNA (schema bump + migration), debounced geometry regeneration, coherent randomizer shapes, distinct template silhouettes (Child/Dwarf/Elf).
+
+---
+
+## Session 033 - Sprint 18: DNA-Driven Shapes
+
+### Date
+
+2026-08-26
+
+### What we built
+
+Sprint 18 - shape became data. Body proportions are now part of CharacterDNA, so they persist through save/load, flow through undo/redo, and drive the procedural geometry.
+
+| Change | Detail |
+|---|---|
+| BodyShape shared type | src/shared/types/bodyShape.ts - headWidth/headHeight/headLength/jawChin + shoulderWidth/chestDepth/waistTaper/hipWidth; DEFAULT_BODY_SHAPE, mergeBodyShape, sanitizeBodyShape (clamps to sane ranges) |
+| DNA v2 | CharacterDNA.bodyShape?: Partial<BodyShape>; CURRENT_DNA_VERSION bumped 1->2; migration upgrades v1 (missing fields fall back to defaults at render) |
+| Shape-driven rebuilds | CharacterManager tracks head/torso shape keys; updateCharacter compares keys and rebuilds only what changed. New indToBones() unifies SkinnedMesh binding with cached rest-pose inverses (head/face/torso/limbs all share it); face group disposed/rebuilt with the head |
+| Coherent random shapes | RandomGenerator picks one of 3 archetypes (slim/average/stocky) plus small per-field noise; bust morph correlates with hipWidth |
+| Template silhouettes | templates.json gained bodyShape: Child (big round head, soft jaw), Dwarf (wide/stocky), Elf (slender/tall, pointy jaw), Stylized Female (narrow shoulders/wide hips/bust+butt morphs). Preset type also accepts bodyShape |
+
+### Files created / modified
+
+- src/shared/types/bodyShape.ts - new
+- src/shared/types/dna.ts - v2 schema
+- src/shared/dna/migration.ts - v1->v2
+- src/shared/types/preset.ts, 	emplate.ts - bodyShape field
+- src/shared/data/templates.json - silhouette data
+- src/renderer/three/procedural/BodyParts.ts + FaceFeatures.ts - take BodyShape
+- src/renderer/three/CharacterManager.ts - bindToBones cache, rebuildHeadMesh/rebuildTorsoMesh, shape-key diffing
+- src/renderer/services/RandomGenerator.ts - archetypes
+- Tests updated: mutations (+2 bodyShape merge), migration (v2), BodyParts/FaceFeatures signatures, RandomGenerator (+2 shape tests)
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 192 tests passing (186 + 6 new/updated), no regressions
+
+### Current status
+
+We are at **Sprint 19** (final planned sprint). Sprints 13-18 complete: fully procedural, DNA-driven character.
+
+### Next steps
+
+**Sprint 19: Face Variations & Expressions** (browTilt/mouthCurve/etc via torus arc params). After that, user-requested discussion: procedural clothing slots (plain t-shirts, jeans, hats, glasses generated like the body).

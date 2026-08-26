@@ -4,10 +4,9 @@ import {
   buildHead,
   buildTorso,
   buildArm,
-  buildLeg,
-  DEFAULT_HEAD_PARAMS,
-  DEFAULT_TORSO_PARAMS
+  buildLeg
 } from './BodyParts'
+import { DEFAULT_BODY_SHAPE } from '../../../shared/types/bodyShape'
 
 function weightSumViolations(geometry: THREE.BufferGeometry): number {
   const sw = geometry.attributes.skinWeight.array as ArrayLike<number>
@@ -40,6 +39,26 @@ function pelvisExtent(geometry: THREE.BufferGeometry): number {
   return max
 }
 
+function zExtent(geometry: THREE.BufferGeometry, yMin: number, yMax: number): number {
+  const pos = geometry.attributes.position as THREE.BufferAttribute
+  let max = -Infinity
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i)
+    if (y >= yMin && y <= yMax) max = Math.max(max, pos.getZ(i))
+  }
+  return max
+}
+
+function zMin(geometry: THREE.BufferGeometry, yMin: number, yMax: number): number {
+  const pos = geometry.attributes.position as THREE.BufferAttribute
+  let min = Infinity
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i)
+    if (y >= yMin && y <= yMax) min = Math.min(min, pos.getZ(i))
+  }
+  return min
+}
+
 describe('buildHead', () => {
   it('produces normalized skin weights', () => {
     const { geometry } = buildHead()
@@ -47,7 +66,7 @@ describe('buildHead', () => {
   })
 
   it('head spans from neck stub to skull top', () => {
-    const { geometry } = buildHead(DEFAULT_HEAD_PARAMS)
+    const { geometry } = buildHead(DEFAULT_BODY_SHAPE)
     const box = new THREE.Box3().setFromBufferAttribute(
       geometry.attributes.position as THREE.BufferAttribute
     )
@@ -55,6 +74,12 @@ describe('buildHead', () => {
     expect(box.min.y).toBeLessThan(1.6)
     expect(box.max.y).toBeGreaterThan(2.0)
     expect(box.max.y).toBeLessThan(2.2)
+  })
+
+  it('wider head param widens the skull', () => {
+    const narrow = xExtent(buildHead({ ...DEFAULT_BODY_SHAPE, headWidth: 0.2 }).geometry)
+    const wide = xExtent(buildHead({ ...DEFAULT_BODY_SHAPE, headWidth: 0.3 }).geometry)
+    expect(wide.max).toBeGreaterThan(narrow.max)
   })
 })
 
@@ -77,7 +102,7 @@ describe('buildTorso', () => {
   })
 
   it('torso spans hips to neck base with symmetric x extent', () => {
-    const { geometry } = buildTorso(DEFAULT_TORSO_PARAMS)
+    const { geometry } = buildTorso(DEFAULT_BODY_SHAPE)
     const box = new THREE.Box3().setFromBufferAttribute(
       geometry.attributes.position as THREE.BufferAttribute
     )
@@ -88,49 +113,29 @@ describe('buildTorso', () => {
   })
 
   it('shoulderWidth param widens the rest pose', () => {
-    const narrow = xExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, shoulderWidth: 0.8 }).geometry)
-    const wide = xExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, shoulderWidth: 1.2 }).geometry)
+    const narrow = xExtent(buildTorso({ ...DEFAULT_BODY_SHAPE, shoulderWidth: 0.8 }).geometry)
+    const wide = xExtent(buildTorso({ ...DEFAULT_BODY_SHAPE, shoulderWidth: 1.2 }).geometry)
     expect(wide.max).toBeGreaterThan(narrow.max)
   })
 
   it('hipWidth param widens the pelvis', () => {
-    const slim = pelvisExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, hipWidth: 0.8 }).geometry)
-    const broad = pelvisExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, hipWidth: 1.2 }).geometry)
+    const slim = pelvisExtent(buildTorso({ ...DEFAULT_BODY_SHAPE, hipWidth: 0.8 }).geometry)
+    const broad = pelvisExtent(buildTorso({ ...DEFAULT_BODY_SHAPE, hipWidth: 1.2 }).geometry)
     expect(broad).toBeGreaterThan(slim)
   })
 
   it('bust param extends chest front projection', () => {
-    const flat = zExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, bust: 0 }).geometry, 1.25, 1.42)
-    const full = zExtent(buildTorso({ ...DEFAULT_TORSO_PARAMS, bust: 1 }).geometry, 1.25, 1.42)
+    const flat = zExtent(buildTorso(DEFAULT_BODY_SHAPE, 0, 0.2).geometry, 1.25, 1.42)
+    const full = zExtent(buildTorso(DEFAULT_BODY_SHAPE, 1, 0.2).geometry, 1.25, 1.42)
     expect(full).toBeGreaterThan(flat)
   })
 
   it('butt param extends rear projection', () => {
-    const flat = -zMin(buildTorso({ ...DEFAULT_TORSO_PARAMS, butt: 0 }).geometry, 0.85, 1.05)
-    const full = -zMin(buildTorso({ ...DEFAULT_TORSO_PARAMS, butt: 1 }).geometry, 0.85, 1.05)
+    const flat = -zMin(buildTorso(DEFAULT_BODY_SHAPE, 0.15, 0).geometry, 0.85, 1.05)
+    const full = -zMin(buildTorso(DEFAULT_BODY_SHAPE, 0.15, 1).geometry, 0.85, 1.05)
     expect(full).toBeGreaterThan(flat)
   })
 })
-
-function zExtent(geometry: THREE.BufferGeometry, yMin: number, yMax: number): number {
-  const pos = geometry.attributes.position as THREE.BufferAttribute
-  let max = -Infinity
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i)
-    if (y >= yMin && y <= yMax) max = Math.max(max, pos.getZ(i))
-  }
-  return max
-}
-
-function zMin(geometry: THREE.BufferGeometry, yMin: number, yMax: number): number {
-  const pos = geometry.attributes.position as THREE.BufferAttribute
-  let min = Infinity
-  for (let i = 0; i < pos.count; i++) {
-    const y = pos.getY(i)
-    if (y >= yMin && y <= yMax) min = Math.min(min, pos.getZ(i))
-  }
-  return min
-}
 
 describe('buildArm', () => {
   it('binds to upper arm, forearm and hand segments', () => {
