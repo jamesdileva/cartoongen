@@ -100,7 +100,16 @@ export function buildFace(
   const curve = Math.max(-1, Math.min(1, faceShape.mouthCurve))
   const arcLen = (0.35 + 0.65 * Math.abs(curve)) * Math.PI
   const radius = 0.06 * faceShape.mouthWidth
-  const mouthWorldY = CRANIUM_CENTER_Y - H * 0.48
+  // Mouth anchors to the NOSE, not to an independent latitude: always 2cm
+  // below the nose's bottom edge, so nose and mouth can never overlap.
+  // Frowns arch UP by a full radius above the anchor - account for it.
+  const noseBottomY = noseWorldY - 0.05 * faceShape.noseSize
+  // Smile arcs dip R below the anchor; keep the dip above the chin underside.
+  const chinFloor = 1.66 + (curve >= 0 ? radius : 0)
+  const mouthWorldY = Math.max(
+    chinFloor,
+    noseBottomY - 0.02 - (curve < 0 ? radius : 0)
+  )
   // Sample the mouth arc directly ON the cranium ellipsoid surface: every
   // point is projected onto the surface (+4mm), so the mouth hugs any head
   // shape regardless of slope or curvature. Smile = lower arc, frown = upper.

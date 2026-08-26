@@ -2275,3 +2275,23 @@ The CDP sweep's per-feature band-scan produced persistent false positives (mouth
 - typecheck 0 errors; lint clean; 211 tests passing; build succeeds
 - Live sweep: 30/30 UI rolls clean on structural invariants
 - Screenshot verification: mouth visible (sweep-bad-9.png shows red smile correctly placed)
+
+---
+
+## Session 039 addendum 3 - Nose-Relative Mouth Anchoring (user idea)
+
+### Date
+
+2026-08-26
+
+### What we fixed (user live-captured nomouth3: noseSize 1.2 nose completely covering the mouth region)
+
+| Issue | Root Cause | Fix |
+|---|---|---|
+| Mouth hidden behind big noses; frown arches poking into the nose | Mouth anchored at independent latitude (CY - H*0.48) which collides with the nose bottom whenever noseSize is large or headHeight small (measured: nose bottom 1.7715 BELOW mouth anchor 1.7648) | User idea adopted: mouth anchors to the NOSE - always 2cm below the nose's bottom edge. Frowns arch up by a full radius, so their anchor drops an extra R. Smile dips guarded by a chin floor. Combined with the surface-projected tube, the mouth can neither bury in the skull nor hide behind the nose |
+
+### Verification
+
+- typecheck 0 errors; lint clean; build succeeds
+- 211 tests passing, incl. new regression: mouth never overlaps nose across 5 extreme shapes x 3 nose sizes x 3 curves, and every mouth point stays on the ellipsoid surface
+- Live CDP sweep: 30/30 UI rolls clean on structural invariants
