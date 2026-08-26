@@ -148,7 +148,7 @@ segments.
 **Acceptance**: bellySize / shoulderWidth / height morphs visibly deform the
 procedural torso; breathing-style spine animation deforms mesh smoothly.
 
-### Sprint 16 — Arms, Hands, Legs, Feet
+### Sprint 16 — Arms, Hands, Legs, Feet ✅ complete (2026-08-26)
 
 **Goal**: Complete the silhouette. Feet expected hardest (shoe-last shape).
 

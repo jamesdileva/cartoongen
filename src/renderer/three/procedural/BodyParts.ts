@@ -182,3 +182,109 @@ export function buildTorso(params: TorsoShapeParams = DEFAULT_TORSO_PARAMS): {
 
   return { geometry: merged, segments }
 }
+
+export function buildArm(side: -1 | 1): {
+  geometry: THREE.BufferGeometry
+  segments: BoneSegment[]
+} {
+  const s = side
+  const sweep = makeSweep(
+    [
+      { center: [s * 0.32, 1.5, 0], width: 0.15, height: 0.15 },
+      { center: [s * 0.45, 1.495, 0], width: 0.135, height: 0.135 },
+      { center: [s * 0.58, 1.495, 0], width: 0.125, height: 0.125 },
+      { center: [s * 0.66, 1.5, 0], width: 0.132, height: 0.132 },
+      { center: [s * 0.76, 1.505, 0], width: 0.105, height: 0.105 },
+      { center: [s * 0.86, 1.51, 0], width: 0.088, height: 0.088 },
+      { center: [s * 0.93, 1.512, 0], width: 0.075, height: 0.075 }
+    ],
+    14,
+    true,
+    true
+  )
+
+  const palmGeo = makeEllipsoid(0.07, 0.055, 0.028, 16, 12)
+  const palm = translateGeometry(palmGeo, s * 1.005, 1.505, 0)
+
+  const thumbGeo = makeEllipsoid(0.034, 0.024, 0.024, 10, 8)
+  const thumb = translateGeometry(thumbGeo, s * 0.972, 1.487, -0.042)
+
+  const merged = mergeGeometries([sweep, palm, thumb])
+  if (!merged) {
+    throw new Error('buildArm: mergeGeometries returned null')
+  }
+
+  const prefix = side < 0 ? 'Left' : 'Right'
+  const segments: BoneSegment[] = [
+    {
+      name: `${prefix}UpperArm`,
+      start: [s * 0.36, 1.5, 0],
+      end: [s * 0.66, 1.5, 0]
+    },
+    {
+      name: `${prefix}Forearm`,
+      start: [s * 0.66, 1.5, 0],
+      end: [s * 0.91, 1.51, 0]
+    },
+    {
+      name: `${prefix}Hand`,
+      start: [s * 0.91, 1.51, 0],
+      end: [s * 1.04, 1.51, 0]
+    }
+  ]
+
+  const binding = computeSkinBindings(merged.attributes.position.array as Float32Array, segments)
+  applySkinAttributes(merged, binding)
+
+  return { geometry: merged, segments }
+}
+
+export function buildLeg(side: -1 | 1): {
+  geometry: THREE.BufferGeometry
+  segments: BoneSegment[]
+} {
+  const s = side
+  const sweep = makeSweep(
+    [
+      { center: [s * 0.18, 0.88, 0], width: 0.21, height: 0.21 },
+      { center: [s * 0.18, 0.72, 0], width: 0.185, height: 0.185 },
+      { center: [s * 0.18, 0.56, 0], width: 0.155, height: 0.155 },
+      { center: [s * 0.18, 0.5, 0], width: 0.165, height: 0.165 },
+      { center: [s * 0.18, 0.4, 0], width: 0.145, height: 0.145 },
+      { center: [s * 0.18, 0.24, 0], width: 0.1, height: 0.1 },
+      { center: [s * 0.18, 0.13, 0], width: 0.075, height: 0.075 }
+    ],
+    14,
+    true,
+    true
+  )
+
+  const foot = makeSweep(
+    [
+      { center: [s * 0.18, 0.055, -0.02], width: 0.095, height: 0.1 },
+      { center: [s * 0.18, 0.045, 0.03], width: 0.088, height: 0.075 },
+      { center: [s * 0.18, 0.045, 0.09], width: 0.09, height: 0.062 },
+      { center: [s * 0.18, 0.04, 0.15], width: 0.078, height: 0.045 }
+    ],
+    12,
+    true,
+    true
+  )
+
+  const merged = mergeGeometries([sweep, foot])
+  if (!merged) {
+    throw new Error('buildLeg: mergeGeometries returned null')
+  }
+
+  const prefix = side < 0 ? 'Left' : 'Right'
+  const segments: BoneSegment[] = [
+    { name: `${prefix}UpperLeg`, start: [s * 0.18, 0.86, 0], end: [s * 0.18, 0.5, 0] },
+    { name: `${prefix}Calf`, start: [s * 0.18, 0.5, 0], end: [s * 0.18, 0.12, 0] },
+    { name: `${prefix}Foot`, start: [s * 0.18, 0.1, 0.06], end: [s * 0.18, 0.05, 0.22] }
+  ]
+
+  const binding = computeSkinBindings(merged.attributes.position.array as Float32Array, segments)
+  applySkinAttributes(merged, binding)
+
+  return { geometry: merged, segments }
+}

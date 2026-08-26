@@ -13,7 +13,7 @@ import { MaterialManager } from './MaterialManager'
 import { AssetManager } from './AssetManager'
 import { SlotManager } from './SlotManager'
 import { ProportionManager } from './ProportionManager'
-import { buildHead, buildTorso, DEFAULT_TORSO_PARAMS, DEFAULT_HEAD_PARAMS } from './procedural/BodyParts'
+import { buildHead, buildTorso, buildArm, buildLeg, DEFAULT_TORSO_PARAMS, DEFAULT_HEAD_PARAMS } from './procedural/BodyParts'
 import { buildFace } from './procedural/FaceFeatures'
 import referenceSkeleton from '../../shared/data/reference-skeleton.json'
 
@@ -26,6 +26,7 @@ gltfLoader.setMeshoptDecoder(MeshoptDecoder)
 interface BoneDefinition {
   name: string
   position: [number, number, number]
+  rotZ?: number
   children?: BoneDefinition[]
 }
 
@@ -55,22 +56,24 @@ const SKELETON: BoneDefinition = {
                 {
                   name: 'LeftUpperArm',
                   position: [-0.38, 0.05, 0],
+                  rotZ: Math.PI / 2,
                   children: [
                     {
                       name: 'LeftForearm',
-                      position: [-0.3, 0, 0],
-                      children: [{ name: 'LeftHand', position: [-0.25, 0, 0] }]
+                      position: [0, 0.3, 0],
+                      children: [{ name: 'LeftHand', position: [0, 0.25, 0] }]
                     }
                   ]
                 },
                 {
                   name: 'RightUpperArm',
                   position: [0.38, 0.05, 0],
+                  rotZ: -Math.PI / 2,
                   children: [
                     {
                       name: 'RightForearm',
-                      position: [0.3, 0, 0],
-                      children: [{ name: 'RightHand', position: [0.25, 0, 0] }]
+                      position: [0, 0.3, 0],
+                      children: [{ name: 'RightHand', position: [0, 0.25, 0] }]
                     }
                   ]
                 }
@@ -81,12 +84,24 @@ const SKELETON: BoneDefinition = {
         {
           name: 'LeftUpperLeg',
           position: [-0.18, -0.3, 0],
-          children: [{ name: 'LeftFoot', position: [0, -0.4, 0.05] }]
+          children: [
+            {
+              name: 'LeftCalf',
+              position: [0, -0.37, 0],
+              children: [{ name: 'LeftFoot', position: [0, -0.38, 0.06] }]
+            }
+          ]
         },
         {
           name: 'RightUpperLeg',
           position: [0.18, -0.3, 0],
-          children: [{ name: 'RightFoot', position: [0, -0.4, 0.05] }]
+          children: [
+            {
+              name: 'RightCalf',
+              position: [0, -0.37, 0],
+              children: [{ name: 'RightFoot', position: [0, -0.38, 0.06] }]
+            }
+          ]
         }
       ]
     }
@@ -97,6 +112,9 @@ function buildSkeleton(def: BoneDefinition): THREE.Bone {
   const bone = new THREE.Bone()
   bone.name = def.name
   bone.position.set(def.position[0], def.position[1], def.position[2])
+  if (def.rotZ !== undefined) {
+    bone.rotation.z = def.rotZ
+  }
   if (def.children) {
     for (const child of def.children) {
       bone.add(buildSkeleton(child))
@@ -296,41 +314,27 @@ export class CharacterManager {
     this.proportionManager.setHeadMesh(this.headMesh)
 
     const armMat = this.materialManager.getMaterial('skin')
-    const limbGeo = (r: number, h: number) => new THREE.CylinderGeometry(r, r, h, 8)
 
-    const leftUpperArm = new THREE.Mesh(limbGeo(0.08, 0.3), armMat)
-    leftUpperArm.position.set(-0.38, 1.45, 0)
-    leftUpperArm.rotation.z = -0.2
-    this.scene.add(leftUpperArm)
-    this.proceduralMeshes.push(leftUpperArm)
+    this.addLimbMesh(buildArm(-1).geometry, ['LeftUpperArm', 'LeftForearm', 'LeftHand'], armMat)
+    this.addLimbMesh(buildArm(1).geometry, ['RightUpperArm', 'RightForearm', 'RightHand'], armMat)
+    this.addLimbMesh(buildLeg(-1).geometry, ['LeftUpperLeg', 'LeftCalf', 'LeftFoot'], armMat)
+    this.addLimbMesh(buildLeg(1).geometry, ['RightUpperLeg', 'RightCalf', 'RightFoot'], armMat)
+  }
 
-    const rightUpperArm = new THREE.Mesh(limbGeo(0.08, 0.3), armMat)
-    rightUpperArm.position.set(0.38, 1.45, 0)
-    rightUpperArm.rotation.z = 0.2
-    this.scene.add(rightUpperArm)
-    this.proceduralMeshes.push(rightUpperArm)
-
-    const leftForearm = new THREE.Mesh(limbGeo(0.06, 0.28), armMat)
-    leftForearm.position.set(-0.72, 1.45, 0)
-    leftForearm.rotation.z = -0.05
-    this.scene.add(leftForearm)
-    this.proceduralMeshes.push(leftForearm)
-
-    const rightForearm = new THREE.Mesh(limbGeo(0.06, 0.28), armMat)
-    rightForearm.position.set(0.72, 1.45, 0)
-    rightForearm.rotation.z = 0.05
-    this.scene.add(rightForearm)
-    this.proceduralMeshes.push(rightForearm)
-
-    const leftUpperLeg = new THREE.Mesh(limbGeo(0.12, 0.35), armMat)
-    leftUpperLeg.position.set(-0.18, 0.65, 0)
-    this.scene.add(leftUpperLeg)
-    this.proceduralMeshes.push(leftUpperLeg)
-
-    const rightUpperLeg = new THREE.Mesh(limbGeo(0.12, 0.35), armMat)
-    rightUpperLeg.position.set(0.18, 0.65, 0)
-    this.scene.add(rightUpperLeg)
-    this.proceduralMeshes.push(rightUpperLeg)
+  private addLimbMesh(
+    geometry: THREE.BufferGeometry,
+    boneNames: string[],
+    material: THREE.Material
+  ): void {
+    const bones = boneNames.map((n) => this.boneMap.get(n))
+    if (bones.some((b) => !b)) return
+    const typedBones = bones as THREE.Bone[]
+    const inverses = typedBones.map((b) => new THREE.Matrix4().copy(b.matrixWorld).invert())
+    const skeleton = new THREE.Skeleton(typedBones, inverses)
+    const mesh = new THREE.SkinnedMesh(geometry, material)
+    mesh.bind(skeleton)
+    this.scene.add(mesh)
+    this.proceduralMeshes.push(mesh)
   }
 
   private ensureDataLoaded(): void {

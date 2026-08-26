@@ -1912,3 +1912,47 @@ The head's neck sweep was also affected but near-circular so invisible. Verified
 ### Current status
 
 We are at **Sprint 16**. Female silhouette dials are in ahead of Sprint 18's full body-shape DNA.
+
+---
+
+## Session 031 - Sprint 16: Arms, Hands, Legs, Feet
+
+### Date
+
+2026-08-26
+
+### What we built
+
+Sprint 16 - the procedural character is now complete-bodied. Tapered swept arms with elbow bulge + mitten hands (palm ellipsoid + thumb bump), tapered legs with knee/calf shaping + shoe-last feet that stand on the grid floor. All skinned via distance falloff.
+
+### Files modified
+
+| File | Change |
+|---|---|
+| src/renderer/three/procedural/BodyParts.ts | uildArm(side) - 7-station sweep (deltoid blend, elbow bulge, wrist taper) + palm/thumb ellipsoids; uildLeg(side) - 7-station thigh/calf sweep with knee bulge + 4-station foot sweep (heel bulb, arch instep, ball, toe box) |
+| src/renderer/three/CharacterManager.ts | SKELETON reworked: arm chains rotated 90-deg about Z (real-rig convention so y-scale morphs work on any rig), LeftCalf/RightCalf inserted between thigh and foot, Foot bone moved to ankle height y=0.10; cylinder limbs deleted; ddLimbMesh() binds arm/leg geometries to their 3-bone chains |
+
+### Decisions made during Sprint 16
+
+| Decision | Rationale |
+|---|---|
+| Arm bones rotated 90-deg (children along local Y) | ProportionManager morphs scale bone-local Y for length; horizontal child offsets made armLength a no-op on procedural rigs. Rotation matches Quaternius/GLB convention so one mapping serves both |
+| Calf bones inserted | Legs previously jumped thigh->foot; aliases (calf_l/r) already existed and height morph already referenced them |
+| Mitten hands v1 (palm + thumb) | Finger grooves deferred; mitten reads cleanly at cartoon scale. Sprint 19+ can add finger variants |
+| Feet as Z-path sweeps | Shoe-last profile via existing makeSweep stations (heel/arch/ball/toe); heel bottom lands at y~0 so character stands on grid |
+| One merged geometry per limb pair-segment chain | Single SkinnedMesh per side = fewer draw calls, single bind |
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 184 tests passing (177 + 7 new), no regressions
+
+**Manual verification pending**: launch app, confirm full-body silhouette in T-pose-ish stance, feet on floor, drag Arm Length/Muscle Mass/Leg Length sliders.
+
+### Current status
+
+We are at **Sprint 17**. Sprint 16 is complete.
+
+### Next steps
+
+**Sprint 17: CharacterManager Integration Cleanup** - make ProceduralBodyBuilder the only base body path, verify undo/redo/rules/colors/save/export against the fully procedural character.

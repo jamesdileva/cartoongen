@@ -3,6 +3,8 @@ import * as THREE from 'three'
 import {
   buildHead,
   buildTorso,
+  buildArm,
+  buildLeg,
   DEFAULT_HEAD_PARAMS,
   DEFAULT_TORSO_PARAMS
 } from './BodyParts'
@@ -129,3 +131,58 @@ function zMin(geometry: THREE.BufferGeometry, yMin: number, yMax: number): numbe
   }
   return min
 }
+
+describe('buildArm', () => {
+  it('binds to upper arm, forearm and hand segments', () => {
+    const { segments } = buildArm(-1)
+    expect(segments.map((s) => s.name)).toEqual(['LeftUpperArm', 'LeftForearm', 'LeftHand'])
+  })
+
+  it('left arm extends leftward with normalized weights', () => {
+    const { geometry } = buildArm(-1)
+    const box = new THREE.Box3().setFromBufferAttribute(
+      geometry.attributes.position as THREE.BufferAttribute
+    )
+    expect(box.max.x).toBeLessThan(-0.25)
+    expect(box.min.x).toBeGreaterThan(-1.15)
+    expect(weightSumViolations(geometry)).toBe(0)
+  })
+
+  it('right arm mirrors left arm', () => {
+    const left = xExtent(buildArm(-1).geometry)
+    const right = xExtent(buildArm(1).geometry)
+    expect(right.max).toBeCloseTo(-left.min, 4)
+    expect(right.min).toBeCloseTo(-left.max, 4)
+  })
+})
+
+describe('buildLeg', () => {
+  it('binds to thigh, calf and foot segments', () => {
+    const { segments } = buildLeg(1)
+    expect(segments.map((s) => s.name)).toEqual(['RightUpperLeg', 'RightCalf', 'RightFoot'])
+  })
+
+  it('foot reaches the floor without going through it', () => {
+    const { geometry } = buildLeg(-1)
+    const box = new THREE.Box3().setFromBufferAttribute(
+      geometry.attributes.position as THREE.BufferAttribute
+    )
+    expect(box.min.y).toBeGreaterThanOrEqual(-0.01)
+    expect(box.min.y).toBeLessThanOrEqual(0.02)
+    expect(box.max.y).toBeGreaterThan(0.8)
+  })
+
+  it('foot points forward from the ankle', () => {
+    const { geometry } = buildLeg(1)
+    const box = new THREE.Box3().setFromBufferAttribute(
+      geometry.attributes.position as THREE.BufferAttribute
+    )
+    expect(box.max.z).toBeGreaterThan(0.14)
+    expect(box.min.z).toBeGreaterThan(-0.12)
+  })
+
+  it('produces normalized skin weights', () => {
+    expect(weightSumViolations(buildLeg(1).geometry)).toBe(0)
+    expect(weightSumViolations(buildArm(1).geometry)).toBe(0)
+  })
+})
