@@ -10,6 +10,7 @@ export const HEAD_BONE_SEGMENTS: BoneSegment[] = [
 ]
 
 const CRANIUM_CENTER_Y = 1.86
+const CRANIUM_CENTER_Z = 0.005
 
 export function buildHeadGeometry(shape: BodyShape = DEFAULT_BODY_SHAPE): THREE.BufferGeometry {
   const cranium = translateGeometry(
@@ -53,10 +54,68 @@ export function buildHead(shape: BodyShape = DEFAULT_BODY_SHAPE): {
   geometry: THREE.BufferGeometry
   segments: BoneSegment[]
 } {
-  const geometry = buildHeadGeometry(shape)
-  const binding = computeSkinBindings(geometry.attributes.position.array as Float32Array, HEAD_BONE_SEGMENTS)
-  applySkinAttributes(geometry, binding)
-  return { geometry, segments: HEAD_BONE_SEGMENTS }
+  const cranium = translateGeometry(
+    makeEllipsoid(shape.headWidth, shape.headHeight, shape.headLength, 28, 20),
+    0,
+    CRANIUM_CENTER_Y,
+    CRANIUM_CENTER_Z
+  )
+
+  const earGeo = makeEllipsoid(0.042, 0.07, 0.05, 10, 8)
+  const leftEar = translateGeometry(earGeo.clone(), -shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
+  const rightEar = translateGeometry(earGeo, shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
+
+  const chinR = 0.07 * (1 - shape.jawChin) + 0.02
+  const chinY = 1.68 - 0.05 * shape.jawChin
+  const jawProfile: Array<[number, number]> = [
+    [shape.headWidth * 0.62, CRANIUM_CENTER_Y + 0.03],
+    [shape.headWidth * 0.6, 1.77],
+    [shape.headWidth * 0.44, 1.71],
+    [chinR, chinY]
+  ]
+  const jaw = makeLathe(jawProfile, 24)
+
+  const skull = mergeGeometries([cranium, leftEar, rightEar, jaw])
+  if (!skull) {
+    throw new Error('buildHead: skull mergeGeometries returned null')
+  }
+
+  // The whole cranium is one rigid unit bound fully to the Head bone so that
+  // face features (parented to the same bone) can never drift relative to it
+  // when proportion morphs scale the bone.
+  const headIdx = HEAD_BONE_SEGMENTS.findIndex((s) => s.name === 'Head')
+  const vertCount = skull.attributes.position.count
+  const skullIndices = new Uint16Array(vertCount * 4)
+  const skullWeights = new Float32Array(vertCount * 4)
+  for (let i = 0; i < vertCount; i++) {
+    skullIndices[i * 4] = headIdx
+    skullWeights[i * 4] = 1
+  }
+  skull.setAttribute('skinIndex', new THREE.BufferAttribute(skullIndices, 4))
+  skull.setAttribute('skinWeight', new THREE.BufferAttribute(skullWeights, 4))
+
+  // Only the neck stub (hidden inside the torso/skull overlap) blends between
+  // Neck and Head bones for smooth neck-region deformation.
+  const neck = makeSweep(
+    [
+      { center: [0, 1.53, 0], width: 0.17, height: 0.15 },
+      { center: [0, 1.66, 0.01], width: 0.18, height: 0.16 },
+      { center: [0, 1.78, 0.02], width: 0.19, height: 0.17 }
+    ],
+    14
+  )
+  const neckSegments: BoneSegment[] = [
+    { name: 'Neck', start: [0, 1.5, 0], end: [0, 1.73, 0] },
+    { name: 'Head', start: [0, 1.73, 0], end: [0, 2.08, 0] }
+  ]
+  const neckBinding = computeSkinBindings(neck.attributes.position.array as Float32Array, neckSegments)
+  applySkinAttributes(neck, neckBinding)
+
+  const merged = mergeGeometries([skull, neck])
+  if (!merged) {
+    throw new Error('buildHead: mergeGeometries returned null')
+  }
+  return { geometry: merged, segments: HEAD_BONE_SEGMENTS }
 }
 
 interface TorsoStation {

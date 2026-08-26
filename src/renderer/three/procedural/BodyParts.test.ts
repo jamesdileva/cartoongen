@@ -191,3 +191,49 @@ describe('buildLeg', () => {
     expect(weightSumViolations(buildArm(1).geometry)).toBe(0)
   })
 })
+
+describe('buildHead skinning', () => {
+  it('binds every cranium vertex fully to the Head bone', () => {
+    const { geometry } = buildHead(DEFAULT_BODY_SHAPE)
+    const si = geometry.attributes.skinIndex.array as ArrayLike<number>
+    const sw = geometry.attributes.skinWeight.array as ArrayLike<number>
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    let checked = 0
+    for (let v = 0; v < pos.count; v++) {
+      if (pos.getY(v) > 1.8) {
+        expect(si[v * 4]).toBe(1)
+        expect(sw[v * 4]).toBeGreaterThan(0.999)
+        checked++
+      }
+    }
+    expect(checked).toBeGreaterThan(300)
+  })
+
+  it('skull vertices track the Head bone exactly under scale (feature parity)', () => {
+    const HEAD_BONE_Y = 1.75
+    const SCALE = 1.3
+    const { geometry } = buildHead(DEFAULT_BODY_SHAPE)
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    const si = geometry.attributes.skinIndex.array as ArrayLike<number>
+    const sw = geometry.attributes.skinWeight.array as ArrayLike<number>
+
+    // Simulate headSize morph: full transform for Head-weighted part,
+    // blended with Neck (origin 1.60) for the rest.
+    const neckY = 1.6
+    let maxFeatureSkullGap = 0
+    for (let v = 0; v < pos.count; v++) {
+      const y = pos.getY(v)
+      const wHead = sw[v * 4]
+      const yDeformed =
+        wHead * (HEAD_BONE_Y + SCALE * (y - HEAD_BONE_Y)) +
+        (1 - wHead) * (neckY + SCALE * (y - neckY))
+      void si
+      // A feature parented to the Head bone at this rest height moves as:
+      const featureY = HEAD_BONE_Y + SCALE * (y - HEAD_BONE_Y)
+      if (y > 1.85) {
+        maxFeatureSkullGap = Math.max(maxFeatureSkullGap, Math.abs(yDeformed - featureY))
+      }
+    }
+    expect(maxFeatureSkullGap).toBeLessThan(0.002)
+  })
+})

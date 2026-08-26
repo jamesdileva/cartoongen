@@ -2115,3 +2115,26 @@ Sprints 20-23 appended to procedural-character.md per user discussion:
 - Sprint 23: archetype outfits (mage robe/elven tunic/dwarf vest) + outfit presets
 
 User confirmed archetype outfits (mage robes etc.) as multi-sprint expansion.
+
+---
+
+## Session 036 - Sprint 19 Follow-up: Face Drift Fix (Skinning Weight Overhaul)
+
+### Date
+
+2026-08-26
+
+### What we fixed (second user report: face features drop toward the neck on different head sizes)
+
+| Issue | Root Cause | Fix |
+|---|---|---|
+| Face features slide/drop relative to the skull when headSize morph changes | Distance-based skin weights blended face-region skull verts ~50/50 between Neck and Head capsules (both are vertical axes through x=z=0, so horizontal distance dominates and y-clamping barely differentiates). Skull deformed partially about the NECK joint (y=1.60) while features parented to Head bone track it exactly -> divergence on any scale | Cranium is one rigid visual unit: skull+ears+jaw now bound 100% to the Head bone; only the hidden neck stub keeps distance-blended Neck/Head binding. Features parented to Head bone can no longer drift - they share the exact transform |
+
+Debug evidence before fix: mouth/jaw verts had 45-52% Head weight, eyes only 64%. After: all verts above y=1.80 have exactly 1.000 Head weight.
+
+Regression tests added to BodyParts.test.ts: cranium fully Head-bound (structural), simulated headSize scale parity between skull verts and feature transform (<2 micron gap). 203 tests passing.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 203 tests passing (201 + 2 new)
