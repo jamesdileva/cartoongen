@@ -115,18 +115,18 @@ with slightly flattened top where it meets the jaw. Jaw starts ~40% down.
 slider deforms the skinned head smoothly; kernel + weights have unit tests;
 typecheck/lint/test/build green.
 
-### Sprint 14 — Face Features
+### Sprint 14 — Face Features ✅ complete (2026-08-26)
 
 **Goal**: Personality. Eyes/brows/nose/mouth attached to the head surface.
 
-- [ ] `FaceFeatures.ts`: eye group (sclera sphere + iris disc + pupil),
+- [x] `FaceFeatures.ts`: eye group (sclera sphere + iris disc + pupil),
       brow ridge (flattened torus segment), nose wedge (small lathe/prism),
       mouth (torus arc or extruded curve)
-- [ ] Placement derived from the same head params used to build the head, so
+- [x] Placement derived from the same head params used to build the head, so
       features stay on the surface when headSize changes
-- [ ] Colors routed through MaterialManager ('eye', 'mouth' categories exist
+- [x] Colors routed through MaterialManager ('eye', 'mouth' categories exist
       already); brows use 'hair'
-- [ ] DNA-driven eye scale/spacing parameters
+- [ ] DNA-driven eye scale/spacing parameters (deferred to Sprint 18)
 
 **Acceptance**: Face reads clearly at default camera distance; changing eye
 color and headSize behaves correctly; features export in GLB.

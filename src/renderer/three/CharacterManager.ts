@@ -13,7 +13,8 @@ import { MaterialManager } from './MaterialManager'
 import { AssetManager } from './AssetManager'
 import { SlotManager } from './SlotManager'
 import { ProportionManager } from './ProportionManager'
-import { buildHead } from './procedural/BodyParts'
+import { buildHead, DEFAULT_HEAD_PARAMS } from './procedural/BodyParts'
+import { buildFace } from './procedural/FaceFeatures'
 import referenceSkeleton from '../../shared/data/reference-skeleton.json'
 
 const gltfLoader = new GLTFLoader()
@@ -216,6 +217,25 @@ export class CharacterManager {
     }
     this.scene.add(this.headMesh)
     this.proceduralMeshes.push(this.headMesh)
+
+    const face = buildFace(DEFAULT_HEAD_PARAMS, {
+      skin: this.materialManager.getMaterial('skin'),
+      hair: this.materialManager.getMaterial('hair'),
+      eye: this.materialManager.getMaterial('eye'),
+      mouth: this.materialManager.getMaterial('mouth')
+    })
+    const headBone = this.boneMap.get('Head')
+    if (headBone) {
+      headBone.add(face.group)
+    } else {
+      this.scene.add(face.group)
+    }
+    face.group.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        this.proceduralMeshes.push(child)
+      }
+    })
+    this.baseBodyFeatures = { eyebrows: face.eyebrows, eyes: face.eyes }
 
     this.proportionManager.setBoneMap(this.boneMap)
     this.proportionManager.setHeadMesh(this.headMesh)

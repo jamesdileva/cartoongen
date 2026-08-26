@@ -1755,3 +1755,56 @@ The 'head' slot is for head ASSETS worn over the base (future: masks/glasses). T
 pm run typecheck - 0 errors
 - 
 pm run test - 164 passing, no regressions
+
+---
+
+## Session 028 - Sprint 14: Face Features
+
+### Date
+
+2026-08-26
+
+### What we built
+
+Sprint 14 - the procedural face. Eyes (sclera + iris + pupil), torus-arc eyebrows, nose bump, and smile mouth, all parented to the Head bone so they track headSize scaling exactly like the skinned skull does.
+
+### Files created
+
+| File | Purpose |
+|---|---|
+| src/renderer/three/procedural/FaceFeatures.ts | uildFace(params, mats) - returns group + categorized eye/eyebrow arrays; features authored in Head-bone local coordinates |
+| FaceFeatures.test.ts | 4 tests: mesh count (10), local-volume bounds, x-mirror symmetry, material assignment |
+
+### Files modified
+
+| File | Change |
+|---|---|
+| src/renderer/three/CharacterManager.ts | uildBaseCharacter() builds the face and parents it to the Head bone; procedural eyes/brows registered in aseBodyFeatures so existing slot-hide logic (equipping eyebrow/eye assets hides procedural ones) works for free |
+
+### Decisions made during Sprint 14
+
+| Decision | Rationale |
+|---|---|
+| Features parented to Head bone (not scene) | Child world transform = bone origin + scale*(local), identical to skinning math for fully-head-weighted vertices - face follows headSize slider perfectly with zero extra code |
+| Sclera/pupil use fixed local materials; only iris uses 'eye' MaterialManager category | Eye-color palette should tint the iris, not whiten the whole eyeball |
+| Torus arcs for brows and mouth | Cheap, reads clearly at cartoon scale, parametric arc angles give expression control later |
+| Feature positions derived from HeadShapeParams | Sprint 18 can vary face geometry per body shape without repositioning by hand |
+
+### Verification
+
+- 
+pm run typecheck - 0 errors
+- 
+pm run test - 168 passing (164 + 4 new), no regressions
+- 
+pm run lint - 0 errors (4 pre-existing warnings)
+- 
+pm run build - full production build succeeds
+
+### Current status
+
+We are at **Sprint 15**. Sprint 14 is complete.
+
+### Next steps
+
+**Sprint 15: Torso** - lathe torso neck->chest->waist->hips with shoulder deltoids + pelvis, spine-chain skinning, remove cylinder legacy path.
