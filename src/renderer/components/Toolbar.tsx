@@ -2,6 +2,7 @@ import { useCharacterStore } from '../stores/useCharacterStore'
 
 interface ToolbarProps {
   onNewCharacter: () => void
+  onSave: () => void
   onLoadCharacter: () => void
   onImport: () => void
   onExport: () => void
@@ -13,6 +14,7 @@ interface ToolbarProps {
 
 export default function Toolbar({
   onNewCharacter,
+  onSave,
   onLoadCharacter,
   onImport,
   onExport,
@@ -25,7 +27,6 @@ export default function Toolbar({
   const canRedo = useCharacterStore((s) => s.canRedo)
   const loading = useCharacterStore((s) => s.loading)
   const name = useCharacterStore((s) => s.currentCharacterName)
-  const save = useCharacterStore((s) => s.saveCharacter)
   const undo = useCharacterStore((s) => s.undo)
   const redo = useCharacterStore((s) => s.redo)
 
@@ -37,7 +38,7 @@ export default function Toolbar({
       <button style={btnStyle} onClick={onNewCharacter} title="New Character (Ctrl+N)">
         New
       </button>
-      <button style={btnStyle} onClick={save} disabled={loading || !name} title="Save (Ctrl+S)">
+      <button style={btnStyle} onClick={onSave} disabled={loading || !name} title="Save (Ctrl+S)">
         Save
       </button>
       <button style={btnStyle} onClick={onLoadCharacter} title="Load Character">

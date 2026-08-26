@@ -232,6 +232,7 @@ export default function App() {
     >
       <Toolbar
         onNewCharacter={handleNewCharacter}
+        onSave={handleSave}
         onLoadCharacter={() => setShowCharacterBrowser(true)}
         onImport={() => setShowImport(true)}
         onExport={() => setShowExport(true)}
