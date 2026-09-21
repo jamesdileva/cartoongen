@@ -144,6 +144,7 @@ const Viewport = forwardRef<ViewportHandle, ViewportProps>(({ onFileDrop }, ref)
     charManagerRef.current = characterManager
     scene.add(characterManager.getSceneGroup())
     ;(window as unknown as { __ccm?: unknown }).__ccm = characterManager
+    ;(window as unknown as { __camera?: unknown }).__camera = camera
 
     function resize() {
       const w = container.clientWidth

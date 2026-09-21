@@ -117,12 +117,13 @@ export default function App() {
   useEffect(() => {
     ;(window as unknown as { __app?: unknown }).__app = {
       randomize: handleRandomize,
-      getDNA: () => useCharacterStore.getState().present
+      getDNA: () => useCharacterStore.getState().present,
+      setDNA: (dna: CharacterDNA) => overwriteDNA(dna)
     }
     return () => {
       delete (window as unknown as { __app?: unknown }).__app
     }
-  }, [handleRandomize])
+  }, [handleRandomize, overwriteDNA])
 
   const handleFileDrop = useCallback((buffer: ArrayBuffer, fileName: string) => {
     setImportData({ buffer, fileName })
