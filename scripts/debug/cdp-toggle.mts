@@ -1,9 +1,5 @@
-// Replay a saved DNA, zoom the camera to the face, capture close-up.
-// Usage: npx tsx scripts/debug/cdp-zoom.mts <dnaFile> [label]
-import { readFileSync, writeFileSync } from 'node:fs'
-
-const dnaFile = process.argv[2] ?? 'scripts/debug/nomouth4.dna.json'
-const label = process.argv[3] ?? 'zoom'
+// Toggle head/skull visibility live, capture screenshot.
+import { writeFileSync } from 'node:fs'
 
 const list = await fetch('http://127.0.0.1:9222/json/list').then((r) => r.json())
 const page = list.find((t) => t.type === 'page' && t.url.includes('5173'))
@@ -35,15 +31,14 @@ const evalExpr = async (expression) => {
   return r.result?.value
 }
 
-const dna = JSON.parse(readFileSync(dnaFile, 'utf-8'))
-await evalExpr(`window.__app.setDNA(${JSON.stringify(dna)})`)
-await new Promise((r) => setTimeout(r, 600))
-
-// move camera to the face close-up via the app's own preset
-await evalExpr(`window.__app.faceCam()`)
+const mode = process.argv[2] ?? 'hide-skull'
+if (mode === 'hide-skull') {
+  await evalExpr(`window.__ccm.headMesh.visible = false`)
+} else {
+  await evalExpr(`window.__ccm.headMesh.visible = true`)
+}
 await new Promise((r) => setTimeout(r, 400))
-
 const shot = await send('Page.captureScreenshot', { format: 'png' })
-writeFileSync(`scripts/debug/${label}.png`, Buffer.from(shot.data, 'base64'))
-console.log(`captured scripts/debug/${label}.png`)
+writeFileSync(`scripts/debug/${mode}.png`, Buffer.from(shot.data, 'base64'))
+console.log(`captured scripts/debug/${mode}.png`)
 ws.close()

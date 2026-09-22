@@ -2295,3 +2295,24 @@ The CDP sweep's per-feature band-scan produced persistent false positives (mouth
 - typecheck 0 errors; lint clean; build succeeds
 - 211 tests passing, incl. new regression: mouth never overlaps nose across 5 extreme shapes x 3 nose sizes x 3 curves, and every mouth point stays on the ellipsoid surface
 - Live CDP sweep: 30/30 UI rolls clean on structural invariants
+
+---
+
+## Session 039 addendum 4 - Explicit Rebuild Parameters (stale-store class eliminated)
+
+### Date
+
+2026-08-26
+
+### What we found (nomouth4 investigation conclusion)
+
+After exhaustive live-scene forensics (x-ray toggles, isolate toggles, push experiments, full vert dumps, raycasts, close-up replays), the mouth geometry, placement, materials, visibility flags, parenting, and skinning all check out - and replaying the exact 'broken' DNA on a clean build renders the mouth perfectly. The remaining plausible cause for the original sightings: rebuild methods re-reading useCharacterStore.getState() instead of using the DNA already in hand (plus live-scene debug mutations from this investigation landing in the user's test session).
+
+| Change | Detail |
+|---|---|
+| Explicit rebuild parameters | ebuildTorsoMesh(shape, bust, butt, belly), ebuildHeadMesh(shape, neckWidth, faceShape), ebuildFaceGroup(bodyShape, faceShape) now take values as arguments. The store-vs-argument divergence class is eliminated by construction - builders can only ever use the DNA that triggered the rebuild |
+| Verified | nomouth4 DNA replays with a clearly visible smile; 25/25 UI rolls clean on structural invariants; 4 visual checks all show correct mouths (smiles and frowns) |
+
+### Verification
+
+- 211 tests passing; typecheck/lint/build clean

@@ -268,8 +268,17 @@ export class CharacterManager {
     const skinMat = this.materialManager.getMaterial('skin')
     this.skinMaterial = skinMat
 
-    this.rebuildTorsoMesh()
-    this.rebuildHeadMesh()
+    this.rebuildTorsoMesh(
+      sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape),
+      clamp01(useCharacterStore.getState().present?.morphs?.bust ?? BUST_DEFAULT),
+      clamp01(useCharacterStore.getState().present?.morphs?.butt ?? BUTT_DEFAULT),
+      clamp01(useCharacterStore.getState().present?.morphs?.bellySize ?? 0.5)
+    )
+    this.rebuildHeadMesh(
+      sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape),
+      clamp01(useCharacterStore.getState().present?.morphs?.neckWidth ?? 0.5),
+      sanitizeFaceShape(useCharacterStore.getState().present?.face)
+    )
 
     this.proportionManager.setBoneMap(this.boneMap)
     this.proportionManager.setHeadMesh(this.headMesh)
@@ -302,14 +311,9 @@ export class CharacterManager {
     return mesh
   }
 
-  private rebuildTorsoMesh(): void {
+  private rebuildTorsoMesh(shape: BodyShape, bust: number, butt: number, belly: number): void {
     this.removeTorsoMesh()
     const skinMat = this.skinMaterial ?? this.materialManager.getMaterial('skin')
-    const dna = useCharacterStore.getState().present
-    const shape = sanitizeBodyShape(dna?.bodyShape)
-    const bust = clamp01(dna?.morphs?.bust ?? BUST_DEFAULT)
-    const butt = clamp01(dna?.morphs?.butt ?? BUTT_DEFAULT)
-    const belly = clamp01(dna?.morphs?.bellySize ?? 0.5)
     this.lastTorsoShapeKey = torsoKeyOf(shape, bust, butt, belly)
 
     const geo = buildTorso(shape, bust, butt, belly).geometry
@@ -333,7 +337,7 @@ export class CharacterManager {
     this.torsoMesh = null
   }
 
-  private rebuildHeadMesh(): void {
+  private rebuildHeadMesh(shape: BodyShape, neckWidth: number, faceShape: FaceShape): void {
     if (this.headMesh) {
       this.headMesh.geometry.dispose()
       this.headMesh.removeFromParent()
@@ -341,17 +345,10 @@ export class CharacterManager {
       this.headMesh = null
     }
 
-    const shape = sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape)
-    const neckWidth = clamp01(useCharacterStore.getState().present?.morphs?.neckWidth ?? 0.5)
     this.lastHeadShapeKey = headKeyOf(shape, neckWidth)
     const skinMat = this.skinMaterial ?? this.materialManager.getMaterial('skin')
 
     const geo = buildHead(shape, neckWidth).geometry
-    console.log(
-      '[HeadBuild]',
-      `L=${shape.headLength.toFixed(3)} W=${shape.headWidth.toFixed(3)} H=${shape.headHeight.toFixed(3)}`,
-      'maxZ=', (shape.headLength + 0.005).toFixed(3)
-    )
     const mesh = this.bindToBones(geo, ['Neck', 'Head'], skinMat)
     this.headMesh =
       mesh ??
@@ -359,13 +356,11 @@ export class CharacterManager {
     this.scene.add(this.headMesh)
     this.proceduralMeshes.push(this.headMesh)
 
-    this.rebuildFaceGroup()
+    this.rebuildFaceGroup(shape, faceShape)
   }
 
-  private rebuildFaceGroup(): void {
+  private rebuildFaceGroup(bodyShape: BodyShape, faceShape: FaceShape): void {
     this.disposeFaceGroup()
-    const bodyShape = sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape)
-    const faceShape = sanitizeFaceShape(useCharacterStore.getState().present?.face)
     this.lastFaceKey = faceKeyOf(bodyShape, faceShape)
 
     const face = buildFace(bodyShape, faceShape, {
@@ -809,14 +804,14 @@ export class CharacterManager {
       const actions: string[] = []
       if (nextHeadKey !== this.lastHeadShapeKey) {
         actions.push('head+face')
-        this.rebuildHeadMesh()
+        this.rebuildHeadMesh(shape, neckWidth, face)
       } else if (nextFaceKey !== this.lastFaceKey) {
         actions.push('face')
-        this.rebuildFaceGroup()
+        this.rebuildFaceGroup(shape, face)
       }
       if (nextTorsoKey !== this.lastTorsoShapeKey) {
         actions.push('torso')
-        this.rebuildTorsoMesh()
+        this.rebuildTorsoMesh(shape, bust, butt, belly)
       }
       if (actions.length > 0) {
         console.log('[Rebuild]', actions.join('+'), 'faceGroup:', !!this.faceGroup, 'headMesh:', !!this.headMesh)

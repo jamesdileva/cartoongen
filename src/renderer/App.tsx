@@ -118,7 +118,8 @@ export default function App() {
     ;(window as unknown as { __app?: unknown }).__app = {
       randomize: handleRandomize,
       getDNA: () => useCharacterStore.getState().present,
-      setDNA: (dna: CharacterDNA) => overwriteDNA(dna)
+      setDNA: (dna: CharacterDNA) => overwriteDNA(dna),
+      faceCam: () => viewportRef.current?.setCameraPreset('face')
     }
     return () => {
       delete (window as unknown as { __app?: unknown }).__app

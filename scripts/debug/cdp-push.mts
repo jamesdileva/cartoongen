@@ -1,9 +1,5 @@
-// Replay a saved DNA, zoom the camera to the face, capture close-up.
-// Usage: npx tsx scripts/debug/cdp-zoom.mts <dnaFile> [label]
-import { readFileSync, writeFileSync } from 'node:fs'
-
-const dnaFile = process.argv[2] ?? 'scripts/debug/nomouth4.dna.json'
-const label = process.argv[3] ?? 'zoom'
+// Move mouth meshes forward along +z in steps, screenshot each step.
+import { writeFileSync } from 'node:fs'
 
 const list = await fetch('http://127.0.0.1:9222/json/list').then((r) => r.json())
 const page = list.find((t) => t.type === 'page' && t.url.includes('5173'))
@@ -35,15 +31,24 @@ const evalExpr = async (expression) => {
   return r.result?.value
 }
 
-const dna = JSON.parse(readFileSync(dnaFile, 'utf-8'))
-await evalExpr(`window.__app.setDNA(${JSON.stringify(dna)})`)
-await new Promise((r) => setTimeout(r, 600))
-
-// move camera to the face close-up via the app's own preset
-await evalExpr(`window.__app.faceCam()`)
+const dz = Number(process.argv[2] ?? 0.05)
+await evalExpr(`
+  (() => {
+    const ccm = window.__ccm
+    const scene = ccm.getSceneGroup()
+    let n = 0
+    scene.traverse((o) => {
+      if (o.isMesh && o.name === 'Mouth') {
+        o.position.z += ${dz}
+        o.updateMatrixWorld(true)
+        n++
+      }
+    })
+    return n
+  })()
+`)
 await new Promise((r) => setTimeout(r, 400))
-
 const shot = await send('Page.captureScreenshot', { format: 'png' })
-writeFileSync(`scripts/debug/${label}.png`, Buffer.from(shot.data, 'base64'))
-console.log(`captured scripts/debug/${label}.png`)
+writeFileSync(`scripts/debug/mouth-push-${dz}.png`, Buffer.from(shot.data, 'base64'))
+console.log(`pushed mouth +${dz}, captured`)
 ws.close()
