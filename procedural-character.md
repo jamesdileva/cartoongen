@@ -265,7 +265,7 @@ pipeline before variety.
 
 - [x] src/renderer/three/procedural/Garments.ts: buildTShirt(bodyShape) -
       torso-hugging elliptical sweep shell offset ~1cm outside the body
-      surface, short sleeve stubs over the upper arms; uildJeans(bodyShape) -
+      surface, short sleeve stubs over the upper arms; buildJeans(bodyShape) -
       hip shell + two leg tubes down to the ankle
 - [x] Garment geometry reuses SkinWeights bindings (Root..Spine2 / leg chains)
       so garments deform with morphs and future animation
