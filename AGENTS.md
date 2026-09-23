@@ -2316,3 +2316,48 @@ After exhaustive live-scene forensics (x-ray toggles, isolate toggles, push expe
 ### Verification
 
 - 211 tests passing; typecheck/lint/build clean
+
+---
+
+## Session 040 - Mouth Burial Root Cause: bind() Clobbering Rest Inverses + updateCharacter Race Guard
+
+### Date
+
+2026-08-26
+
+### What we found (final root cause after Session 039 addendum 4)
+
+Live CDP forensics on the real repro characters (muc1n0, mudcj*) identified the actual bug - not geometry placement, not stale stores:
+
+| Issue | Root Cause | Fix |
+|---|---|---|
+| Mouth buried inside skull on many randomizes (state-dependent) | bindToBones() called mesh.bind(skeleton) with ONE argument. Three.js SkinnedMesh.bind() with no bindMatrix calls skeleton.calculateInverses() (SkinnedMesh.js:234-241), overwriting our carefully cached rest-pose inverses with already-proportion-scaled bone matrices - applyProportions() runs BEFORE the rebuild block. Skull verts then skin with identity-ish transforms (stay rest-sized) while the face group (child of Head bone) follows live bone scales - on any headSize!=1 the face sinks into or floats off the skull | Pass explicit identity bindMatrix: mesh.bind(skeleton, new THREE.Matrix4()). Geometry is authored in world space with the mesh at identity, so identity is the correct bindMatrix; calculateInverses is never called; rest inverses are preserved |
+| Overlapping updateCharacter() calls after await loadAsset | Async slot loop could interleave two DNA updates | updateGeneration counter - staleness checks after each loop iteration, after loadAsset await, before colors, and before the rebuild block |
+
+### Diagnosis path (what did NOT work - for the record)
+
+- Rest-pose placement math: validated CORRECT for all 7 DNAs via scripts/debug/rest-check.mts (triangle raycast, +4-6mm centerline clearance)
+- Band-max burial metrics (worstClear/skullMaxZInBand): FALSE POSITIVES from sparse tessellation and latitude-mixing - screenshots are ground truth
+- Tube back-half embedding (center +4mm, radius 12mm): by design
+- Explicit rebuild parameters (Session 039 addendum 4): good hygiene, but not the root cause
+- Live proof: inv(boneInverse) had pos y=1.7917 and scaleY~1.18 instead of rest (y=1.75, scale 1); face parent confirmed as the skeleton Head bone
+
+### Files changed
+
+| File | Change |
+|---|---|
+| src/renderer/three/CharacterManager.ts | bindToBones: mesh.bind(skeleton, new THREE.Matrix4()) with comment; updateCharacter: updateGeneration race guard (4 check points) |
+| src/renderer/three/bind-inverses.test.ts | NEW - 3 regression tests: (1) 1-arg bind clobbers inverses; (2) explicit bindMatrix preserves them; (3) skull+face track Head.scale.y=0.912 + Neck.scale.y=1.027 together, with divergence proof for the bad path |
+| scripts/debug/rest-check.mts | NEW - rest-pose raycast placement check |
+| scripts/debug/cdp-buried.mts | NEW - live burial probe + screenshot |
+| scripts/debug/cdp-sync.mts | NEW - face-vs-skull transform sync probe |
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 214 tests passing (211 + 3 new bind-inverses)
+- Live after fix: muc1n0 buriedVerts 75->19, mouth visible in screenshot (muc1n0-fixed2.png); mudcjq/mudcjs/mudcjk all show visible mouths; 10/10 randomize sweep clean (cdp-sweep.mts 10)
+
+### Current status
+
+Mouth-burial bug is fixed. Pushing, then starting Sprint 20 (clothing pipeline proof).

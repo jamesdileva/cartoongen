@@ -199,6 +199,8 @@ export class CharacterManager {
   private lastTorsoShapeKey: string | null = null
   private lastHeadShapeKey: string | null = null
   private lastFaceKey: string | null = null
+  /** Monotonic token so overlapping updateCharacter() calls can detect staleness after await. */
+  private updateGeneration = 0
 
   constructor() {
     this.buildBaseCharacter()
@@ -307,7 +309,12 @@ export class CharacterManager {
     }
     const skeleton = new THREE.Skeleton(typedBones, inverses.map((m) => m.clone()))
     const mesh = new THREE.SkinnedMesh(geometry, material)
-    mesh.bind(skeleton)
+    // Pass an explicit bindMatrix: the 1-arg form of bind() calls
+    // skeleton.calculateInverses(), which overwrites our cached rest inverses
+    // with whatever scale the bones currently carry (applyProportions runs
+    // before rebuilds). Geometry is authored in world space and the mesh sits
+    // at identity, so the correct bindMatrix is identity.
+    mesh.bind(skeleton, new THREE.Matrix4())
     return mesh
   }
 
@@ -694,9 +701,11 @@ export class CharacterManager {
   }
 
   private async updateCharacter(dna: CharacterDNA): Promise<void> {
+    const gen = ++this.updateGeneration
     const slots = this.currentSlots
 
     for (const slot of slots) {
+      if (gen !== this.updateGeneration) return
       const newAssetId = dna.slots[slot.id] ?? null
       const oldAssetId = this.lastAssetIds[slot.id] ?? null
 
@@ -744,6 +753,7 @@ export class CharacterManager {
 
         if (newAssetId !== null) {
           const group = await this.assetManager.loadAsset(newAssetId, slot.id)
+          if (gen !== this.updateGeneration) return
           let hasSkinnedMeshes = false
           if (this.boneMap.size > 0) {
             group.traverse((child) => {
@@ -782,6 +792,8 @@ export class CharacterManager {
       }
     }
 
+    if (gen !== this.updateGeneration) return
+
     for (const [materialId, hex] of Object.entries(dna.colors)) {
       this.materialManager.setColor(materialId, hex)
     }
@@ -790,6 +802,8 @@ export class CharacterManager {
     this.updateBodyVisibility(dna)
 
     this.proportionManager.applyProportions(dna.morphs)
+
+    if (gen !== this.updateGeneration) return
 
     if (!this.hasBaseBody && this.boneMap.get('Root')) {
       const shape = sanitizeBodyShape(dna.bodyShape)
