@@ -6,6 +6,8 @@ export interface AssetEntry {
   previewPath?: string
   version: number
   created: string
+  /** Display name; optional so imported GLB entries stay unchanged. */
+  label?: string
 }
 
 export interface AssetQuery {

@@ -263,15 +263,15 @@ npm run build`, manual viewport check, commit + AGENTS.md session log update.
 **Goal**: One top + one bottom generated as real slot assets, proving the full
 pipeline before variety.
 
-- [ ] src/renderer/three/procedural/Garments.ts: uildTShirt(bodyShape) -
+- [x] src/renderer/three/procedural/Garments.ts: buildTShirt(bodyShape) -
       torso-hugging elliptical sweep shell offset ~1cm outside the body
-      surface, short sleeve stubs over the upper arms; uildJeans(bodyShape) -
+      surface, short sleeve stubs over the upper arms; uildJeans(bodyShape) -
       hip shell + two leg tubes down to the ankle
-- [ ] Garment geometry reuses SkinWeights bindings (Root..Spine2 / leg chains)
+- [x] Garment geometry reuses SkinWeights bindings (Root..Spine2 / leg chains)
       so garments deform with morphs and future animation
-- [ ] Integration: CharacterManager treats garment builders as virtual slot
+- [x] Integration: CharacterManager treats garment builders as virtual slot
       assets (shirt/pants slots list generated variants alongside imported GLBs)
-- [ ] Colors flow through MaterialManager 'cloth'/'leather' categories;
+- [x] Colors flow through MaterialManager 'cloth'/'leather' categories;
       thumbnails generate via existing offscreen renderer; rules engine works
       unchanged
 

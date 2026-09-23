@@ -28,6 +28,7 @@ export class MaterialManager {
         roughness: config?.roughness ?? 0.5,
         metalness: config?.metalness ?? 0.0
       })
+      mat.name = materialId
       this.materials.set(materialId, mat)
     }
     return mat

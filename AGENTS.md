@@ -1557,7 +1557,7 @@ Three bugs found during visual testing of imported Quaternius assets:
 
 ---
 
-## Session 024 — Project Audit + Outfit Fit Investigation
+## Session 024 ï¿½ Project Audit + Outfit Fit Investigation
 
 ### Date
 
@@ -1565,15 +1565,15 @@ Three bugs found during visual testing of imported Quaternius assets:
 
 ### What we did
 
-Full project audit at user request. User had given up on the project because "models and clothes weren't working" — the goal was randomized 3D characters with clothes (video-game-style character creator). Audit found the engine is complete and healthy; the failure was content pairing, not code.
+Full project audit at user request. User had given up on the project because "models and clothes weren't working" ï¿½ the goal was randomized 3D characters with clothes (video-game-style character creator). Audit found the engine is complete and healthy; the failure was content pairing, not code.
 
 ### Audit findings
 
 | # | Finding |
 |---|---|
 | 1 | Engine fully intact: all 12 sprints, 141?145 tests passing, typecheck/lint clean |
-| 2 | `future.md` was stale — claimed "0 clothing assets", but `imported-project/` already has 30 registered GLBs incl. full peasant/ranger clothing sets for both genders |
-| 3 | App was silently opening `test-project` (stale `projectRoot` in global `app-state.json` at `%APPDATA%/cartoongen/app-state.json`) — this is why clothes didn't appear in the slot panel. Repointed to `imported-project/` |
+| 2 | `future.md` was stale ï¿½ claimed "0 clothing assets", but `imported-project/` already has 30 registered GLBs incl. full peasant/ranger clothing sets for both genders |
+| 3 | App was silently opening `test-project` (stale `projectRoot` in global `app-state.json` at `%APPDATA%/cartoongen/app-state.json`) ï¿½ this is why clothes didn't appear in the slot panel. Repointed to `imported-project/` |
 | 4 | **Root cause of clipping**: outfits are sculpted for Quaternius *Regular* physique (outfit textures literally named `T_Regular_Male/Female_*`), but the only free base bodies are *Superhero* variant. Same exact 65-bone skeleton (verified programmatically), different body shape ? skin pokes through. Male fits ~decently; female clips badly (bust/torso/thighs) |
 | 5 | Regular/Teen bodies are ONLY in the paid $19.99 Source pack. The free Standard zip ships Superhero M/F despite marketing "6 models" (verified by inspecting the actual zip contents) |
 | 6 | Materials are safe: outfit materials (`MI_Ranger`, `MI_Peasant`) don't match any remap keyword in `AssetManager.remapMaterial`, so PBR textures survive |
@@ -1617,8 +1617,8 @@ Full project audit at user request. User had given up on the project because "mo
 
 ### Verification
 
-- `npm run typecheck` — 0 errors
-- `npm run test` — 145 tests passing (4 new gender-filter tests)
+- `npm run typecheck` ï¿½ 0 errors
+- `npm run test` ï¿½ 145 tests passing (4 new gender-filter tests)
 
 ### Current status
 
@@ -1627,7 +1627,7 @@ Engine complete and healthy. Randomizer is gender-correct. Remaining blocker is 
 
 ---
 
-## Session 025 — Procedural Character Planning + Sprint 13 Kickoff
+## Session 025 ï¿½ Procedural Character Planning + Sprint 13 Kickoff
 
 ### Date
 
@@ -1659,7 +1659,7 @@ Sprint 13 in progress.
 
 ---
 
-## Session 026 — Sprint 13: Geometry Kernel + Procedural Head
+## Session 026 ï¿½ Sprint 13: Geometry Kernel + Procedural Head
 
 ### Date
 
@@ -1667,7 +1667,7 @@ Sprint 13 in progress.
 
 ### What we built
 
-Sprint 13 — the procedural geometry foundation. Three parametric primitives in a new src/renderer/three/procedural/ module, pure-math skin weight computation with unit tests, and a watermelon head (cranium ellipsoid + jaw lathe + ears + neck sweep) that is genuinely skinned to the Neck/Head bones - the first procedural mesh in the app that deforms via the skeleton.
+Sprint 13 ï¿½ the procedural geometry foundation. Three parametric primitives in a new src/renderer/three/procedural/ module, pure-math skin weight computation with unit tests, and a watermelon head (cranium ellipsoid + jaw lathe + ears + neck sweep) that is genuinely skinned to the Neck/Head bones - the first procedural mesh in the app that deforms via the skeleton.
 
 ### Files created
 
@@ -2264,7 +2264,7 @@ Regression tests: frown apex clears skull across extreme shapes; smile bottom cl
 
 | Issue | Root Cause | Fix |
 |---|---|---|
-| Mouth invisible on many randomizes (both smiles AND frowns) | The mouth was a flat torus arc whose CIRCLE CENTER anchored it - the visible arc sits up to a full radius away from that center (frowns arch into deeper skull latitudes, smiles span ±3cm vertically). A flat arc cannot hug a curved ellipsoid face: placement offsets + a tilt patch both failed on extreme head shapes (small headHeight -> surface slope > 45 deg) | Mouth rebuilt as a TubeGeometry whose 17 sample points are projected directly ONTO the cranium ellipsoid (z = surfaceZ(x, y) + 4mm). Every point hugs the surface by construction for any head shape. End caps added. FaceResult exposes mouthPoints for tests |
+| Mouth invisible on many randomizes (both smiles AND frowns) | The mouth was a flat torus arc whose CIRCLE CENTER anchored it - the visible arc sits up to a full radius away from that center (frowns arch into deeper skull latitudes, smiles span ï¿½3cm vertically). A flat arc cannot hug a curved ellipsoid face: placement offsets + a tilt patch both failed on extreme head shapes (small headHeight -> surface slope > 45 deg) | Mouth rebuilt as a TubeGeometry whose 17 sample points are projected directly ONTO the cranium ellipsoid (z = surfaceZ(x, y) + 4mm). Every point hugs the surface by construction for any head shape. End caps added. FaceResult exposes mouthPoints for tests |
 
 ### Metric lessons (sweep tooling)
 
@@ -2310,7 +2310,10 @@ After exhaustive live-scene forensics (x-ray toggles, isolate toggles, push expe
 
 | Change | Detail |
 |---|---|
-| Explicit rebuild parameters | ebuildTorsoMesh(shape, bust, butt, belly), ebuildHeadMesh(shape, neckWidth, faceShape), ebuildFaceGroup(bodyShape, faceShape) now take values as arguments. The store-vs-argument divergence class is eliminated by construction - builders can only ever use the DNA that triggered the rebuild |
+| Explicit rebuild parameters | 
+ebuildTorsoMesh(shape, bust, butt, belly), 
+ebuildHeadMesh(shape, neckWidth, faceShape), 
+ebuildFaceGroup(bodyShape, faceShape) now take values as arguments. The store-vs-argument divergence class is eliminated by construction - builders can only ever use the DNA that triggered the rebuild |
 | Verified | nomouth4 DNA replays with a clearly visible smile; 25/25 UI rolls clean on structural invariants; 4 visual checks all show correct mouths (smiles and frowns) |
 
 ### Verification
@@ -2361,3 +2364,82 @@ Live CDP forensics on the real repro characters (muc1n0, mudcj*) identified the 
 ### Current status
 
 Mouth-burial bug is fixed. Pushing, then starting Sprint 20 (clothing pipeline proof).
+
+---
+
+## Session 041 - Sprint 20: Clothing Pipeline Proof
+
+### Date
+
+2026-09-22
+
+### What we built
+
+Sprint 20 - procedural clothing pipeline proof. T-shirt and jeans are generated as virtual slot assets (proc:tshirt / proc:jeans) that hug the body with the same SkinWeights skinning as the procedural character, appear in the slot panel, deform with morphs, export in GLB, and support undo/redo.
+
+### Files created
+
+| File | Purpose |
+|---|---|
+| src/renderer/three/procedural/Garments.ts | buildTShirt/buildJeans builders + PROCEDURAL_ASSETS catalog + isProceduralAssetId/findProceduralAsset/getProceduralAssetEntries |
+| src/renderer/three/procedural/Garments.test.ts | 13 tests: catalog, weights, bounds, symmetry, morph response, clearances, CPU-skinning deformation proofs |
+
+### Files modified
+
+| File | Change |
+|---|---|
+| src/renderer/three/procedural/BodyParts.ts | Exported torsoProfile; shared clearance constants for pelvis/bust/butt |
+| src/shared/types/asset.ts | Optional label?: string on AssetEntry |
+| src/renderer/three/CharacterManager.ts | restWorldByBone snapshot + findBone-based bindToBones; buildProceduralSlotGroup; rebuildEquippedGarments; slot-loop proc: branches; addLimbMesh delegates to bindToBones; dispose helpers |
+| src/renderer/stores/useAssetStore.ts | Merges getProceduralAssetEntries() into query results |
+| src/renderer/components/AssetCard.tsx | Skips thumbnail for proc: assets, shows label |
+| src/renderer/three/MaterialManager.ts | Sets material.name for live inspection |
+| src/renderer/services/ExportManager.ts | Detaches SkeletonHelper/LineSegments before scene clone (SkeletonHelper.clone throws); restores after |
+| src/renderer/services/ExportManager.test.ts | Regression: export with SkeletonHelper present |
+| src/renderer/components/ExportDialog.tsx | mountedRef reset to true on mount (React StrictMode remount left it false, so export wrote the file but UI stayed Exporting...) |
+| procedural-character.md | Sprint 20 checkboxes marked complete |
+
+### Decisions made during Sprint 20
+
+| Decision | Rationale |
+|---|---|
+| Garments built in CharacterManager, not AssetManager | Needs restWorldByBone + bindToBones; AssetManager is for GLB loading |
+| Virtual proc: asset IDs | Slot panel/rules/export treat them like real assets without disk files |
+| Pelvis clearance uses 0.32*hipWidth | Hip poke-through fix; butt/bust use elliptical-ring peaks off-center |
+| detach SkeletonHelper before clone | Three.js SkeletonHelper.clone() throws when root bone is undefined after Object3D.copy |
+| mountedRef.current = true on mount | StrictMode cleanup sets false; without reset, async export completion hits if (!mountedRef) and never setState(success) |
+
+### Bugs found and fixed during Sprint 20
+
+| Bug | Fix |
+|---|---|
+| Hip/butt skin poke-through through jeans | Clearance: pelvis 0.32*hipWidth, butt rear includes hipWidth+butt terms |
+| Bust skin poke-through through t-shirt | Elliptical-ring maxZ at peak x used for chest halfD |
+| Export stuck on Exporting... forever | Two bugs: (1) SkeletonHelper.clone throws - detach before clone; (2) mountedRef never re-set true after StrictMode remount - file written, UI never updated |
+| CDP probe clone crash (isBone undefined) | Same SkeletonHelper root - confirmed root cause for export hang |
+
+### Verification
+
+- npm run typecheck - 0 errors
+- npm run lint - 0 errors (4 pre-existing warnings)
+- npm run test - 238 tests passing (225 + 13 Garments), no regressions
+- npm run build - full production build succeeds
+- Live CDP: garments equip (groups=2, cloth #3366cc), slot panel shows T-Shirt/Jeans labels, Ctrl+Z restores proc:tshirt after clear, Belly/Bust/Butt morph rebuild keeps 2 cloth groups
+- Export GLB: Sprint20Proof.glb 369092 bytes, magic glTF, 2 cloth material meshes, 8 skins; export_log has entries; UI shows Export Successful with full path
+- Screenshots: sprint20-garments.png, -lean, -fixed, -side (hip/bust clearance verified)
+
+### Acceptance criteria (procedural-character.md Sprint 20)
+
+- [x] Equipping t-shirt + jeans covers torso/legs
+- [x] Deforms with Belly/Bust/Butt sliders (unit + live morph rebuild)
+- [x] Exports in GLB (cloth meshes present in Sprint20Proof.glb)
+- [x] Undo/redo works (Ctrl+Z restores cleared shirt)
+
+### Current status
+
+Sprint 20 complete. Next: Sprint 21 - pants fits (shorts/loose/tight) + hats (baseball cap/sombrero/beanie).
+
+### Next steps
+
+**Sprint 21: Lower Body + Headwear Variants** - pants fits and hats per procedural-character.md.
+

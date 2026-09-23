@@ -15,6 +15,10 @@ import { SlotManager } from './SlotManager'
 import { ProportionManager } from './ProportionManager'
 import { buildHead, buildTorso, buildArm, buildLeg } from './procedural/BodyParts'
 import { buildFace } from './procedural/FaceFeatures'
+import {
+  findProceduralAsset,
+  isProceduralAssetId
+} from './procedural/Garments'
 import { sanitizeBodyShape } from '../../shared/types/bodyShape'
 import { sanitizeFaceShape, type FaceShape } from '../../shared/types/faceShape'
 import referenceSkeleton from '../../shared/data/reference-skeleton.json'
@@ -194,6 +198,8 @@ export class CharacterManager {
   private bodyClipPlane: THREE.Plane | null = null
   private skinMaterial: THREE.MeshStandardMaterial | null = null
   private restInversesCache = new Map<string, THREE.Matrix4[]>()
+  /** Rest-pose world matrices captured before proportions, keyed by bone object. */
+  private restWorldByBone = new Map<THREE.Bone, THREE.Matrix4>()
   private torsoMesh: THREE.SkinnedMesh | THREE.Mesh | null = null
   private faceGroup: THREE.Group | null = null
   private lastTorsoShapeKey: string | null = null
@@ -235,6 +241,7 @@ export class CharacterManager {
     this.unsubSlotStore?.()
     this.unsubRuleStore?.()
     this.unsubAssetStore?.()
+    this.disposeProceduralSlotGeometries()
     this.slotManager.dispose()
     this.assetManager.dispose()
     this.proportionManager.dispose()
@@ -266,6 +273,7 @@ export class CharacterManager {
     this.scene.add(helper)
 
     rootBone.updateMatrixWorld(true)
+    this.snapshotRestPoses()
 
     const skinMat = this.materialManager.getMaterial('skin')
     this.skinMaterial = skinMat
@@ -298,13 +306,17 @@ export class CharacterManager {
     boneNames: string[],
     material: THREE.Material
   ): THREE.SkinnedMesh | null {
-    const bones = boneNames.map((n) => this.boneMap.get(n))
+    const bones = boneNames.map((n) => this.findBone(n))
     if (bones.some((b) => !b)) return null
     const typedBones = bones as THREE.Bone[]
     const cacheKey = boneNames.join('|')
     let inverses = this.restInversesCache.get(cacheKey)
     if (!inverses) {
-      inverses = typedBones.map((b) => new THREE.Matrix4().copy(b.matrixWorld).invert())
+      inverses = typedBones.map((b) => {
+        const rest = this.restWorldByBone.get(b)
+        if (rest) return rest.clone().invert()
+        return new THREE.Matrix4().copy(b.matrixWorld).invert()
+      })
       this.restInversesCache.set(cacheKey, inverses)
     }
     const skeleton = new THREE.Skeleton(typedBones, inverses.map((m) => m.clone()))
@@ -316,6 +328,16 @@ export class CharacterManager {
     // at identity, so the correct bindMatrix is identity.
     mesh.bind(skeleton, new THREE.Matrix4())
     return mesh
+  }
+
+  /** Capture rest-pose world matrices for every bone (call before proportions). */
+  private snapshotRestPoses(): void {
+    this.scene.updateMatrixWorld(true)
+    this.restWorldByBone.clear()
+    this.restInversesCache.clear()
+    for (const bone of this.boneMap.values()) {
+      this.restWorldByBone.set(bone, bone.matrixWorld.clone())
+    }
   }
 
   private rebuildTorsoMesh(shape: BodyShape, bust: number, butt: number, belly: number): void {
@@ -410,15 +432,62 @@ export class CharacterManager {
     boneNames: string[],
     material: THREE.Material
   ): void {
-    const bones = boneNames.map((n) => this.boneMap.get(n))
-    if (bones.some((b) => !b)) return
-    const typedBones = bones as THREE.Bone[]
-    const inverses = typedBones.map((b) => new THREE.Matrix4().copy(b.matrixWorld).invert())
-    const skeleton = new THREE.Skeleton(typedBones, inverses)
-    const mesh = new THREE.SkinnedMesh(geometry, material)
-    mesh.bind(skeleton)
+    const mesh = this.bindToBones(geometry, boneNames, material)
+    if (!mesh) return
     this.scene.add(mesh)
     this.proceduralMeshes.push(mesh)
+  }
+
+  private buildProceduralSlotGroup(
+    assetId: string,
+    dna: CharacterDNA,
+    layer: number
+  ): THREE.Group | null {
+    const def = findProceduralAsset(assetId)
+    if (!def) return null
+    const { geometry, boneNames } = def.build(dna)
+    const material = this.materialManager.getMaterial(def.materialId)
+    const mesh = this.bindToBones(geometry, boneNames, material)
+    if (!mesh) {
+      geometry.dispose()
+      return null
+    }
+    mesh.renderOrder = layer
+    const group = new THREE.Group()
+    group.add(mesh)
+    return group
+  }
+
+  private disposeAttachedSlotGeometry(slotId: string): void {
+    const group = this.slotManager.getAttachedSlot(slotId)
+    if (!group) return
+    group.traverse((child) => {
+      if (child instanceof THREE.Mesh) {
+        child.geometry.dispose()
+      }
+    })
+  }
+
+  private disposeProceduralSlotGeometries(): void {
+    for (const [slotId, assetId] of Object.entries(this.lastAssetIds)) {
+      if (assetId && isProceduralAssetId(assetId)) {
+        this.disposeAttachedSlotGeometry(slotId)
+      }
+    }
+  }
+
+  private rebuildEquippedGarments(dna: CharacterDNA): void {
+    for (const slot of this.currentSlots) {
+      const id = dna.slots[slot.id]
+      if (!id || !isProceduralAssetId(id)) continue
+      if (this.lastAssetIds[slot.id] !== id) continue
+      const group = this.buildProceduralSlotGroup(id, dna, slot.layer)
+      if (!group) continue
+      this.disposeAttachedSlotGeometry(slot.id)
+      this.slotManager.attachSlot(slot.id, group, this.scene)
+      this.slotManager.setSlotVisibility(slot.id, true)
+    }
+    this.applyRuleVisibility(useRuleStore.getState().results)
   }
 
   private ensureDataLoaded(): void {
@@ -569,6 +638,7 @@ export class CharacterManager {
       this.proportionManager.setBoneMap(this.boneMap)
       this.skeletonRoot = skeletonRoot
       this.hasBaseBody = true
+      this.snapshotRestPoses()
       this.setupBreathing(skeletonRoot)
 
       this.loadingBaseBody = false
@@ -629,6 +699,7 @@ export class CharacterManager {
     this.mixer?.stopAllAction()
     this.mixer = null
     this.breathingAction = null
+    this.disposeProceduralSlotGeometries()
     this.slotManager.dispose()
     for (const mesh of this.baseBodyMeshes) {
       mesh.geometry.dispose()
@@ -747,45 +818,58 @@ export class CharacterManager {
           for (const mesh of this.baseBodyFeatures.eyes) { mesh.visible = visible }
         }
         if (oldAssetId !== null) {
+          if (isProceduralAssetId(oldAssetId)) {
+            this.disposeAttachedSlotGeometry(slot.id)
+          }
           this.slotManager.detachSlot(slot.id)
-          this.assetManager.releaseAsset(oldAssetId)
+          if (!isProceduralAssetId(oldAssetId)) {
+            this.assetManager.releaseAsset(oldAssetId)
+          }
         }
 
         if (newAssetId !== null) {
-          const group = await this.assetManager.loadAsset(newAssetId, slot.id)
-          if (gen !== this.updateGeneration) return
-          let hasSkinnedMeshes = false
-          if (this.boneMap.size > 0) {
-            group.traverse((child) => {
-              if (child instanceof THREE.SkinnedMesh) {
-                hasSkinnedMeshes = true
-                const skel = child.skeleton
-                for (let i = 0; i < skel.bones.length; i++) {
-                  const b = skel.bones[i]
-                  if (b) {
-                    const baseBone = this.findBone(b.name)
-                    if (baseBone) skel.bones[i] = baseBone
+          if (isProceduralAssetId(newAssetId)) {
+            const group = this.buildProceduralSlotGroup(newAssetId, dna, slot.layer)
+            if (group) {
+              this.slotManager.attachSlot(slot.id, group, this.scene)
+              this.slotManager.setSlotVisibility(slot.id, true)
+            }
+          } else {
+            const group = await this.assetManager.loadAsset(newAssetId, slot.id)
+            if (gen !== this.updateGeneration) return
+            let hasSkinnedMeshes = false
+            if (this.boneMap.size > 0) {
+              group.traverse((child) => {
+                if (child instanceof THREE.SkinnedMesh) {
+                  hasSkinnedMeshes = true
+                  const skel = child.skeleton
+                  for (let i = 0; i < skel.bones.length; i++) {
+                    const b = skel.bones[i]
+                    if (b) {
+                      const baseBone = this.findBone(b.name)
+                      if (baseBone) skel.bones[i] = baseBone
+                    }
                   }
+                  skel.update()
                 }
-                skel.update()
+              })
+            }
+            if (hasSkinnedMeshes && this.baseBodyGroup) {
+              this.slotManager.attachSlot(slot.id, group, this.scene)
+              this.slotManager.setSlotVisibility(slot.id, true)
+            } else {
+              const bone = this.findBone(slot.boneAttachment)
+              if (bone) {
+                this.slotManager.attachSlot(slot.id, group, bone)
+                this.slotManager.setSlotVisibility(slot.id, true)
+              }
+            }
+            group.traverse((child) => {
+              if (child instanceof THREE.Mesh || child instanceof THREE.SkinnedMesh) {
+                child.renderOrder = slot.layer
               }
             })
           }
-          if (hasSkinnedMeshes && this.baseBodyGroup) {
-            this.slotManager.attachSlot(slot.id, group, this.scene)
-            this.slotManager.setSlotVisibility(slot.id, true)
-          } else {
-            const bone = this.findBone(slot.boneAttachment)
-            if (bone) {
-              this.slotManager.attachSlot(slot.id, group, bone)
-              this.slotManager.setSlotVisibility(slot.id, true)
-            }
-          }
-          group.traverse((child) => {
-            if (child instanceof THREE.Mesh || child instanceof THREE.SkinnedMesh) {
-              child.renderOrder = slot.layer
-            }
-          })
         }
 
         this.lastAssetIds[slot.id] = newAssetId
@@ -805,16 +889,18 @@ export class CharacterManager {
 
     if (gen !== this.updateGeneration) return
 
+    const shape = sanitizeBodyShape(dna.bodyShape)
+    const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+    const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+    const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+    const neckWidth = clamp01(dna.morphs?.neckWidth ?? 0.5)
+    const face = sanitizeFaceShape(dna.face)
+    const nextHeadKey = headKeyOf(shape, neckWidth)
+    const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly)
+    const nextFaceKey = faceKeyOf(shape, face)
+    const torsoChanged = nextTorsoKey !== this.lastTorsoShapeKey
+
     if (!this.hasBaseBody && this.boneMap.get('Root')) {
-      const shape = sanitizeBodyShape(dna.bodyShape)
-      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
-      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
-      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
-      const neckWidth = clamp01(dna.morphs?.neckWidth ?? 0.5)
-      const face = sanitizeFaceShape(dna.face)
-      const nextHeadKey = headKeyOf(shape, neckWidth)
-      const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly)
-      const nextFaceKey = faceKeyOf(shape, face)
       const actions: string[] = []
       if (nextHeadKey !== this.lastHeadShapeKey) {
         actions.push('head+face')
@@ -823,14 +909,25 @@ export class CharacterManager {
         actions.push('face')
         this.rebuildFaceGroup(shape, face)
       }
-      if (nextTorsoKey !== this.lastTorsoShapeKey) {
+      if (torsoChanged) {
         actions.push('torso')
         this.rebuildTorsoMesh(shape, bust, butt, belly)
       }
       if (actions.length > 0) {
         console.log('[Rebuild]', actions.join('+'), 'faceGroup:', !!this.faceGroup, 'headMesh:', !!this.headMesh)
       }
+    } else if (torsoChanged) {
+      this.lastTorsoShapeKey = nextTorsoKey
     }
+
+    // Cloth shells must track belly/bust/butt/shape changes on both
+    // procedural and GLB bodies (geometry is authored, not just bone-scaled).
+    if (torsoChanged) {
+      this.rebuildEquippedGarments(dna)
+    }
+
+    if (gen !== this.updateGeneration) return
+    this.applyRuleVisibility(useRuleStore.getState().results)
   }
 
   private COVERAGE_SLOTS = new Set(['shirt', 'pants', 'shoes', 'gloves', 'helmet'])

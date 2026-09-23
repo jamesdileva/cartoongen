@@ -69,6 +69,22 @@ describe('exportCharacter', () => {
     expect(validation.meshesPresent).toBe(true)
   }, 30000)
 
+  it('exports scenes that contain a SkeletonHelper', async () => {
+    const scene = makeSkinnedScene()
+    const bones: THREE.Bone[] = []
+    scene.traverse((c) => {
+      if ((c as THREE.Bone).isBone) bones.push(c as THREE.Bone)
+    })
+    const helper = new THREE.SkeletonHelper(bones[0])
+    helper.name = 'SkeletonHelper'
+    scene.add(helper)
+
+    const { buffer } = await exportCharacter(scene, makeDNA(), BINARY_PROFILE, 'with-helper')
+    expect(new TextDecoder().decode(new Uint8Array(buffer, 0, 4))).toBe('glTF')
+    expect(scene.getObjectByName('SkeletonHelper')).toBe(helper)
+    expect(helper.parent).toBe(scene)
+  }, 30000)
+
   it('validation recognizes procedural body via hasBody flag', () => {
     const scene = makeSkinnedScene()
     const result = validateExport(makeDNA(), scene, true)

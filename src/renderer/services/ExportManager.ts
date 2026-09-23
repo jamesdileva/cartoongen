@@ -15,16 +15,30 @@ export async function exportCharacter(
   profile: ExportProfile,
   _characterName: string
 ): Promise<{ buffer: ArrayBuffer; validation: ExportValidation }> {
-  const clone = sceneGroup.clone(true)
-
-  const toRemove: THREE.Object3D[] = []
-  clone.traverse((child) => {
-    if ((child as THREE.LineSegments).isLineSegments) {
-      toRemove.push(child)
+  // SkeletonHelper.clone() throws (broken root bone after Object3D.copy) — detach debug
+  // helpers before cloning, then restore them on the live scene.
+  const detached: { obj: THREE.Object3D; parent: THREE.Object3D; index: number }[] = []
+  sceneGroup.traverse((child) => {
+    if ((child as THREE.SkeletonHelper).isSkeletonHelper || (child as THREE.LineSegments).isLineSegments) {
+      const parent = child.parent
+      if (parent) {
+        detached.push({ obj: child, parent, index: parent.children.indexOf(child) })
+      }
     }
   })
-  for (const obj of toRemove) {
-    obj.parent?.remove(obj)
+  for (const { obj, parent } of detached) {
+    parent.remove(obj)
+  }
+
+  let clone: THREE.Group
+  try {
+    clone = sceneGroup.clone(true)
+  } finally {
+    for (const { obj, parent, index } of detached) {
+      const at = Math.min(index, parent.children.length)
+      parent.children.splice(at, 0, obj)
+      obj.parent = parent
+    }
   }
 
   const validation: ExportValidation = {

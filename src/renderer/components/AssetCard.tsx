@@ -22,6 +22,10 @@ export default function AssetCard({
 
   useEffect(() => {
     let cancelled = false
+    if (!asset.path && asset.id.startsWith('proc:')) {
+      setThumbUrl(null)
+      return
+    }
     ;(async () => {
       const buffer = await window.electronAPI.asset.readThumbnail(asset.id)
       if (cancelled) return
@@ -33,7 +37,9 @@ export default function AssetCard({
     return () => {
       cancelled = true
     }
-  }, [asset.id])
+  }, [asset.id, asset.path])
+
+  const displayName = asset.label ?? asset.id
 
   return (
     <div
@@ -46,11 +52,11 @@ export default function AssetCard({
         background: thumbUrl ? 'transparent' : '#2a2a2a'
       }}
     >
-      <FavoriteToggle isFavorite={isFavorite} onToggle={onToggleFavorite} />
+      <FavoriteToggle isFavorite={isFavorite} onToggleFavorite={onToggleFavorite} />
       {thumbUrl ? (
         <img
           src={thumbUrl}
-          alt={asset.id}
+          alt={displayName}
           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }}
         />
       ) : (
@@ -62,16 +68,19 @@ export default function AssetCard({
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 10,
-            color: '#666'
+            color: '#888',
+            padding: 4,
+            textAlign: 'center',
+            lineHeight: 1.3
           }}
         >
-          no preview
+          {asset.id.startsWith('proc:') ? displayName : 'no preview'}
         </div>
       )}
       {isSelected && <div style={checkStyle}>✓</div>}
       {hover && (
         <div style={tooltipStyle}>
-          <div style={{ fontWeight: 600 }}>{asset.id}</div>
+          <div style={{ fontWeight: 600 }}>{displayName}</div>
           <div style={{ fontSize: 10, color: '#999' }}>v{asset.version}</div>
           {asset.tags.length > 0 && (
             <div style={{ fontSize: 10, color: '#888' }}>{asset.tags.slice(0, 3).join(', ')}</div>

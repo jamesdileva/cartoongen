@@ -90,7 +90,7 @@ interface TorsoStation {
   d: number
 }
 
-function torsoProfile(s: BodyShape): TorsoStation[] {
+export function torsoProfile(s: BodyShape): TorsoStation[] {
   return [
     { y: 0.86, w: 0.3 * s.hipWidth, d: 0.215 },
     { y: 0.96, w: 0.29 * s.hipWidth, d: 0.205 },

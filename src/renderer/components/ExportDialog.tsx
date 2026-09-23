@@ -27,6 +27,7 @@ export default function ExportDialog({ viewportRef, onClose, onEditProfiles }: E
   const cancelRef = useRef(false)
 
   useEffect(() => {
+    mountedRef.current = true
     return () => {
       mountedRef.current = false
     }
