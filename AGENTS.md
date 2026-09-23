@@ -1,4 +1,4 @@
-# AGENTS — Session Log & Architecture Decisions
+# AGENTS ΓÇö Session Log & Architecture Decisions
 
 This file is a running log of every session. It records what was built, why it was built that way, and where we left off.
 
@@ -6,7 +6,7 @@ Check this file at the start of every session to know the current state of the p
 
 ---
 
-## Session 001 — Architecture Review & Roadmap Definition
+## Session 001 ΓÇö Architecture Review & Roadmap Definition
 
 ### Date
 
@@ -31,19 +31,19 @@ Performed a comprehensive architecture review of the project's `architecture.md`
 
 ### Systems introduced
 
-- **Project System** — organizes characters, assets, export profiles, presets, and plugins into a folder-based project
-- **Character DNA** — JSON schema that fully describes a character (slots, morphs, colors, metadata)
-- **Asset Registry** — queryable JSON index of all assets with tags, slot assignments, and metadata
-- **Slot Definitions** — data-driven slot types with bone attachments, layer priority, and allowed tags
-- **Rules Engine** — declarative compatibility/visibility rules evaluated against current DNA
-- **Material Manager** — shared material instances (skin, hair, cloth, etc.) with color subscription
-- **Validation System** — gates at import (skeleton, scale, textures) and export (completeness, compatibility)
-- **Export Profiles** — named configurations for Unity, Mixamo, Godot, and custom targets
+- **Project System** ΓÇö organizes characters, assets, export profiles, presets, and plugins into a folder-based project
+- **Character DNA** ΓÇö JSON schema that fully describes a character (slots, morphs, colors, metadata)
+- **Asset Registry** ΓÇö queryable JSON index of all assets with tags, slot assignments, and metadata
+- **Slot Definitions** ΓÇö data-driven slot types with bone attachments, layer priority, and allowed tags
+- **Rules Engine** ΓÇö declarative compatibility/visibility rules evaluated against current DNA
+- **Material Manager** ΓÇö shared material instances (skin, hair, cloth, etc.) with color subscription
+- **Validation System** ΓÇö gates at import (skeleton, scale, textures) and export (completeness, compatibility)
+- **Export Profiles** ΓÇö named configurations for Unity, Mixamo, Godot, and custom targets
 
 ### Files created
 
-- `direction.md` — Sprint roadmap with 10 sprints, completion criteria, performance budgets, and testing strategy
-- `AGENTS.md` — This file. Session log and decision history.
+- `direction.md` ΓÇö Sprint roadmap with 10 sprints, completion criteria, performance budgets, and testing strategy
+- `AGENTS.md` ΓÇö This file. Session log and decision history.
 
 ### Current status
 
@@ -51,7 +51,7 @@ We are at **Sprint 3**. Sprints 0 and 1 are complete and verified.
 
 ---
 
-## Session 002 — Sprint 0: Project Scaffold
+## Session 002 ΓÇö Sprint 0: Project Scaffold
 
 ### Date
 
@@ -59,7 +59,7 @@ We are at **Sprint 3**. Sprints 0 and 1 are complete and verified.
 
 ### What we built
 
-Sprint 0 — the project scaffold for the Electron + React + TypeScript + Three.js desktop application.
+Sprint 0 ΓÇö the project scaffold for the Electron + React + TypeScript + Three.js desktop application.
 
 ### Files created
 
@@ -73,12 +73,12 @@ Sprint 0 — the project scaffold for the Electron + React + TypeScript + Three.
 | `eslint.config.mjs` | ESLint 9 flat config with TypeScript-ESLint and React Hooks plugin |
 | `.prettierrc` | Prettier config (no semis, single quotes, 100 width) |
 | `.gitignore` | Ignores `out/`, `dist/`, `.vite/`, `node_modules/` |
-| `electron/main.ts` | Electron main process — creates BrowserWindow, loads renderer, handles lifecycle |
-| `electron/preload.ts` | Preload script — exposes `electronAPI` via contextBridge |
+| `electron/main.ts` | Electron main process ΓÇö creates BrowserWindow, loads renderer, handles lifecycle |
+| `electron/preload.ts` | Preload script ΓÇö exposes `electronAPI` via contextBridge |
 | `src/renderer/index.html` | HTML entry with full-viewport styling |
-| `src/renderer/main.tsx` | React entry — renders App into #root |
-| `src/renderer/App.tsx` | Root component — mounts Viewport |
-| `src/renderer/components/Viewport.tsx` | Three.js canvas — scene, camera, renderer, OrbitControls, lights, test icosahedron |
+| `src/renderer/main.tsx` | React entry ΓÇö renders App into #root |
+| `src/renderer/App.tsx` | Root component ΓÇö mounts Viewport |
+| `src/renderer/components/Viewport.tsx` | Three.js canvas ΓÇö scene, camera, renderer, OrbitControls, lights, test icosahedron |
 
 ### Decisions made during Sprint 0
 
@@ -93,11 +93,11 @@ Sprint 0 — the project scaffold for the Electron + React + TypeScript + Three.
 
 ### Verification
 
-- `npm run typecheck` — TypeScript compiles with strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run build` — Full production build succeeds (main + preload + renderer in `out/`)
-- `npm run dev` — Vite dev server starts, Electron window launches with 3D viewport
-- `npm run format` — Prettier passes on all source files
+- `npm run typecheck` ΓÇö TypeScript compiles with strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run build` ΓÇö Full production build succeeds (main + preload + renderer in `out/`)
+- `npm run dev` ΓÇö Vite dev server starts, Electron window launches with 3D viewport
+- `npm run format` ΓÇö Prettier passes on all source files
 
 ### Current status
 
@@ -109,11 +109,11 @@ We are at **Sprint 3**. Sprint 0 is complete. The project scaffold is stable and
 
 ### Next steps
 
-**Sprint 2: Asset Registry + Slot Definitions** — Define slot types as data, build the Asset Registry query system, and implement the Rules Engine. See `direction.md` for full details.
+**Sprint 2: Asset Registry + Slot Definitions** ΓÇö Define slot types as data, build the Asset Registry query system, and implement the Rules Engine. See `direction.md` for full details.
 
 ---
 
-## Session 003 — Sprint 1: Project System + Character DNA
+## Session 003 ΓÇö Sprint 1: Project System + Character DNA
 
 ### Date
 
@@ -121,7 +121,7 @@ We are at **Sprint 3**. Sprint 0 is complete. The project scaffold is stable and
 
 ### What we built
 
-Sprint 1 — the complete data layer for the application. Character DNA schema with immutable mutations, project system with folder-based organization, character save/load with JSON persistence, asset registry with queryable index, typed IPC bridge between main/renderer, Zustand state stores with undo/redo, and 45 passing tests.
+Sprint 1 ΓÇö the complete data layer for the application. Character DNA schema with immutable mutations, project system with folder-based organization, character save/load with JSON persistence, asset registry with queryable index, typed IPC bridge between main/renderer, Zustand state stores with undo/redo, and 45 passing tests.
 
 ### Files created
 
@@ -133,7 +133,7 @@ Sprint 1 — the complete data layer for the application. Character DNA schema w
 | `src/shared/types/ipc.ts` | IPC channel name constants, typed API interfaces |
 | `src/shared/dna/mutations.ts` | Pure immutable mutation functions: createDNA, setSlot, setMorph, setColor |
 | `src/shared/dna/mutation.test.ts` | 15 tests for DNA mutation functions |
-| `src/shared/dna/migration.ts` | migrateDNA — schema version upgrade path |
+| `src/shared/dna/migration.ts` | migrateDNA ΓÇö schema version upgrade path |
 | `src/shared/dna/migration.test.ts` | 1 test for migration identity |
 | `electron/services/ProjectService.ts` | Project CRUD: create, open, list characters/assets |
 | `electron/services/ProjectService.test.ts` | 5 tests for project lifecycle |
@@ -169,17 +169,17 @@ Sprint 1 — the complete data layer for the application. Character DNA schema w
 | **Services in main process, not renderer** | File I/O requires Node.js APIs. Services are pure logic (testable without Electron). IPC handlers are thin wrappers. |
 | **Shared types in src/shared/** | Both main (Node) and renderer (DOM) import the same interfaces. No duplication, no drift. |
 | **Undo/redo in Zustand store** | The undo/redo stack is in-memory renderer state, not persisted. Zustand's devtools middleware allows Redux DevTools inspection. |
-| **Immutable DNA mutations as pure functions** | Every mutation returns a new DNA object. Undo/redo is free — push current to past, store new as present. No deep cloning needed. |
+| **Immutable DNA mutations as pure functions** | Every mutation returns a new DNA object. Undo/redo is free ΓÇö push current to past, store new as present. No deep cloning needed. |
 | **crypto.randomUUID() over uuid package** | Available natively in Node 19+ without a dependency. |
 | **Zustand over Redux** | Minimal boilerplate, no action/reducer ceremony, built-in devtools middleware. |
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors (both node + web configs)
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 45 tests passing across 5 test files
-- `npm run build` — Full production build succeeds (main: 10kB, preload: 1.3kB)
-- `npm run format` — Prettier passes on all source files
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors (both node + web configs)
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 45 tests passing across 5 test files
+- `npm run build` ΓÇö Full production build succeeds (main: 10kB, preload: 1.3kB)
+- `npm run format` ΓÇö Prettier passes on all source files
 
 ### Current status
 
@@ -192,7 +192,7 @@ We are at **Sprint 3**. Sprints 0 and 1 are complete and verified.
 
 ---
 
-## Session 004 — Sprint 2: Asset Registry + Slot Definitions
+## Session 004 ΓÇö Sprint 2: Asset Registry + Slot Definitions
 
 ### Date
 
@@ -200,7 +200,7 @@ We are at **Sprint 3**. Sprints 0 and 1 are complete and verified.
 
 ### What we built
 
-Sprint 2 — Slot definitions as data, Rules Engine with declarative compatibility rules, and expanded Asset Registry IPC.
+Sprint 2 ΓÇö Slot definitions as data, Rules Engine with declarative compatibility rules, and expanded Asset Registry IPC.
 
 ### Files created
 
@@ -210,7 +210,7 @@ Sprint 2 — Slot definitions as data, Rules Engine with declarative compatibili
 | `src/shared/types/rule.ts` | Rule, RuleAction, RuleResult types for the Rules Engine |
 | `src/shared/data/slots.json` | Default slot definitions (14 slots: body, head, hair, helmet, etc.) |
 | `src/shared/data/rules.json` | Default compatibility rules (5 rules: helmet-hides-hair, full-face-helmet, etc.) |
-| `src/shared/rules/engine.ts` | Pure evaluateRules() function — injectable tag resolver keeps it testable |
+| `src/shared/rules/engine.ts` | Pure evaluateRules() function ΓÇö injectable tag resolver keeps it testable |
 | `src/shared/rules/engine.test.ts` | 12 tests covering trigger, conditions, tags, multi-rule, warn |
 | `electron/services/SlotService.ts` | Loads slot definitions from bundled JSON |
 | `electron/services/SlotService.test.ts` | 6 tests for slot loading, query, and field validation |
@@ -233,11 +233,11 @@ Sprint 2 — Slot definitions as data, Rules Engine with declarative compatibili
 
 | Decision | Rationale |
 |---|---|
-| **Rules Engine in src/shared/** | Pure function — no Electron, no Node.js, testable from Vitest. Imported by both main and renderer. |
+| **Rules Engine in src/shared/** | Pure function ΓÇö no Electron, no Node.js, testable from Vitest. Imported by both main and renderer. |
 | **Tag resolver injected, not coupled** | The engine takes an optional `getAssetTags` function. Without it, tag-based triggers silently skip. This keeps the engine pure while supporting tag-based rules when asset metadata is available. |
-| **Slots as bundled JSON** | Default slots ship with the app in `src/shared/data/slots.json`. No code changes needed to add a new slot type — just edit the JSON. |
+| **Slots as bundled JSON** | Default slots ship with the app in `src/shared/data/slots.json`. No code changes needed to add a new slot type ΓÇö just edit the JSON. |
 | **useRuleStore auto-subscribes** | The rule store subscribes to character store changes and re-evaluates rules automatically when DNA changes. No manual re-evaluation calls needed in UI code. |
-| **No Zustand for rules — minimal hooks** | Slot and rule data is loaded once and cached. No undo/redo needed for static data. |
+| **No Zustand for rules ΓÇö minimal hooks** | Slot and rule data is loaded once and cached. No undo/redo needed for static data. |
 
 ### Rules Engine design
 
@@ -248,19 +248,19 @@ The engine evaluates rules in order:
 3. **Action application**: If trigger + conditions match, produce RuleResult[] from rule actions
 
 Default rules:
-- `helmet-hides-hair`: Any helmet → hide hair slot
-- `full-helmet-hides-face`: Helmet with tag `full_face` → hide eyebrows, eyes, mouth
-- `full-helmet-clips-beard`: Full face helmet + beard equipped → warn about clipping
-- `heavy-armor-disables-cape`: Shirt with tag `heavy_armor` + cape equipped → disable cape, warn
-- `beard-and-helmet-warn`: Any helmet + beard equipped → warn about clipping
+- `helmet-hides-hair`: Any helmet ΓåÆ hide hair slot
+- `full-helmet-hides-face`: Helmet with tag `full_face` ΓåÆ hide eyebrows, eyes, mouth
+- `full-helmet-clips-beard`: Full face helmet + beard equipped ΓåÆ warn about clipping
+- `heavy-armor-disables-cape`: Shirt with tag `heavy_armor` + cape equipped ΓåÆ disable cape, warn
+- `beard-and-helmet-warn`: Any helmet + beard equipped ΓåÆ warn about clipping
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 63 tests passing across 7 test files
-- `npm run build` — Full production build succeeds (main: 12.2kB, preload: 1.96kB)
-- `npm run format` — Prettier passes on all source files
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 63 tests passing across 7 test files
+- `npm run build` ΓÇö Full production build succeeds (main: 12.2kB, preload: 1.96kB)
+- `npm run format` ΓÇö Prettier passes on all source files
 
 ### Current status
 
@@ -275,11 +275,11 @@ We are at **Sprint 3**. Sprints 0, 1, and 2 are complete and verified.
 
 ### Next steps
 
-**Sprint 4: Import Pipeline** — Import GLB assets, validate skeletons, generate thumbnails, and index assets.
+**Sprint 4: Import Pipeline** ΓÇö Import GLB assets, validate skeletons, generate thumbnails, and index assets.
 
 ---
 
-## Session 005 — Sprint 3: Three.js Character Assembler
+## Session 005 ΓÇö Sprint 3: Three.js Character Assembler
 
 ### Date
 
@@ -287,7 +287,7 @@ We are at **Sprint 3**. Sprints 0, 1, and 2 are complete and verified.
 
 ### What we built
 
-Sprint 3 — the Three.js Character Assembler that bridges the data layer (DNA, slots, rules) to a visible 3D character in the viewport. The test icosahedron is replaced by a procedural humanoid with a bone hierarchy, body/head/limb meshes, shared materials, and placeholder asset attachment.
+Sprint 3 ΓÇö the Three.js Character Assembler that bridges the data layer (DNA, slots, rules) to a visible 3D character in the viewport. The test icosahedron is replaced by a procedural humanoid with a bone hierarchy, body/head/limb meshes, shared materials, and placeholder asset attachment.
 
 ### Files created
 
@@ -313,14 +313,14 @@ Sprint 3 — the Three.js Character Assembler that bridges the data layer (DNA, 
 | **MaterialManager owns shared materials** | One material instance per type (skin, hair, etc.) means `setColor()` propagates to all meshes using that material instantly. Placeholder assets and base body share the same material instances. |
 | **AssetManager generates placeholders** | Without real GLB assets (coming in Sprint 4), AssetManager creates slot-appropriate primitives (cone for hair, dome for helmet, box for shirt, etc.) using MaterialManager materials for instant color propagation. |
 | **CharacterManager diffs DNA changes** | On each DNA update, only changed slots trigger load/detach cycles. Unchanged slots keep their cached assets. Colors and morphs are applied unconditionally (they're cheap setters). |
-| **Skeleton bone name aliasing** | `findBone()` tries exact match, then Left/Right prefix (e.g., "Hand" → "LeftHand"/"RightHand"), then Hip→Root mapping. This decouples slot definitions from rig-specific bone naming. |
+| **Skeleton bone name aliasing** | `findBone()` tries exact match, then Left/Right prefix (e.g., "Hand" ΓåÆ "LeftHand"/"RightHand"), then HipΓåÆRoot mapping. This decouples slot definitions from rig-specific bone naming. |
 | **SkeletonHelper hidden by default** | The helper is created for debugging but invisible. Set `helper.visible = true` to visualize bones during development. |
 
 ### Architecture notes
 
 - CharacterManager subscribes to three Zustand stores: useCharacterStore (DNA), useSlotStore (slot definitions), useRuleStore (visibility results)
 - Stores are checked on CharacterManager construction for pre-existing DNA (handles Viewport re-mounts)
-- Slot loading is asynchronous — if slots aren't loaded when DNA arrives, DNA is stored as pending and processed when slot definitions become available
+- Slot loading is asynchronous ΓÇö if slots aren't loaded when DNA arrives, DNA is stored as pending and processed when slot definitions become available
 - AssetManager caches placeholder groups by assetId; LRU eviction with default max 50 entries
 - SlotManager does NOT dispose geometry (ownership belongs to AssetManager cache); it only removes from scene graph
 - The procedural base body is a cylinder torso + sphere head + cylinder limbs, all using the 'skin' shared material
@@ -328,11 +328,11 @@ Sprint 3 — the Three.js Character Assembler that bridges the data layer (DNA, 
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 63 tests passing across 7 test files (no regressions)
-- `npm run build` — Full production build succeeds (main: 12.2kB, preload: 1.95kB)
-- `npm run format` — Prettier passes on all source files
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 63 tests passing across 7 test files (no regressions)
+- `npm run build` ΓÇö Full production build succeeds (main: 12.2kB, preload: 1.95kB)
+- `npm run format` ΓÇö Prettier passes on all source files
 
 ### Current status
 
@@ -348,11 +348,11 @@ We are at **Sprint 4**. Sprints 0-3 are complete and verified.
 
 ### Next steps
 
-**Sprint 4: Import Pipeline** — Import GLB assets, validate skeletons, generate thumbnails, index assets. See `direction.md` for full details.
+**Sprint 4: Import Pipeline** ΓÇö Import GLB assets, validate skeletons, generate thumbnails, index assets. See `direction.md` for full details.
 
 ---
 
-## Session 006 — Sprint 4: Import Pipeline
+## Session 006 ΓÇö Sprint 4: Import Pipeline
 
 ### Date
 
@@ -360,7 +360,7 @@ We are at **Sprint 4**. Sprints 0-3 are complete and verified.
 
 ### What we built
 
-Sprint 4 — the complete import pipeline. Users can click "Import Asset", select a GLB file, validate it against a reference skeleton, assign a slot, add tags, generate a thumbnail, and index the asset into the project. Real imported GLBs replace placeholders in the viewport.
+Sprint 4 ΓÇö the complete import pipeline. Users can click "Import Asset", select a GLB file, validate it against a reference skeleton, assign a slot, add tags, generate a thumbnail, and index the asset into the project. Real imported GLBs replace placeholders in the viewport.
 
 ### Files created
 
@@ -379,7 +379,7 @@ Sprint 4 — the complete import pipeline. Users can click "Import Asset", selec
 |---|---|
 | `src/shared/types/ipc.ts` | Added `ASSET_READ_FILE`, `IMPORT_PICK_FILE`, `IMPORT_CONFIRM` constants, `ImportFileResult` and `ImportConfirmParams` interfaces, `readFile` to `IpcAssetApi` |
 | `src/renderer/types/electron.d.ts` | Added `import.pickFile()`, `import.confirm()`, `asset.readFile()` to `ElectronAPI` |
-| `electron/ipc/assetIpc.ts` | Added `ASSET_READ_FILE` handler — reads asset file from disk, returns ArrayBuffer to renderer |
+| `electron/ipc/assetIpc.ts` | Added `ASSET_READ_FILE` handler ΓÇö reads asset file from disk, returns ArrayBuffer to renderer |
 | `electron/ipc/index.ts` | Added `registerImportIpc()` call |
 | `electron/preload.ts` | Exposed `asset.readFile()` and `import.pickFile()`/`import.confirm()` via contextBridge |
 | `src/renderer/three/AssetManager.ts` | Added real GLB loading: `tryLoadGLBAsset()` fetches buffer via IPC, parses with GLTFLoader, remaps materials (skin/hair/cloth etc.) to shared MaterialManager instances. Falls back to placeholder on failure. Added `ownsMaterials` flag for proper disposal. |
@@ -398,11 +398,11 @@ Sprint 4 — the complete import pipeline. Users can click "Import Asset", selec
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 63 tests passing across 7 test files (no regressions)
-- `npm run build` — Full production build succeeds (main: 16.19kB, preload: 2.32kB)
-- `npm run format` — Prettier passes on all source files
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 63 tests passing across 7 test files (no regressions)
+- `npm run build` ΓÇö Full production build succeeds (main: 16.19kB, preload: 2.32kB)
+- `npm run format` ΓÇö Prettier passes on all source files
 
 ### Import flow
 
@@ -420,18 +420,18 @@ Sprint 4 — the complete import pipeline. Users can click "Import Asset", selec
 
 We are at **Sprint 5**. Sprints 0-4 are complete and verified.
 
-- Import pipeline works end-to-end: file dialog → copy → validate → thumbnail → index
+- Import pipeline works end-to-end: file dialog ΓåÆ copy ΓåÆ validate ΓåÆ thumbnail ΓåÆ index
 - AssetManager loads real GLBs from disk, falls back to placeholders on failure
 - 63 unit tests still pass with no regressions
 - Full production build succeeds
 
 ### Next steps
 
-**Sprint 5: React UI Layer** — Full visual character customization with panels, pickers, and viewport. See `direction.md` for full details.
+**Sprint 5: React UI Layer** ΓÇö Full visual character customization with panels, pickers, and viewport. See `direction.md` for full details.
 
 ---
 
-## Session 007 — Sprint 5: React UI Layer
+## Session 007 ΓÇö Sprint 5: React UI Layer
 
 ### Date
 
@@ -439,7 +439,7 @@ We are at **Sprint 5**. Sprints 0-4 are complete and verified.
 
 ### What we built
 
-Sprint 5 — the complete React UI layer. The app transitions from a bare 3D viewport to a structured three-panel desktop application with toolbar, slot browser, color pickers, morph sliders, character list, and keyboard shortcuts.
+Sprint 5 ΓÇö the complete React UI layer. The app transitions from a bare 3D viewport to a structured three-panel desktop application with toolbar, slot browser, color pickers, morph sliders, character list, and keyboard shortcuts.
 
 ### Files created
 
@@ -448,11 +448,11 @@ Sprint 5 — the complete React UI layer. The app transitions from a bare 3D vie
 | `src/renderer/components/LayoutShell.tsx` | Three-panel resizable layout via `react-resizable-panels` (Group/Panel/Separator) |
 | `src/renderer/components/Toolbar.tsx` | Top bar: New, Save, Load, Undo, Redo, Import, Export (stub), Random (stub). Reads store state for disabled/enabled. |
 | `src/renderer/components/SlotPanel.tsx` | Left panel: tab bar (one per SlotDefinition) + asset thumbnail grid filtered by active slot. Includes "none" option to deselect. |
-| `src/renderer/components/AssetCard.tsx` | Single thumbnail card: reads thumbnail via IPC → blob URL, selection highlight ring, hover tooltip with tags/version. |
+| `src/renderer/components/AssetCard.tsx` | Single thumbnail card: reads thumbnail via IPC ΓåÆ blob URL, selection highlight ring, hover tooltip with tags/version. |
 | `src/renderer/components/PropertiesPanel.tsx` | Right panel: ColorPicker + MorphSliders. Scrollable sections. |
 | `src/renderer/components/ColorPicker.tsx` | Category tabs (skin/hair/cloth/metal/leather/eye) + default swatch + palette grid (5 cols). Reads from `palettes.json`. |
 | `src/renderer/components/CharacterList.tsx` | Modal overlay: grid of saved character names, click to load, cancel to close. |
-| `src/shared/data/palettes.json` | Color palettes per category — skin (24), hair (32), cloth (50), metal (20), leather (20), eyes (25). |
+| `src/shared/data/palettes.json` | Color palettes per category ΓÇö skin (24), hair (32), cloth (50), metal (20), leather (20), eyes (25). |
 
 ### Files modified
 
@@ -461,7 +461,7 @@ Sprint 5 — the complete React UI layer. The app transitions from a bare 3D vie
 | `src/renderer/App.tsx` | Replaced Viewport-only with Toolbar + LayoutShell (SlotPanel, Viewport, PropertiesPanel). Added keyboard shortcuts (Ctrl+Z/Y/S/N, 1-6 camera presets). ImportDialog and CharacterList as modals. |
 | `src/renderer/components/Viewport.tsx` | Converted to `forwardRef<ViewportHandle>`. Exposes `setCameraPreset(front/back/side/face/full)`. Camera, controls, scene stored in refs. Background cycle button (bottom-right). |
 | `src/shared/types/ipc.ts` | Added `ASSET_READ_THUMBNAIL` constant, `readThumbnail` to `IpcAssetApi` |
-| `electron/ipc/assetIpc.ts` | Added `ASSET_READ_THUMBNAIL` handler — reads thumbnail PNG from project path, returns ArrayBuffer |
+| `electron/ipc/assetIpc.ts` | Added `ASSET_READ_THUMBNAIL` handler ΓÇö reads thumbnail PNG from project path, returns ArrayBuffer |
 | `electron/preload.ts` | Exposed `asset.readThumbnail(assetId)` |
 | `src/renderer/types/electron.d.ts` | Added `readThumbnail(assetId)` to asset API |
 | `package.json` | Added `react-resizable-panels` dependency |
@@ -473,21 +473,21 @@ Sprint 5 — the complete React UI layer. The app transitions from a bare 3D vie
 | **react-resizable-panels (Group/Panel/Separator)** | Lightweight (~5KB), zero-config resizable panels. Export names differ from docs: `Group`=PanelGroup, `Separator`=PanelResizeHandle. |
 | **Viewport uses forwardRef for camera control** | Toolbar and keyboard shortcuts call `viewportRef.setCameraPreset('front')` without exposing Three.js internals. Keeps the 3D lifecycle encapsulated in Viewport. |
 | **No new stores needed** | All four existing stores (character, slot, asset, project) provide the actions and data the UI needs. |
-| **Asset thumbnails via IPC → blob URL** | Same pattern as GLB loading. `asset:readThumbnail` returns ArrayBuffer → blob URL for `<img>` tags. |
-| **Color palettes as JSON data** | `palettes.json` defines colors per category. Palette grid (5 columns) — no free color wheel, matching direction.md spec. |
+| **Asset thumbnails via IPC ΓåÆ blob URL** | Same pattern as GLB loading. `asset:readThumbnail` returns ArrayBuffer ΓåÆ blob URL for `<img>` tags. |
+| **Color palettes as JSON data** | `palettes.json` defines colors per category. Palette grid (5 columns) ΓÇö no free color wheel, matching direction.md spec. |
 | **Export + Randomize buttons as disabled stubs** | Buttons exist in toolbar with `opacity: 0.5` and `disabled`. Export needs Sprint 6, Randomize needs Sprint 7. |
 
 ### Component tree (post-Sprint 5)
 
 ```
 App
-├── Toolbar (New | Save | Load | Undo | Redo | Import | Export | Random)
-├── LayoutShell (3-panel resizable)
-│   ├── SlotPanel (slot tabs + asset thumbnail grid)
-│   ├── Viewport (Three.js with orbit controls, camera presets, bg toggle)
-│   └── PropertiesPanel (color picker + morph sliders)
-├── ImportDialog (modal)
-└── CharacterList (modal)
+Γö£ΓöÇΓöÇ Toolbar (New | Save | Load | Undo | Redo | Import | Export | Random)
+Γö£ΓöÇΓöÇ LayoutShell (3-panel resizable)
+Γöé   Γö£ΓöÇΓöÇ SlotPanel (slot tabs + asset thumbnail grid)
+Γöé   Γö£ΓöÇΓöÇ Viewport (Three.js with orbit controls, camera presets, bg toggle)
+Γöé   ΓööΓöÇΓöÇ PropertiesPanel (color picker + morph sliders)
+Γö£ΓöÇΓöÇ ImportDialog (modal)
+ΓööΓöÇΓöÇ CharacterList (modal)
 ```
 
 ### Keyboard shortcuts
@@ -502,11 +502,11 @@ App
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 63 tests passing across 7 test files (no regressions)
-- `npm run build` — Full production build succeeds (main: 16.71kB, preload: 2.46kB)
-- `npm run format` — Prettier passes on all source files
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 63 tests passing across 7 test files (no regressions)
+- `npm run build` ΓÇö Full production build succeeds (main: 16.71kB, preload: 2.46kB)
+- `npm run format` ΓÇö Prettier passes on all source files
 
 ### Current status
 
@@ -524,11 +524,11 @@ We are at **Sprint 5**. Sprints 0-5 are complete and verified.
 
 ### Next steps
 
-**Sprint 6: Export Pipeline** — Reliable export to game-ready formats (GLB/GLTF). See `direction.md` for full details.
+**Sprint 6: Export Pipeline** ΓÇö Reliable export to game-ready formats (GLB/GLTF). See `direction.md` for full details.
 
 ---
 
-## Session 008 — Sprint 6: Export Pipeline
+## Session 008 ΓÇö Sprint 6: Export Pipeline
 
 ### Date
 
@@ -536,7 +536,7 @@ We are at **Sprint 5**. Sprints 0-5 are complete and verified.
 
 ### What we built
 
-Sprint 6 — the Export Pipeline. Users can click "Export" in the toolbar, select an export profile, run validation checks, and export the current character to GLB/GLTF with embedded textures. Exported files are organized into `{project}/exports/{profile}/{characterName}/` with a sidecar DNA file and an export log.
+Sprint 6 ΓÇö the Export Pipeline. Users can click "Export" in the toolbar, select an export profile, run validation checks, and export the current character to GLB/GLTF with embedded textures. Exported files are organized into `{project}/exports/{profile}/{characterName}/` with a sidecar DNA file and an export log.
 
 ### Files created
 
@@ -545,7 +545,7 @@ Sprint 6 — the Export Pipeline. Users can click "Export" in the toolbar, selec
 | `src/shared/types/export.ts` | `ExportProfile` interface (id, name, description, binary, embedImages) |
 | `src/shared/data/export-profiles.json` | 5 default profiles: GLB Standard, Unity, Godot, Mixamo, GLTF Debug |
 | `electron/services/ExportFileService.ts` | Writes GLB buffer + sidecar DNA + export_log.json to project exports directory |
-| `electron/ipc/exportIpc.ts` | `export:execute` IPC handler — receives buffer + metadata, delegates to ExportFileService |
+| `electron/ipc/exportIpc.ts` | `export:execute` IPC handler ΓÇö receives buffer + metadata, delegates to ExportFileService |
 | `src/renderer/services/ExportManager.ts` | Scene cloning + cleanup (removes SkeletonHelper), validation (body/head slots, meshes), GLTFExporter.parseAsync() orchestration |
 | `src/renderer/components/ExportDialog.tsx` | Modal dialog: validation results display (checkmarks/warnings), profile dropdown, export button, success/error states |
 
@@ -558,7 +558,7 @@ Sprint 6 — the Export Pipeline. Users can click "Export" in the toolbar, selec
 | `electron/preload.ts` | Exposed `export.execute(params)` |
 | `src/renderer/types/electron.d.ts` | Added `export.execute()` to ElectronAPI with typed params/result |
 | `src/renderer/components/Toolbar.tsx` | Added `onExport` prop, enabled Export button (was disabled stub) |
-| `src/renderer/components/Viewport.tsx` | Added `getSceneGroup()` to `ViewportHandle` interface — exposes character's THREE.Group for ExportDialog |
+| `src/renderer/components/Viewport.tsx` | Added `getSceneGroup()` to `ViewportHandle` interface ΓÇö exposes character's THREE.Group for ExportDialog |
 | `src/renderer/App.tsx` | Added export dialog state, wired Export button to ExportDialog with viewportRef |
 
 ### Decisions made during Sprint 6
@@ -618,10 +618,10 @@ No new shortcuts added. Export uses the toolbar button only.
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 63 tests passing across 7 test files (no regressions)
-- `npm run build` — Full production build succeeds (main: 18.81kB, preload: 2.59kB)
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 63 tests passing across 7 test files (no regressions)
+- `npm run build` ΓÇö Full production build succeeds (main: 18.81kB, preload: 2.59kB)
 
 ### Current status
 
@@ -637,11 +637,11 @@ We are at **Sprint 6**. Sprints 0-6 are complete and verified.
 
 ### Next steps
 
-**Sprint 7: Presets + Random Generator** — Apply templates and generate random characters. See `direction.md` for full details.
+**Sprint 7: Presets + Random Generator** ΓÇö Apply templates and generate random characters. See `direction.md` for full details.
 
 ---
 
-## Session 009 — Sprint 7: Presets + Random Generator
+## Session 009 ΓÇö Sprint 7: Presets + Random Generator
 
 ### Date
 
@@ -649,17 +649,17 @@ We are at **Sprint 6**. Sprints 0-6 are complete and verified.
 
 ### What we built
 
-Sprint 7 — preset system with 5 themed presets (Knight, Mage, Farmer, Rogue, Barbarian), deterministic random character generator with seed support, template-based character creation (Stylized Male/Female, Child, Dwarf, Elf), and Presets/Random buttons in the toolbar.
+Sprint 7 ΓÇö preset system with 5 themed presets (Knight, Mage, Farmer, Rogue, Barbarian), deterministic random character generator with seed support, template-based character creation (Stylized Male/Female, Child, Dwarf, Elf), and Presets/Random buttons in the toolbar.
 
 ### Files created
 
 | File | Purpose |
 |---|---|
-| `src/shared/types/preset.ts` | `Preset` interface — id, name, description, icon, optional slots/morphs/colors |
-| `src/shared/types/template.ts` | `Template` interface — id, name, description, icon, default morphs/colors |
+| `src/shared/types/preset.ts` | `Preset` interface ΓÇö id, name, description, icon, optional slots/morphs/colors |
+| `src/shared/types/template.ts` | `Template` interface ΓÇö id, name, description, icon, default morphs/colors |
 | `src/shared/data/presets.json` | 5 built-in presets with thematic color schemes (knight=metal/red, mage=purple/blue, farmer=brown/green, rogue=dark/grey, barbarian=warm/fire) |
 | `src/shared/data/templates.json` | 5 templates with baseline morphs and natural skin/hair/eye tones |
-| `src/renderer/services/RandomGenerator.ts` | `SeededPRNG` class (Lehmer RNG) + `generateRandomDNA()` — picks random assets per slot, evaluates rules for conflicts, assigns random morphs, picks random colors from palettes |
+| `src/renderer/services/RandomGenerator.ts` | `SeededPRNG` class (Lehmer RNG) + `generateRandomDNA()` ΓÇö picks random assets per slot, evaluates rules for conflicts, assigns random morphs, picks random colors from palettes |
 | `src/renderer/components/PresetPanel.tsx` | Grid of 5 preset cards with two-click confirmation (click once to select, again to confirm). Matches existing modal dialog pattern. |
 | `src/renderer/components/TemplateDialog.tsx` | Horizontal row of 5 template cards shown on "New Character". Selecting a template creates a new DNA with its morphs/colors. |
 
@@ -667,9 +667,9 @@ Sprint 7 — preset system with 5 themed presets (Knight, Mage, Farmer, Rogue, B
 
 | File | Change |
 |---|---|
-| `src/shared/dna/mutations.ts` | Added `applyPreset(dna, preset)` — deep-merges preset.slots/morphs/colors onto dna, preserves unset fields |
+| `src/shared/dna/mutations.ts` | Added `applyPreset(dna, preset)` ΓÇö deep-merges preset.slots/morphs/colors onto dna, preserves unset fields |
 | `src/shared/dna/mutations.test.ts` | Added 5 tests for `applyPreset` (full merge, partial merge, immutability, empty preset, preserves other fields) |
-| `src/renderer/stores/useCharacterStore.ts` | Added `applyPreset(preset)` action — merges preset onto current DNA with undo support. Added `overwriteDNA(dna)` for generic DNA replacement. |
+| `src/renderer/stores/useCharacterStore.ts` | Added `applyPreset(preset)` action ΓÇö merges preset onto current DNA with undo support. Added `overwriteDNA(dna)` for generic DNA replacement. |
 | `src/renderer/components/Toolbar.tsx` | Added `onRandomize` and `onPresets` props. Enabled both buttons (they were disabled stubs). |
 | `src/renderer/App.tsx` | Added TemplateDialog, PresetPanel, and randomize wiring. Ctrl+R shortcut for randomize. Template selection flow: "New" now shows template dialog instead of immediately creating. |
 
@@ -679,44 +679,44 @@ Sprint 7 — preset system with 5 themed presets (Knight, Mage, Farmer, Rogue, B
 |---|---|
 | **Presets define colors and morphs only** | Without real imported assets, preset slot assetIds would never match. Presets set thematic colors (e.g., Knight = steel/gold/red) and proportion morphs. Slots are preserved from current character. When user-saved presets land (Sprint 8), full slot references work. |
 | **Templates = presets applied at creation** | Templates use the same `applyPreset` mechanism. After creating a blank DNA, the template's morphs/colors are merged on top. No separate template storage needed. |
-| **Two-click confirm on presets** | Applying a preset overwrites colors and morphs — non-trivial change. Two-click prevents accidental application. ImportDialog and ExportDialog don't need this since their actions are more explicitly confirm/cancel. |
+| **Two-click confirm on presets** | Applying a preset overwrites colors and morphs ΓÇö non-trivial change. Two-click prevents accidental application. ImportDialog and ExportDialog don't need this since their actions are more explicitly confirm/cancel. |
 | **Seeded PRNG (Lehmer, not mulberry32)** | Lehmer RNG (16807 modulus) is simpler, deterministic across JS engines, and sufficient for visual randomization. Mulberry32 has better distribution but adds complexity for no visual benefit. |
 | **Lehmer RNG** (self-correct) | Using `(seed * 16807) % 2147483647` which is the classic Park-Miller minimal standard generator. Deterministic across platforms. |
-| **evaluateRules imported from shared engine** | RandomGenerator uses the actual `evaluateRules()` function from `src/shared/rules/engine.ts` rather than duplicating logic. Rules compatibility checked after initial slot assignment — conflicting slots are cleared. |
-| **TemplateDialog not saved on undo** | Creating a character from a template creates a fresh history stack (past/future cleared). The template selection itself is not undoable — it's the starting state. |
+| **evaluateRules imported from shared engine** | RandomGenerator uses the actual `evaluateRules()` function from `src/shared/rules/engine.ts` rather than duplicating logic. Rules compatibility checked after initial slot assignment ΓÇö conflicting slots are cleared. |
+| **TemplateDialog not saved on undo** | Creating a character from a template creates a fresh history stack (past/future cleared). The template selection itself is not undoable ΓÇö it's the starting state. |
 
 ### User flows
 
 **Template flow:**
 ```
 User clicks "New" or Ctrl+N
-  → TemplateDialog shows 5 cards: Stylized Male, Stylized Female, Child, Dwarf, Elf
-  → User clicks one
-  → newCharacter(name) creates blank DNA
-  → applyPreset(template) merges template morphs/colors onto blank DNA
-  → Viewport updates, history is fresh (no undo to before template)
+  ΓåÆ TemplateDialog shows 5 cards: Stylized Male, Stylized Female, Child, Dwarf, Elf
+  ΓåÆ User clicks one
+  ΓåÆ newCharacter(name) creates blank DNA
+  ΓåÆ applyPreset(template) merges template morphs/colors onto blank DNA
+  ΓåÆ Viewport updates, history is fresh (no undo to before template)
 ```
 
 **Preset flow:**
 ```
 User clicks "Presets" in toolbar
-  → PresetPanel shows 5 cards: Knight, Mage, Farmer, Rogue, Barbarian
-  → User clicks "Knight" (first click = select, border turns orange)
-  → User clicks "Knight" again (second click = confirm)
-  → applyPreset(knightPreset) merges knight colors + morphs
-  → Undoable via Ctrl+Z (single undo step)
+  ΓåÆ PresetPanel shows 5 cards: Knight, Mage, Farmer, Rogue, Barbarian
+  ΓåÆ User clicks "Knight" (first click = select, border turns orange)
+  ΓåÆ User clicks "Knight" again (second click = confirm)
+  ΓåÆ applyPreset(knightPreset) merges knight colors + morphs
+  ΓåÆ Undoable via Ctrl+Z (single undo step)
 ```
 
 **Randomize flow:**
 ```
 User clicks "Random" or Ctrl+R
-  → seed = Date.now().toString(36)
-  → generateRandomDNA({ seed, slots, assets, palettes, rules })
-  → PRNG picks assets per slot, picks colors from palettes, picks morphs
-  → evaluateRules() checks for conflicts
-  → hide/disable results have their slots cleared
-  → overwriteDNA(randomDNA) pushes to undo stack
-  → Same seed always produces same character
+  ΓåÆ seed = Date.now().toString(36)
+  ΓåÆ generateRandomDNA({ seed, slots, assets, palettes, rules })
+  ΓåÆ PRNG picks assets per slot, picks colors from palettes, picks morphs
+  ΓåÆ evaluateRules() checks for conflicts
+  ΓåÆ hide/disable results have their slots cleared
+  ΓåÆ overwriteDNA(randomDNA) pushes to undo stack
+  ΓåÆ Same seed always produces same character
 ```
 
 ### Deferred (to later sprints)
@@ -730,11 +730,11 @@ User clicks "Random" or Ctrl+R
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 68 tests passing across 7 test files (5 new applyPreset tests, no regressions)
-- `npm run build` — Full production build succeeds (main: 18.81kB, preload: 2.59kB, renderer: 2154kB)
-- `npm run format` — Prettier passes on all source files
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 68 tests passing across 7 test files (5 new applyPreset tests, no regressions)
+- `npm run build` ΓÇö Full production build succeeds (main: 18.81kB, preload: 2.59kB, renderer: 2154kB)
+- `npm run format` ΓÇö Prettier passes on all source files
 
 ### Current status
 
@@ -750,11 +750,11 @@ We are at **Sprint 7**. Sprints 0-7 are complete and verified.
 
 ### Next steps
 
-**Sprint 8: Polish & Professional Quality** — Thumbnails, lighting presets, pose library, favorites, user-saved presets, batch export, game ready score. See `direction.md` for full details.
+**Sprint 8: Polish & Professional Quality** ΓÇö Thumbnails, lighting presets, pose library, favorites, user-saved presets, batch export, game ready score. See `direction.md` for full details.
 
 ---
 
-## Session 010 — Sprint 8: Polish & Professional Quality
+## Session 010 ΓÇö Sprint 8: Polish & Professional Quality
 
 ### Date
 
@@ -762,7 +762,7 @@ We are at **Sprint 7**. Sprints 0-7 are complete and verified.
 
 ### What we built
 
-Sprint 8 — polish and professional quality additions: lighting presets (5 presets via LightingManager that mutates existing scene lights), favorites system (asset favorites stored in project.json), character browser with search/sort (replaces plain CharacterList), workspace persistence (app-state.json saves last character + bg color on quit, restored on launch), toast notifications (Zustand-based with auto-dismiss), export profiles editor (rename/duplicate/delete non-default profiles), and character thumbnails (generated on save via offscreen renderer).
+Sprint 8 ΓÇö polish and professional quality additions: lighting presets (5 presets via LightingManager that mutates existing scene lights), favorites system (asset favorites stored in project.json), character browser with search/sort (replaces plain CharacterList), workspace persistence (app-state.json saves last character + bg color on quit, restored on launch), toast notifications (Zustand-based with auto-dismiss), export profiles editor (rename/duplicate/delete non-default profiles), and character thumbnails (generated on save via offscreen renderer).
 
 ### Files created
 
@@ -805,17 +805,17 @@ Sprint 8 — polish and professional quality additions: lighting presets (5 pres
 | **LightingManager mutates existing lights** | Instead of recreating lights per preset, the manager modifies the 3 scene lights (ambient, key, fill) in place. This avoids scene graph churn and preserves light references. |
 | **Favorites in project.json** | Favorites are stored in the `ProjectManifest` (`favorites: string[]`), not a separate file. Simple to read/write, always in sync with project. No separate IPC needed beyond getFavorites/setFavorites. |
 | **CharacterBrowser replaces CharacterList** | The old CharacterList was a simple name list. The new browser has search input, sort dropdown, and a thumbnail grid. Old component kept with deprecation notice for backward compat. |
-| **Workspace state in app-state.json** | Lightweight JSON file in project root. Saves only lastCharacterName and bgIndex on unmount, restores on mount. No debouncing needed — save fires once per session end. |
+| **Workspace state in app-state.json** | Lightweight JSON file in project root. Saves only lastCharacterName and bgIndex on unmount, restores on mount. No debouncing needed ΓÇö save fires once per session end. |
 | **Toast store with auto-dismiss** | Zustand + setTimeout(3500ms) for automatic removal. No animation library needed. Managed outside React tree (Zustand store) so any code can trigger a toast. |
-| **ExportProfileEditor as local state** | Edits are in-memory (Zustand state in component). Persisting edited profiles to disk was deemed unnecessary complexity for this sprint — the editor is for experimenting. |
+| **ExportProfileEditor as local state** | Edits are in-memory (Zustand state in component). Persisting edited profiles to disk was deemed unnecessary complexity for this sprint ΓÇö the editor is for experimenting. |
 | **Character thumbnail on save** | Thumbnail generation is non-blocking (fire-and-forget after save success). If it fails, the save still succeeds. The thumbnail is saved via IPC to `thumbnails/characters/{name}.png`. |
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 68 tests passing across 7 test files (no regressions)
-- `npm run build` — Full production build succeeds (main: 21.63kB, preload: 3.42kB)
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 68 tests passing across 7 test files (no regressions)
+- `npm run build` ΓÇö Full production build succeeds (main: 21.63kB, preload: 3.42kB)
 
 ### Current status
 
@@ -846,15 +846,15 @@ We are at **Sprint 8**. All 8 sprints are complete and verified.
 
 All 8 sprints from `direction.md` are complete. Next steps beyond the roadmap:
 
-- **User testing & feedback** — Polish UX based on real usage
-- **Real asset packs** — Import actual GLB character parts to replace procedural placeholders
-- **Animation support** — Skeleton rigging + AnimationMixer + FBX export
-- **Game ready score** — Validation score display in ExportDialog
-- **Batch export** — Multi-select characters + queue-based export pipeline
+- **User testing & feedback** ΓÇö Polish UX based on real usage
+- **Real asset packs** ΓÇö Import actual GLB character parts to replace procedural placeholders
+- **Animation support** ΓÇö Skeleton rigging + AnimationMixer + FBX export
+- **Game ready score** ΓÇö Validation score display in ExportDialog
+- **Batch export** ΓÇö Multi-select characters + queue-based export pipeline
 
 ---
 
-## Session 011 — Sprint 9: Extensibility (Plugin System)
+## Session 011 ΓÇö Sprint 9: Extensibility (Plugin System)
 
 ### Date
 
@@ -862,7 +862,7 @@ All 8 sprints from `direction.md` are complete. Next steps beyond the roadmap:
 
 ### What we built
 
-Sprint 9 — the plugin system. Third-party asset packs can be distributed as folders that drop into `{project}/plugins/`. The app discovers, validates, and merges plugin content (assets, rules, presets, palettes) at startup. Presets and palettes were refactored from Vite JSON imports (build-time) to IPC-based loading (runtime), enabling plugin injection.
+Sprint 9 ΓÇö the plugin system. Third-party asset packs can be distributed as folders that drop into `{project}/plugins/`. The app discovers, validates, and merges plugin content (assets, rules, presets, palettes) at startup. Presets and palettes were refactored from Vite JSON imports (build-time) to IPC-based loading (runtime), enabling plugin injection.
 
 ### Files created
 
@@ -896,9 +896,9 @@ Sprint 9 — the plugin system. Third-party asset packs can be distributed as fo
 
 | Decision | Rationale |
 |---|---|
-| **IPC-based preset/palette loading** | Direct Vite JSON imports are build-time only. Plugins can't inject. Moving to IPC makes them runtime-loadable — the same pattern as rules. PluginService merges bundled + plugin data and returns the combined result. |
+| **IPC-based preset/palette loading** | Direct Vite JSON imports are build-time only. Plugins can't inject. Moving to IPC makes them runtime-loadable ΓÇö the same pattern as rules. PluginService merges bundled + plugin data and returns the combined result. |
 | **PluginService as singleton in main process** | Maintains the merged data cache (rules, presets, palettes) and manages plugin lifecycle. Renderer never reads plugin files directly. |
-| **Plugin assets persisted to AssetRegistry** | Calling `AssetRegistry.register()` for each plugin asset persists it to `assets/index.json`. Simplifies the architecture — no separate "volatile" registry needed. Cleanup on plugin uninstall is a manual action for now. |
+| **Plugin assets persisted to AssetRegistry** | Calling `AssetRegistry.register()` for each plugin asset persists it to `assets/index.json`. Simplifies the architecture ΓÇö no separate "volatile" registry needed. Cleanup on plugin uninstall is a manual action for now. |
 | **Dynamic import to break circular deps** | `ruleIpc.ts` dynamically imports `pluginIpc.ts` to access `getPluginService()`. `PluginService.ts` dynamically imports `index.ts` to call `getProjectService()`. Both could be refactored with dependency injection in a future sprint. |
 | **Per-project plugins only** | The `direction.md` shows plugins under `my-project/plugins/`. No app-wide plugin directory. Simpler implementation and management. |
 | **PluginPanel as toolbar button** | Most discoverable option. "Plugins" button separated by a divider after the Random button. |
@@ -908,23 +908,23 @@ Sprint 9 — the plugin system. Third-party asset packs can be distributed as fo
 
 ```
 my-project/plugins/my-pack/
-├── plugin.json          # name, version, author, description, minAppVersion
-├── assets/
-│   ├── index.json       # AssetEntry[] (id, slotId, tags, version)
-│   ├── meshes/          # GLB files named {id}.glb
-│   └── thumbnails/      # PNG files named {id}.png
-├── rules.json           # Optional: additional Rule[]
-├── presets.json         # Optional: additional Preset[]
-├── palettes.json        # Optional: additional palette colors per category
-└── README.md            # Ignored by the app
+Γö£ΓöÇΓöÇ plugin.json          # name, version, author, description, minAppVersion
+Γö£ΓöÇΓöÇ assets/
+Γöé   Γö£ΓöÇΓöÇ index.json       # AssetEntry[] (id, slotId, tags, version)
+Γöé   Γö£ΓöÇΓöÇ meshes/          # GLB files named {id}.glb
+Γöé   ΓööΓöÇΓöÇ thumbnails/      # PNG files named {id}.png
+Γö£ΓöÇΓöÇ rules.json           # Optional: additional Rule[]
+Γö£ΓöÇΓöÇ presets.json         # Optional: additional Preset[]
+Γö£ΓöÇΓöÇ palettes.json        # Optional: additional palette colors per category
+ΓööΓöÇΓöÇ README.md            # Ignored by the app
 ```
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict mode, 0 errors
-- `npm run lint` — ESLint 0 warnings, 0 errors
-- `npm run test` — 68 tests passing across 7 test files (no regressions)
-- `npm run build` — Full production build succeeds (main: 35.21kB, preload: 4.01kB, renderer: 2181.59kB)
+- `npm run typecheck` ΓÇö TypeScript strict mode, 0 errors
+- `npm run lint` ΓÇö ESLint 0 warnings, 0 errors
+- `npm run test` ΓÇö 68 tests passing across 7 test files (no regressions)
+- `npm run build` ΓÇö Full production build succeeds (main: 35.21kB, preload: 4.01kB, renderer: 2181.59kB)
 
 ### Current status
 
@@ -938,23 +938,23 @@ We are at **Sprint 9**. All 9 sprints from `direction.md` are complete and verif
 - Rule loading (`rule:listAll`) now includes plugin rules alongside bundled rules
 - Enabling/disabling a plugin persists toggled state in `project.json`
 - Broken plugins (missing files, incompatible version) show error state and don't crash the app
-- Dynamic imports used to break circular dependency between ruleIpc ↔ pluginIpc ↔ index
+- Dynamic imports used to break circular dependency between ruleIpc Γåö pluginIpc Γåö index
 
 ### Next steps
 
 All 9 sprints from `direction.md` are complete. The project is fully functional from scaffold through plugin system. Future work beyond the roadmap:
 
-- **Real asset packs** — Create/import actual GLB character parts to replace procedural placeholders
-- **Pose library** — AnimationMixer + skeleton pose system (JSON bone rotations)
-- **Animation support** — Animated export (GLB with animations)
-- **Game ready score** — Validation score display in ExportDialog
-- **Batch export** — Multi-select characters + queue-based export pipeline
-- **Collections / folders** — UI for organizing characters and assets
-- **User-saved presets** — Save current character as preset with IPC + file management
+- **Real asset packs** ΓÇö Create/import actual GLB character parts to replace procedural placeholders
+- **Pose library** ΓÇö AnimationMixer + skeleton pose system (JSON bone rotations)
+- **Animation support** ΓÇö Animated export (GLB with animations)
+- **Game ready score** ΓÇö Validation score display in ExportDialog
+- **Batch export** ΓÇö Multi-select characters + queue-based export pipeline
+- **Collections / folders** ΓÇö UI for organizing characters and assets
+- **User-saved presets** ΓÇö Save current character as preset with IPC + file management
 
 ---
 
-## Session 012 — Sprint 10: Polish & Bone Scaling
+## Session 012 ΓÇö Sprint 10: Polish & Bone Scaling
 
 ### Date
 
@@ -962,19 +962,19 @@ All 9 sprints from `direction.md` are complete. The project is fully functional 
 
 ### What we built
 
-Sprint 10 — polish fixes and bone scaling system. LayoutShell panel sizing corrected, Delete/Backspace key to clear active slot, GLTF import extension support, ImportDialog Escape-to-close, CharacterBrowser broken sort removed. MorphManager replaced by ProportionManager with 8 bone scale proportions (height, shoulderWidth, neckWidth, bellySize, headSize, legLength, armLength, muscleMass). Templates and presets updated to use bone-scale-compatible morphs.
+Sprint 10 ΓÇö polish fixes and bone scaling system. LayoutShell panel sizing corrected, Delete/Backspace key to clear active slot, GLTF import extension support, ImportDialog Escape-to-close, CharacterBrowser broken sort removed. MorphManager replaced by ProportionManager with 8 bone scale proportions (height, shoulderWidth, neckWidth, bellySize, headSize, legLength, armLength, muscleMass). Templates and presets updated to use bone-scale-compatible morphs.
 
 ### Files created
 
 | File | Purpose |
 |---|---|
-| `src/renderer/three/ProportionManager.ts` | Replaces MorphManager — scales bones by axis with mirror support, falls through to mesh morph targets for unknown morph names |
+| `src/renderer/three/ProportionManager.ts` | Replaces MorphManager ΓÇö scales bones by axis with mirror support, falls through to mesh morph targets for unknown morph names |
 
 ### Files modified
 
 | File | Change |
 |---|---|
-| `src/renderer/components/LayoutShell.tsx` | Left panel defaultSize 22→28, maxSize 35→40; right panel defaultSize 28→22, maxSize 40→30 |
+| `src/renderer/components/LayoutShell.tsx` | Left panel defaultSize 22ΓåÆ28, maxSize 35ΓåÆ40; right panel defaultSize 28ΓåÆ22, maxSize 40ΓåÆ30 |
 | `src/renderer/App.tsx` | Delete/Backspace keyboard handler calls setSlot(activeSlot, null); activeSlot state lifted from SlotPanel to App |
 | `src/shared/types/ipc.ts` | Added extension field to ImportConfirmParams |
 | `electron/ipc/importIpc.ts` | IPC handler uses extension field; writes fileBuffer to disk if provided |
@@ -988,15 +988,15 @@ Sprint 10 — polish fixes and bone scaling system. LayoutShell panel sizing cor
 
 | Decision | Rationale |
 |---|---|
-| **Bone scaling over mesh morph targets** | Works with ANY rigged mesh — no Blender editing needed. Recognized morph names scale bones; unknown names fall through to mesh morph targets. |
+| **Bone scaling over mesh morph targets** | Works with ANY rigged mesh ΓÇö no Blender editing needed. Recognized morph names scale bones; unknown names fall through to mesh morph targets. |
 | **ProportionManager replaces MorphManager** | MorphManager only handled mesh morph targets. ProportionManager handles both bone scaling (primary) and mesh morphs (fallback). |
 | **8 proportion dimensions** | Covers the most common character customization sliders. Each maps to specific bone/axis combinations with mirror support for symmetric limbs. |
 | **activeSlot state lifted to App** | SlotPanel local state could not be read by keyboard handler in App. Lifting enables Delete/Backspace to clear the active slot. |
 
 ### Verification
 
-- `npm run build` — Full production build succeeds
-- `npm run test` — 68 tests passing, no regressions
+- `npm run build` ΓÇö Full production build succeeds
+- `npm run test` ΓÇö 68 tests passing, no regressions
 
 ### Current status
 
@@ -1004,7 +1004,7 @@ We are at **Sprint 11**. Sprint 10 is complete.
 
 ---
 
-## Session 013 — Sprint 11: Quaternius Integration Prep
+## Session 013 ΓÇö Sprint 11: Quaternius Integration Prep
 
 ### Date
 
@@ -1012,18 +1012,18 @@ We are at **Sprint 11**. Sprint 10 is complete.
 
 ### What we built
 
-Preparatory work for replacing the procedural base body with real CC0 assets from Quaternius. Reference skeleton updated to include Quaternius bone names via aliases. ImportValidator and CharacterManager now check the aliases map for bone matching — imported Quaternius meshes will validate and animate correctly. ProportionManager bone targets updated to Quaternius naming with alias fallback. Drag-and-drop import wired from Viewport to ImportDialog. Build-time type errors fixed in ExportDialog, ImportValidator.
+Preparatory work for replacing the procedural base body with real CC0 assets from Quaternius. Reference skeleton updated to include Quaternius bone names via aliases. ImportValidator and CharacterManager now check the aliases map for bone matching ΓÇö imported Quaternius meshes will validate and animate correctly. ProportionManager bone targets updated to Quaternius naming with alias fallback. Drag-and-drop import wired from Viewport to ImportDialog. Build-time type errors fixed in ExportDialog, ImportValidator.
 
 ### Files modified
 
 | File | Change |
 |---|---|
-| `src/shared/data/reference-skeleton.json` | Reverted critical/optional/hierarchy to canonical names (Root, Spine, etc.); added comprehensive aliases map mapping 30+ Quaternius/Unity bone names to canonical names (e.g. `spine_01`→`Spine`, `upperarm_l`→`LeftUpperArm`, `thigh_l`→`LeftUpperLeg`) |
+| `src/shared/data/reference-skeleton.json` | Reverted critical/optional/hierarchy to canonical names (Root, Spine, etc.); added comprehensive aliases map mapping 30+ Quaternius/Unity bone names to canonical names (e.g. `spine_01`ΓåÆ`Spine`, `upperarm_l`ΓåÆ`LeftUpperArm`, `thigh_l`ΓåÆ`LeftUpperLeg`) |
 | `src/renderer/services/ImportValidator.ts` | `hasCanonicalBone()` checks aliases map during skeleton validation; fixed Box3 `never` type issue with bbox variable |
 | `src/renderer/three/CharacterManager.ts` | `findBone()` iterates aliases map for Quaternius bone name resolution |
 | `src/renderer/three/ProportionManager.ts` | BONE_MORPHS updated to Quaternius bone names (`spine_01`, `upperarm_l`, etc.); `resolveBone()` checks aliases as fallback |
 | `src/renderer/App.tsx` | Added `handleFileDrop` callback, `importData` state, drag-and-drop from Viewport to ImportDialog via `initialFileData` prop |
-| `src/renderer/components/ImportDialog.tsx` | Accepts `initialFileData` prop — skips file picker, validates pre-loaded buffer directly; refactored validation into `validateBuffer()` for reuse |
+| `src/renderer/components/ImportDialog.tsx` | Accepts `initialFileData` prop ΓÇö skips file picker, validates pre-loaded buffer directly; refactored validation into `validateBuffer()` for reuse |
 | `src/renderer/components/ExportDialog.tsx` | Added optional `pass` prop to CheckItem component for type safety |
 
 ### Decisions made during Sprint 11
@@ -1033,30 +1033,30 @@ Preparatory work for replacing the procedural base body with real CC0 assets fro
 | **Aliases map in reference-skeleton.json** | Single source of truth for all known bone naming conventions (Mixamo, Quaternius/Unity, etc.). ImportValidator and CharacterManager share the same map. |
 | **Canonical names preserved in critical/optional lists** | Non-Quaternius meshes (Mixamo, custom) still validate correctly. The aliases map is checked as a fallback when a canonical name isn't found directly. |
 | **ProportionManager uses Quaternius bone names + alias fallback** | After mesh swap, scene bones will be Quaternius-style (`spine_01`, `upperarm_l`). `resolveBone()` tries exact match first, then alias lookup. |
-| **Drag-and-drop via initialFileData prop** | ImportDialog is the single entry point for all imports. Drag-and-drop pre-loads the buffer and opens the dialog — same validation, no code duplication. |
+| **Drag-and-drop via initialFileData prop** | ImportDialog is the single entry point for all imports. Drag-and-drop pre-loads the buffer and opens the dialog ΓÇö same validation, no code duplication. |
 
 ### Verification
 
-- `npm run build` — Production build succeeds (main: 35.64kB, preload: 4.01kB, renderer: 2187.87kB)
-- `npm run test` — 68 tests passing across 7 test files, no regressions
+- `npm run build` ΓÇö Production build succeeds (main: 35.64kB, preload: 4.01kB, renderer: 2187.87kB)
+- `npm run test` ΓÇö 68 tests passing across 7 test files, no regressions
 
 ### Current status
 
 We are at **Sprint 11**. Sprints 0-10 are complete and verified.
 
 - Reference skeleton supports Quaternius bone naming via aliases (30+ mappings)
-- Import validation checks aliases — Quaternius meshes will pass skeleton check
-- CharacterManager findBone() resolves aliases — bone attachments work with Quaternius bones
+- Import validation checks aliases ΓÇö Quaternius meshes will pass skeleton check
+- CharacterManager findBone() resolves aliases ΓÇö bone attachments work with Quaternius bones
 - ProportionManager uses Quaternius bone names for direct scaling + alias fallback for cross-compatibility
-- Drag-and-drop import works: drop a .glb/.gltf file on viewport → ImportDialog opens with pre-loaded data
+- Drag-and-drop import works: drop a .glb/.gltf file on viewport ΓåÆ ImportDialog opens with pre-loaded data
 - All 68 unit tests pass with no regressions
 - Production build succeeds with no errors
 
 ### Next steps
 
-**Import Quaternius base mesh** — Run app, use Import button or drag-and-drop to import a Quaternius `.gltf` file (with accompanying `.bin` and textures). Register it as "body" or "head" slot asset. Modify `CharacterManager.buildBaseCharacter()` to load imported mesh instead of procedural cylinder body.
+**Import Quaternius base mesh** ΓÇö Run app, use Import button or drag-and-drop to import a Quaternius `.gltf` file (with accompanying `.bin` and textures). Register it as "body" or "head" slot asset. Modify `CharacterManager.buildBaseCharacter()` to load imported mesh instead of procedural cylinder body.
 
-## Session 014 — Sprint 11 continued: Quaternius Mesh Swap + Polish
+## Session 014 ΓÇö Sprint 11 continued: Quaternius Mesh Swap + Polish
 
 ### Date
 
@@ -1066,9 +1066,9 @@ We are at **Sprint 11**. Sprints 0-10 are complete and verified.
 
 **Phase 1**: Convert Quaternius GLTF to self-contained GLB; import into project as base body asset.
 
-**Phase 2**: CharacterManager loads base body GLB instead of procedural cylinders — extract skeleton, use imported mesh, fall back to procedural if no base body found.
+**Phase 2**: CharacterManager loads base body GLB instead of procedural cylinders ΓÇö extract skeleton, use imported mesh, fall back to procedural if no base body found.
 
-**Phase 3**: AnimationMixer with idle breathing — oscillate `spine_01.scale.y` on a 3s loop, wired into Viewport render loop.
+**Phase 3**: AnimationMixer with idle breathing ΓÇö oscillate `spine_01.scale.y` on a 3s loop, wired into Viewport render loop.
 
 **Phase 4**: Game Ready Score badge in ExportDialog validation section.
 
@@ -1078,11 +1078,11 @@ We are at **Sprint 11**. Sprints 0-10 are complete and verified.
 
 All 5 phases completed:
 
-**Phase 1**: Converted Quaternius Superhero_Male_FullBody.gltf (15.5MB) → self-contained GLB (18.8MB) using `@gltf-transform/cli optimize`. Fixed misnamed texture references (T_Hair_1_Normal_png.png → T_Hair_1_Normal.png, T_Eye_Normal_png.png → T_Eye_Normal.png).
+**Phase 1**: Converted Quaternius Superhero_Male_FullBody.gltf (15.5MB) ΓåÆ self-contained GLB (18.8MB) using `@gltf-transform/cli optimize`. Fixed misnamed texture references (T_Hair_1_Normal_png.png ΓåÆ T_Hair_1_Normal.png, T_Eye_Normal_png.png ΓåÆ T_Eye_Normal.png).
 
 **Phase 2**: CharacterManager now checks `useAssetStore` for assets tagged `base_body`. If found, loads the GLB via `GLTFLoader.parseAsync()`, extracts skeleton (`findSkeletonRoot` which traverses for the first `THREE.Bone`), clears procedural body meshes, rebuilds `boneMap`, remaps materials to shared `MaterialManager` instances (by material name detection: "skin", "hair", "cloth", etc.), wires `ProportionManager`, and applies any existing DNA. Falls back gracefully to procedural body if no base body asset exists.
 
-**Phase 3**: `AnimationMixer` created on the skeleton root after base body load. Idle breathing clip oscillates `spine_01.scale[y]` between 1.0→1.02→1.0 on a 3-second loop. `getMixer()` exposes mixer to Viewport's render loop via `clock.getDelta()`.
+**Phase 3**: `AnimationMixer` created on the skeleton root after base body load. Idle breathing clip oscillates `spine_01.scale[y]` between 1.0ΓåÆ1.02ΓåÆ1.0 on a 3-second loop. `getMixer()` exposes mixer to Viewport's render loop via `clock.getDelta()`.
 
 **Phase 4**: Game Ready Score badge added below validation checks in ExportDialog. Shows `{passed}/3 ({percentage}%)` with green/orange color based on all-pass vs partial.
 
@@ -1117,8 +1117,8 @@ All 5 phases completed:
 
 ### Verification
 
-- `npm run build` — Full production build succeeds (main: 35.64kB, preload: 4.01kB, renderer: 2250kB)
-- `npm run test` — 68 tests passing across 7 test files, no regressions
+- `npm run build` ΓÇö Full production build succeeds (main: 35.64kB, preload: 4.01kB, renderer: 2250kB)
+- `npm run test` ΓÇö 68 tests passing across 7 test files, no regressions
 - Draco decoder WASM files auto-bundled in renderer assets (285KB + 192KB)
 
 ### Current status
@@ -1134,11 +1134,11 @@ We are at **Sprint 11** (post-plan). All 5 phases complete:
 
 ### Next steps
 
-**Testing sprint** — Switch to plan mode to design a comprehensive test suite covering all 11 sprints.
+**Testing sprint** ΓÇö Switch to plan mode to design a comprehensive test suite covering all 11 sprints.
 
 ---
 
-## Session 015 — Comprehensive Test Suite
+## Session 015 ΓÇö Comprehensive Test Suite
 
 ### Date
 
@@ -1146,7 +1146,7 @@ We are at **Sprint 11** (post-plan). All 5 phases complete:
 
 ### What we built
 
-Designed and implemented a comprehensive test suite covering all 11 sprints. Added 73 new tests across 9 new test files, bringing total from 68 → 141. Created shared test utility for mocking Electron API in renderer tests.
+Designed and implemented a comprehensive test suite covering all 11 sprints. Added 73 new tests across 9 new test files, bringing total from 68 ΓåÆ 141. Created shared test utility for mocking Electron API in renderer tests.
 
 ### Files created
 
@@ -1166,7 +1166,7 @@ Designed and implemented a comprehensive test suite covering all 11 sprints. Add
 
 | File | Change |
 |---|---|
-| `src/renderer/tests/test-utils.ts` | Created — shared `mockElectronAPI()` and `setupStoreTests()` helpers for renderer tests |
+| `src/renderer/tests/test-utils.ts` | Created ΓÇö shared `mockElectronAPI()` and `setupStoreTests()` helpers for renderer tests |
 
 ### Test coverage summary
 
@@ -1191,8 +1191,8 @@ Designed and implemented a comprehensive test suite covering all 11 sprints. Add
 
 ### Verification
 
-- `npm run test` — 141 tests passing across 16 test files
-- `npm run build` — Full production build succeeds with no errors
+- `npm run test` ΓÇö 141 tests passing across 16 test files
+- `npm run build` ΓÇö Full production build succeeds with no errors
 
 ### Manual testing required (cannot be automated)
 
@@ -1200,30 +1200,30 @@ These features need a running Electron app with WebGL:
 
 | # | Test | What to check |
 |---|------|---------------|
-| 1 | Base body loads | Launch, select `test-project/` — Quaternius mesh appears instead of cylinder blob |
+| 1 | Base body loads | Launch, select `test-project/` ΓÇö Quaternius mesh appears instead of cylinder blob |
 | 2 | Breathing animation | Spine/chest gently oscillates on a 3s cycle |
-| 3 | Slot attach/detach | Click slot tab → asset appears on correct bone; Delete/Backspace clears it |
-| 4 | Color picker | Select color → all meshes with that material update instantly |
-| 5 | Morph sliders | Drag sliders → bones scale in real-time |
+| 3 | Slot attach/detach | Click slot tab ΓåÆ asset appears on correct bone; Delete/Backspace clears it |
+| 4 | Color picker | Select color ΓåÆ all meshes with that material update instantly |
+| 5 | Morph sliders | Drag sliders ΓåÆ bones scale in real-time |
 | 6 | Camera presets | Keys 1-6 cycle through preset views |
 | 7 | Undo/redo | Ctrl+Z reverts, Ctrl+Y restores |
-| 8 | Save/load + browser | Ctrl+S saves, Load → browser → click to restore |
-| 9 | Import asset | Click Import → pick GLB → validation → assign slot → confirm |
-| 10 | Drag-drop import | Drag GLB onto viewport → dialog opens with pre-loaded data |
-| 11 | Export + Game Ready Score | Click Export → see score badge → select profile → Export → file written |
-| 12 | Presets | Two-click confirm → colors/morphs update |
-| 13 | Randomize | Ctrl+R → random character, same seed produces same result |
-| 14 | Lighting presets | Click Lighting → select preset → scene lights change |
-| 15 | Plugins | Click Plugins → list toggles |
-| 16 | Template dialog | Ctrl+N → 5 templates → select → base morphs applied |
-| 17 | Favorites | Star toggle → filter works |
+| 8 | Save/load + browser | Ctrl+S saves, Load ΓåÆ browser ΓåÆ click to restore |
+| 9 | Import asset | Click Import ΓåÆ pick GLB ΓåÆ validation ΓåÆ assign slot ΓåÆ confirm |
+| 10 | Drag-drop import | Drag GLB onto viewport ΓåÆ dialog opens with pre-loaded data |
+| 11 | Export + Game Ready Score | Click Export ΓåÆ see score badge ΓåÆ select profile ΓåÆ Export ΓåÆ file written |
+| 12 | Presets | Two-click confirm ΓåÆ colors/morphs update |
+| 13 | Randomize | Ctrl+R ΓåÆ random character, same seed produces same result |
+| 14 | Lighting presets | Click Lighting ΓåÆ select preset ΓåÆ scene lights change |
+| 15 | Plugins | Click Plugins ΓåÆ list toggles |
+| 16 | Template dialog | Ctrl+N ΓåÆ 5 templates ΓåÆ select ΓåÆ base morphs applied |
+| 17 | Favorites | Star toggle ΓåÆ filter works |
 | 18 | Background toggle | Bottom-right button cycles bg color |
 | 19 | Export profiles editor | Rename/duplicate/delete |
 | 20 | Layout resize | Drag panel dividers |
 
 ---
 
-## Session 016 — Sprint 12: Manual Test Bug Fixes
+## Session 016 ΓÇö Sprint 12: Manual Test Bug Fixes
 
 ### Date
 
@@ -1235,12 +1235,12 @@ Ran the 20-item manual test checklist from Session 015. Found and fixed 6 issues
 
 | # | Issue | Root Cause | Fix |
 |---|-------|------------|-----|
-| 1 | Export dialog Cancel not working | `close()` guarded by `mountedRef.current` which is `false` after React StrictMode double-mount (useRef doesn't reinitialize on remount) | Removed `mountedRef` check from `close()` — only keep it for async export handler |
-| 2 | Body slot "none" doesn't switch back | No teardown path for base body when slot cleared | Added `destroyBaseBody()` — disposes GLB meshes, stops mixer, removes helper, rebuilds procedural body, re-applies DNA |
-| 3 | Export validation says "Head slot" missing | `validateExport` checked slots in DNA, but body+head are embedded in base body asset, not slot assets | Added `hasBaseBody` parameter to `validateExport` — auto-passes body and head checks when base body loaded |
-| 4 | Skin color picker not applying | Was applying correctly (no console errors) — only `cloth`/`metal`/`leather` materials didn't exist | Added debug log to `MaterialManager.setColor` — confirmed only non-existent materials are cloth/metal/leather (no clothes on nude body) |
+| 1 | Export dialog Cancel not working | `close()` guarded by `mountedRef.current` which is `false` after React StrictMode double-mount (useRef doesn't reinitialize on remount) | Removed `mountedRef` check from `close()` ΓÇö only keep it for async export handler |
+| 2 | Body slot "none" doesn't switch back | No teardown path for base body when slot cleared | Added `destroyBaseBody()` ΓÇö disposes GLB meshes, stops mixer, removes helper, rebuilds procedural body, re-applies DNA |
+| 3 | Export validation says "Head slot" missing | `validateExport` checked slots in DNA, but body+head are embedded in base body asset, not slot assets | Added `hasBaseBody` parameter to `validateExport` ΓÇö auto-passes body and head checks when base body loaded |
+| 4 | Skin color picker not applying | Was applying correctly (no console errors) ΓÇö only `cloth`/`metal`/`leather` materials didn't exist | Added debug log to `MaterialManager.setColor` ΓÇö confirmed only non-existent materials are cloth/metal/leather (no clothes on nude body) |
 | 5 | Preset colors not applying | `setColor` silently discarded colors for materials not yet created (cloth, metal, leather) | Changed `setColor` to lazily create missing materials via `getMaterial()` then set color |
-| 6 | Export profile editor delete | Logic correct for non-default profiles; default profiles are protected (no delete button shown) | Not a bug — confirmed working |
+| 6 | Export profile editor delete | Logic correct for non-default profiles; default profiles are protected (no delete button shown) | Not a bug ΓÇö confirmed working |
 
 ### Files modified
 
@@ -1252,7 +1252,7 @@ Ran the 20-item manual test checklist from Session 015. Found and fixed 6 issues
 ### Key findings from testing
 
 - **Base body bones**: 68 bones found via `gltf.scene.traverse()` (Quaternius rig including finger/toe leaf bones)
-- **Double-loading eliminated**: Body slot asset (tagged `base_body`) now detected in `updateCharacter()` — skips slot attachment, leaves loading to `tryLoadBaseBody()` alone
+- **Double-loading eliminated**: Body slot asset (tagged `base_body`) now detected in `updateCharacter()` ΓÇö skips slot attachment, leaves loading to `tryLoadBaseBody()` alone
 - **Breathing animation**: Confirmed working via `spine_01` bone oscillation
 - **Morphs**: All 8 working (height, shoulderWidth, bellySize, neckWidth, headSize, legLength, armLength, muscleMass)
 - **Positioning**: Character stands on grid floor (Box3 Y-offset applied)
@@ -1268,7 +1268,7 @@ We are at **Sprint 12**. All bugs from the 20-item manual checklist are fixed ex
 - User imports superhero-female GLTF (need console error for thumbnail failure)
 - Once all fixes confirmed, create `future.md` with deferred features roadmap
 
-## Session 017 — Sprint 12 continued: Remapping Fix + GLB-only Import
+## Session 017 ΓÇö Sprint 12 continued: Remapping Fix + GLB-only Import
 
 ### Date
 
@@ -1278,7 +1278,7 @@ We are at **Sprint 12**. All bugs from the 20-item manual checklist are fixed ex
 
 | # | Issue | Root Cause | Fix |
 |---|-------|------------|-----|
-| 1 | Skin color not changing | `remapBaseMaterial` matched `T_Body` (skin) to `cloth` via `name.includes('body')` on the cloth line | Moved `'body'` to skin line; added `'eyebrow'`→hair, `'boot'`/`'shoe'`→leather |
+| 1 | Skin color not changing | `remapBaseMaterial` matched `T_Body` (skin) to `cloth` via `name.includes('body')` on the cloth line | Moved `'body'` to skin line; added `'eyebrow'`ΓåÆhair, `'boot'`/`'shoe'`ΓåÆleather |
 | 2 | GLTF import fails (thumbnail) | `FileImportService` accepts `.gltf` but can't resolve external `.bin`/textures during validation/thumbnail generation | Changed filter to `['glb']` only. Drag-dropped `.gltf` shows clear error with conversion command |
 | 3 | Console noise | Debug `console.log` lines left in `CharacterManager` | Removed `tryLoadBaseBody started`, `Base body bones`, `applying colors` logs |
 
@@ -1286,7 +1286,7 @@ We are at **Sprint 12**. All bugs from the 20-item manual checklist are fixed ex
 
 | File | Change |
 |---|---|
-| `src/renderer/three/CharacterManager.ts` | Fixed `remapBaseMaterial` — `'body'`→`skin`, `'eyebrow'`→`hair`, `'boot'`/`'shoe'`→`leather`. Removed 3 debug console.log lines. Inlined `colorEntries` variable. |
+| `src/renderer/three/CharacterManager.ts` | Fixed `remapBaseMaterial` ΓÇö `'body'`ΓåÆ`skin`, `'eyebrow'`ΓåÆ`hair`, `'boot'`/`'shoe'`ΓåÆ`leather`. Removed 3 debug console.log lines. Inlined `colorEntries` variable. |
 | `electron/services/FileImportService.ts` | Changed filter from `['glb', 'gltf']` to `['glb']` only |
 | `src/renderer/components/ImportDialog.tsx` | Drag-drop GLTF shows error: "Only GLB files are supported. Convert GLTF to GLB with: npx @gltf-transform/cli optimize input.gltf output.glb" |
 
@@ -1298,8 +1298,8 @@ We are at **Sprint 12**. All bugs from the 20-item manual checklist are fixed ex
 
 ### Verification
 
-- `npm run build` — Full production build succeeds (no errors)
-- `npm run test` — 141 tests passing, no regressions
+- `npm run build` ΓÇö Full production build succeeds (no errors)
+- `npm run test` ΓÇö 141 tests passing, no regressions
 
 ### Current status
 
@@ -1310,7 +1310,7 @@ We are at **Sprint 12**. All 6 issues from the manual test checklist are fixed. 
 - User verifies skin color fix and import refresh in latest build
 - Once all fixes confirmed, create `future.md` with deferred features roadmap
 
-## Session 018 — Sprint 12 continued: Skin Remap + Import Refresh
+## Session 018 ΓÇö Sprint 12 continued: Skin Remap + Import Refresh
 
 ### Date
 
@@ -1336,8 +1336,8 @@ We are at **Sprint 12**. All 6 issues from the manual test checklist are fixed. 
 
 ### Verification
 
-- `npm run build` — Full production build succeeds (no errors)
-- `npm run test` — 141 tests passing, no regressions
+- `npm run build` ΓÇö Full production build succeeds (no errors)
+- `npm run test` ΓÇö 141 tests passing, no regressions
 
 ### Current status
 
@@ -1347,9 +1347,9 @@ We are at **Sprint 12**. All issues from the 20-item manual test checklist are n
 
 - User verifies skin color change and import refresh
 - If confirmed, create `future.md` with deferred features roadmap
-- Consider auto GLTF→GLB conversion during import as future improvement
+- Consider auto GLTFΓåÆGLB conversion during import as future improvement
 
-## Session 019 — Sprint 12 continued: Base Body Switching + Asset ID Fix
+## Session 019 ΓÇö Sprint 12 continued: Base Body Switching + Asset ID Fix
 
 ### Date
 
@@ -1359,7 +1359,7 @@ We are at **Sprint 12**. All issues from the 20-item manual test checklist are n
 
 | # | Issue | Root Cause | Fix |
 |---|-------|------------|-----|
-| 1 | Switching base bodies (male↔female) doesn't work | `updateCharacter` body slot handling had `if (hasBaseBody) continue` when `newAssetId` was non-null, silently skipping all processing | Restructured body slot logic: detects base body switches by comparing `newAssetId !== oldAssetId`, calls `destroyBaseBody()` then `tryLoadBaseBody(newAssetId)` |
+| 1 | Switching base bodies (maleΓåöfemale) doesn't work | `updateCharacter` body slot handling had `if (hasBaseBody) continue` when `newAssetId` was non-null, silently skipping all processing | Restructured body slot logic: detects base body switches by comparing `newAssetId !== oldAssetId`, calls `destroyBaseBody()` then `tryLoadBaseBody(newAssetId)` |
 | 2 | tryLoadBaseBody always loads the FIRST base_body asset | `assets.find()` returned the first base_body asset regardless of which one the DNA specifies | Added optional `dnaAssetId` parameter to `tryLoadBaseBody()`; when provided, finds asset by ID instead of first match |
 | 3 | Asset store subscription doesn't specify which base body to load | `tryLoadBaseBody()` called without args from subscription callback | Now passes `dna?.slots?.body` from `useCharacterStore.getState().present` |
 | 4 | Extra blank lines from removed console.log | Leftover empty lines in `tryLoadBaseBody` | Cleaned up |
@@ -1372,8 +1372,8 @@ We are at **Sprint 12**. All issues from the 20-item manual test checklist are n
 
 ### Verification
 
-- `npm run build` — Full production build succeeds (no errors)
-- `npm run test` — 141 tests passing, no regressions
+- `npm run build` ΓÇö Full production build succeeds (no errors)
+- `npm run test` ΓÇö 141 tests passing, no regressions
 
 ### Current status
 
@@ -1381,16 +1381,16 @@ We are at **Sprint 12**. All known base body switching and asset loading bugs ar
 
 ### Known issues for future scope
 
-- **Delete assets**: No UI for removing imported assets from the registry. User needs a way to clean up (e.g., right-click → Delete on AssetCard, or a slot panel context menu).
-- **GLTF→GLB auto-conversion**: During import, `.gltf` files could be converted to `.glb` automatically using `@gltf-transform/cli` spawned from main process.
+- **Delete assets**: No UI for removing imported assets from the registry. User needs a way to clean up (e.g., right-click ΓåÆ Delete on AssetCard, or a slot panel context menu).
+- **GLTFΓåÆGLB auto-conversion**: During import, `.gltf` files could be converted to `.glb` automatically using `@gltf-transform/cli` spawned from main process.
 - **Belly morph range**: May need wider range for fatter characters.
 
 ### Next steps
 
-- User verifies: switching male↔female, skin colors, morphs, randomize, import
+- User verifies: switching maleΓåöfemale, skin colors, morphs, randomize, import
 - Create `future.md` with deferred features roadmap after fixes confirmed
 
-## Session 020 — Sprint 12 continued: Asset Store Race Condition + Startup Project Persistence
+## Session 020 ΓÇö Sprint 12 continued: Asset Store Race Condition + Startup Project Persistence
 
 ### Date
 
@@ -1400,8 +1400,8 @@ We are at **Sprint 12**. All known base body switching and asset loading bugs ar
 
 | # | Issue | Root Cause | Fix |
 |---|-------|------------|-----|
-| 1 | Body slot assets don't show up initially | `tryLoadBaseBody` called `queryAssets({ tags: ['base_body'] })` which overwrote the store with only base_body assets, clobbering SlotPanel's unfiltered `queryAssets()` results due to race condition | Changed to `queryAssets()` (no filter) — loads ALL assets, then filters locally |
-| 2 | Folder picker shown every startup | No project root persistence — app always showed dialog | Added `projectRoot` to workspace state, saved to global `app-state.json` in userData; `WorkspaceService.loadGlobalProjectRoot()` reads it on startup; main process skips dialog if saved project exists and is valid |
+| 1 | Body slot assets don't show up initially | `tryLoadBaseBody` called `queryAssets({ tags: ['base_body'] })` which overwrote the store with only base_body assets, clobbering SlotPanel's unfiltered `queryAssets()` results due to race condition | Changed to `queryAssets()` (no filter) ΓÇö loads ALL assets, then filters locally |
+| 2 | Folder picker shown every startup | No project root persistence ΓÇö app always showed dialog | Added `projectRoot` to workspace state, saved to global `app-state.json` in userData; `WorkspaceService.loadGlobalProjectRoot()` reads it on startup; main process skips dialog if saved project exists and is valid |
 | 3 | Viewport drag-drop accepts .gltf | `handleDrop` checked for `.glb` and `.gltf` | Changed to `.glb` only |
 | 4 | Redundant IPC call in workspace load | `App.tsx` loaded character DNA twice (once in workspace effect, once in `loadCharacter`) | Removed pre-check, just call `loadCharacter` directly |
 
@@ -1418,8 +1418,8 @@ We are at **Sprint 12**. All known base body switching and asset loading bugs ar
 
 ### Verification
 
-- `npm run build` — Full production build succeeds (no errors)
-- `npm run test` — 141 tests passing, no regressions
+- `npm run build` ΓÇö Full production build succeeds (no errors)
+- `npm run test` ΓÇö 141 tests passing, no regressions
 
 ### Current status
 
@@ -1431,12 +1431,12 @@ We are at **Sprint 12**. All identified bugs are fixed. App now:
 
 ### Next steps
 
-- User verifies: startup behavior, body slot assets visible, switching male↔female, import
+- User verifies: startup behavior, body slot assets visible, switching maleΓåöfemale, import
 - Create `future.md` with deferred features roadmap
 
 ---
 
-## Session 021 — Sprint 12 continued: Body Switching Fix + Randomizer Body Preservation
+## Session 021 ΓÇö Sprint 12 continued: Body Switching Fix + Randomizer Body Preservation
 
 ### Date
 
@@ -1446,7 +1446,7 @@ We are at **Sprint 12**. All identified bugs are fixed. App now:
 
 | # | Issue | Root Cause | Fix |
 |---|-------|------------|-----|
-| 1 | Body slot switching destroyed base body and stayed on procedural | `tryLoadBaseBody` lines 327-331 set `this.lastAssetIds['body'] = null` before the completion-triggered `updateCharacter` call, causing the body handler to see `oldAssetId === null` !== `newAssetId`, triggering `destroyBaseBody()` | Removed stale cleanup lines (detachSlot, releaseAsset, reset lastAssetIds) from `tryLoadBaseBody` — leftover from old slot-based body system; `destroyBaseBody()` already handles cleanup |
+| 1 | Body slot switching destroyed base body and stayed on procedural | `tryLoadBaseBody` lines 327-331 set `this.lastAssetIds['body'] = null` before the completion-triggered `updateCharacter` call, causing the body handler to see `oldAssetId === null` !== `newAssetId`, triggering `destroyBaseBody()` | Removed stale cleanup lines (detachSlot, releaseAsset, reset lastAssetIds) from `tryLoadBaseBody` ΓÇö leftover from old slot-based body system; `destroyBaseBody()` already handles cleanup |
 | 2 | Randomizer switched to procedural body | `generateRandomDNA` skipped body slot (`if (slot.id === 'body') continue`), so the randomized DNA had no body slot | `handleRandomize` in `App.tsx` now copies `currentDNA.slots.body` into the random DNA before calling `overwriteDNA` |
 | 3 | Debug console.log noise | 10 `[CharMgr]` log lines added during debugging | All removed after both fixes confirmed working |
 
@@ -1459,13 +1459,13 @@ We are at **Sprint 12**. All identified bugs are fixed. App now:
 
 ### Verification
 
-- `npm run build` — Full production build succeeds
-- `npm run test` — 141 tests passing, no regressions
+- `npm run build` ΓÇö Full production build succeeds
+- `npm run test` ΓÇö 141 tests passing, no regressions
 
 ### Current status
 
 We are at **Sprint 12**. All known bugs from manual testing are fixed:
-- Body asset switching works (click any body asset → loads immediately)
+- Body asset switching works (click any body asset ΓåÆ loads immediately)
 - Randomizer preserves current body (only randomizes morphs/colors/accessories)
 - Import refresh works (imported assets appear in slot panel)
 - Skin color changes propagate correctly
@@ -1477,7 +1477,7 @@ We are at **Sprint 12**. All known bugs from manual testing are fixed:
 
 ---
 
-## Session 022 — Sprint 12 continued: Skinned Mesh Re-binding for Asset Pipeline
+## Session 022 ΓÇö Sprint 12 continued: Skinned Mesh Re-binding for Asset Pipeline
 
 ### Date
 
@@ -1485,14 +1485,14 @@ We are at **Sprint 12**. All known bugs from manual testing are fixed:
 
 ### What we built
 
-Full asset pipeline — 30 Quaternius GLTF files converted to self-contained GLB and registered in `imported-project/` across 10 slots. Fixed skinned mesh attachment: all Quaternius hair/clothing meshes are `SkinnedMesh` with their own skeleton instances; parenting to bones via `SlotManager.attachSlot()` produced wrong skinning matrices.
+Full asset pipeline ΓÇö 30 Quaternius GLTF files converted to self-contained GLB and registered in `imported-project/` across 10 slots. Fixed skinned mesh attachment: all Quaternius hair/clothing meshes are `SkinnedMesh` with their own skeleton instances; parenting to bones via `SlotManager.attachSlot()` produced wrong skinning matrices.
 
 ### Files created
 
 | File | Purpose |
 |---|---|
-| `scripts/import-all-assets.mjs` | Batch GLTF→GLB conversion via `@gltf-transform/cli optimize` + project creation + asset registration |
-| `imported-project/` | Fresh project with 30 assets across 10 slots (body ×2, hair ×9, beard ×1, eyebrows ×4, shirt ×4, pants ×2, shoes ×2, gloves ×2, helmet ×1, cape ×3) |
+| `scripts/import-all-assets.mjs` | Batch GLTFΓåÆGLB conversion via `@gltf-transform/cli optimize` + project creation + asset registration |
+| `imported-project/` | Fresh project with 30 assets across 10 slots (body ├ù2, hair ├ù9, beard ├ù1, eyebrows ├ù4, shirt ├ù4, pants ├ù2, shoes ├ù2, gloves ├ù2, helmet ├ù1, cape ├ù3) |
 | `future.md` | 5-phase roadmap (Asset Pipeline, Belly Fix, Face Morphs, Core Features, Distribution) |
 
 ### Files modified
@@ -1507,25 +1507,25 @@ Full asset pipeline — 30 Quaternius GLTF files converted to self-contained GLB
 |---|---|
 | **Re-bind skinned meshes to base skeleton** | Quaternius parts share the same skeleton. Re-binding with original `bindMatrix` preserves world position. Skinned meshes parented to skeleton root (instead of attachment bone) so skinning shader handles deformation, not scene graph position. |
 | **Re-bind on every attach** | Cached assets from AssetManager could be bound to a different skeleton if base body was switched. `child.bind()` is cheap (updates references, not GPU data). |
-| **Non-skinned assets fall through to bone attachment** | Placeholder assets and un-rigged meshes continue to use `findBone()` — no behavior change for procedural parts. |
+| **Non-skinned assets fall through to bone attachment** | Placeholder assets and un-rigged meshes continue to use `findBone()` ΓÇö no behavior change for procedural parts. |
 
 ### Asset pipeline (3 phases completed)
 
-**Phase 1 — Conversion**: 30 GLTF files from `assets/quaternius/` converted via `@gltf-transform/cli optimize` to self-contained GLB in `assets/converted-glb/`. All materials/textures embedded.
+**Phase 1 ΓÇö Conversion**: 30 GLTF files from `assets/quaternius/` converted via `@gltf-transform/cli optimize` to self-contained GLB in `assets/converted-glb/`. All materials/textures embedded.
 
-**Phase 2 — Project creation**: `imported-project/` created with `project.json`, `assets/index.json` mapping 30 GLBs to correct slots with tags.
+**Phase 2 ΓÇö Project creation**: `imported-project/` created with `project.json`, `assets/index.json` mapping 30 GLBs to correct slots with tags.
 
-**Phase 3 — Base body registration**: Both Superhero_Male_FullBody and Superhero_Female_FullBody tagged `base_body` for auto-discovery.
+**Phase 3 ΓÇö Base body registration**: Both Superhero_Male_FullBody and Superhero_Female_FullBody tagged `base_body` for auto-discovery.
 
 ### Verification
 
-- `npm run build` — Full production build succeeds
-- `npm run typecheck` — TypeScript strict, 0 errors
-- `npm run test` — 141 tests passing, no regressions
+- `npm run build` ΓÇö Full production build succeeds
+- `npm run typecheck` ΓÇö TypeScript strict, 0 errors
+- `npm run test` ΓÇö 141 tests passing, no regressions
 
 ---
 
-## Session 023 — Clipping & Hat Rule Fixes
+## Session 023 ΓÇö Clipping & Hat Rule Fixes
 
 ### Date
 
@@ -1537,27 +1537,27 @@ Three bugs found during visual testing of imported Quaternius assets:
 
 | # | Issue | Root Cause | Fix |
 |---|-------|------------|-----|
-| 1 | Clothes clip through body — skin peaks through | Two compounding bugs: (a) skinned mesh groups parented to `skeletonRoot` bone double-counted the skeleton root's world transform in the skinning shader (`modelMatrix * boneMatrices`); (b) `child.bind(baseSkeleton, bindMatrix)` replaced the skeleton object, swapping the clothing mesh's correct `boneInverses` with the base body's (which were computed for a different mesh position) | (a) Skinned mesh groups now parent to `baseBodyGroup` (same level as skeleton bones) instead of `skeletonRoot`; (b) Instead of `bind()`, loop replaces bone references (`skel.bones[i] = baseBone`) preserving the clothing's own skeleton and boneInverses |
-| 2 | Hair after hat shows through (rules timing) | Rule subscription fired synchronously on DNA change, calling `applyRuleVisibility` *before* `updateCharacter` attached the new slot — `setSlotVisibility(false)` was a no-op, then attachment set visibility `true` | Re-apply `applyRuleVisibility(useRuleStore.getState().results)` at end of `updateCharacter` after all slots processed |
-| 3 | One hairstyle peaks through hat | Mesh geometry issue — that specific hair mesh extends beyond the helmet's interior volume | Not code-fixable (would need Blender edit or a specific clipping rule) |
+| 1 | Clothes clip through body ΓÇö skin peaks through | Two compounding bugs: (a) skinned mesh groups parented to `skeletonRoot` bone double-counted the skeleton root's world transform in the skinning shader (`modelMatrix * boneMatrices`); (b) `child.bind(baseSkeleton, bindMatrix)` replaced the skeleton object, swapping the clothing mesh's correct `boneInverses` with the base body's (which were computed for a different mesh position) | (a) Skinned mesh groups now parent to `baseBodyGroup` (same level as skeleton bones) instead of `skeletonRoot`; (b) Instead of `bind()`, loop replaces bone references (`skel.bones[i] = baseBone`) preserving the clothing's own skeleton and boneInverses |
+| 2 | Hair after hat shows through (rules timing) | Rule subscription fired synchronously on DNA change, calling `applyRuleVisibility` *before* `updateCharacter` attached the new slot ΓÇö `setSlotVisibility(false)` was a no-op, then attachment set visibility `true` | Re-apply `applyRuleVisibility(useRuleStore.getState().results)` at end of `updateCharacter` after all slots processed |
+| 3 | One hairstyle peaks through hat | Mesh geometry issue ΓÇö that specific hair mesh extends beyond the helmet's interior volume | Not code-fixable (would need Blender edit or a specific clipping rule) |
 
 ### Files modified
 
 | File | Change |
 |---|---|
-| `src/renderer/three/SlotManager.ts` | Changed `SlotAttachment.bone: THREE.Bone` → `SlotAttachment.parent: THREE.Object3D` and `attachSlot()` parameter from `bone` to `parent` (backward-compatible — Bone extends Object3D). Updated `detachSlot` to use `parent.remove()`. |
+| `src/renderer/three/SlotManager.ts` | Changed `SlotAttachment.bone: THREE.Bone` ΓåÆ `SlotAttachment.parent: THREE.Object3D` and `attachSlot()` parameter from `bone` to `parent` (backward-compatible ΓÇö Bone extends Object3D). Updated `detachSlot` to use `parent.remove()`. |
 | `src/renderer/three/CharacterManager.ts` | **Fix 1+2**: Replaced `child.bind(this.baseSkeleton, child.bindMatrix.clone())` with bone reference replacement loop (`skel.bones[i] = baseBone` + `skel.update()`). Changed parent for skinned meshes from `this.skeletonRoot` to `this.baseBodyGroup`. Removed now-unused `baseSkeleton` field, extraction code, and null clear. |  
 | `src/renderer/three/CharacterManager.ts` | **Fix 3**: Added `applyRuleVisibility(useRuleStore.getState().results)` call at end of `updateCharacter()` after all slot processing. |
 
 ### Verification
 
-- `npm run typecheck` — TypeScript strict, 0 errors
-- `npm run test` — 141 tests passing, no regressions
-- `npm run build` — Full production build succeeds
+- `npm run typecheck` ΓÇö TypeScript strict, 0 errors
+- `npm run test` ΓÇö 141 tests passing, no regressions
+- `npm run build` ΓÇö Full production build succeeds
 
 ---
 
-## Session 024 � Project Audit + Outfit Fit Investigation
+## Session 024 ù Project Audit + Outfit Fit Investigation
 
 ### Date
 
@@ -1565,15 +1565,15 @@ Three bugs found during visual testing of imported Quaternius assets:
 
 ### What we did
 
-Full project audit at user request. User had given up on the project because "models and clothes weren't working" � the goal was randomized 3D characters with clothes (video-game-style character creator). Audit found the engine is complete and healthy; the failure was content pairing, not code.
+Full project audit at user request. User had given up on the project because "models and clothes weren't working" ù the goal was randomized 3D characters with clothes (video-game-style character creator). Audit found the engine is complete and healthy; the failure was content pairing, not code.
 
 ### Audit findings
 
 | # | Finding |
 |---|---|
 | 1 | Engine fully intact: all 12 sprints, 141?145 tests passing, typecheck/lint clean |
-| 2 | `future.md` was stale � claimed "0 clothing assets", but `imported-project/` already has 30 registered GLBs incl. full peasant/ranger clothing sets for both genders |
-| 3 | App was silently opening `test-project` (stale `projectRoot` in global `app-state.json` at `%APPDATA%/cartoongen/app-state.json`) � this is why clothes didn't appear in the slot panel. Repointed to `imported-project/` |
+| 2 | `future.md` was stale ù claimed "0 clothing assets", but `imported-project/` already has 30 registered GLBs incl. full peasant/ranger clothing sets for both genders |
+| 3 | App was silently opening `test-project` (stale `projectRoot` in global `app-state.json` at `%APPDATA%/cartoongen/app-state.json`) ù this is why clothes didn't appear in the slot panel. Repointed to `imported-project/` |
 | 4 | **Root cause of clipping**: outfits are sculpted for Quaternius *Regular* physique (outfit textures literally named `T_Regular_Male/Female_*`), but the only free base bodies are *Superhero* variant. Same exact 65-bone skeleton (verified programmatically), different body shape ? skin pokes through. Male fits ~decently; female clips badly (bust/torso/thighs) |
 | 5 | Regular/Teen bodies are ONLY in the paid $19.99 Source pack. The free Standard zip ships Superhero M/F despite marketing "6 models" (verified by inspecting the actual zip contents) |
 | 6 | Materials are safe: outfit materials (`MI_Ranger`, `MI_Peasant`) don't match any remap keyword in `AssetManager.remapMaterial`, so PBR textures survive |
@@ -1617,8 +1617,8 @@ Full project audit at user request. User had given up on the project because "mo
 
 ### Verification
 
-- `npm run typecheck` � 0 errors
-- `npm run test` � 145 tests passing (4 new gender-filter tests)
+- `npm run typecheck` ù 0 errors
+- `npm run test` ù 145 tests passing (4 new gender-filter tests)
 
 ### Current status
 
@@ -1627,7 +1627,7 @@ Engine complete and healthy. Randomizer is gender-correct. Remaining blocker is 
 
 ---
 
-## Session 025 � Procedural Character Planning + Sprint 13 Kickoff
+## Session 025 ù Procedural Character Planning + Sprint 13 Kickoff
 
 ### Date
 
@@ -1659,7 +1659,7 @@ Sprint 13 in progress.
 
 ---
 
-## Session 026 � Sprint 13: Geometry Kernel + Procedural Head
+## Session 026 ù Sprint 13: Geometry Kernel + Procedural Head
 
 ### Date
 
@@ -1667,7 +1667,7 @@ Sprint 13 in progress.
 
 ### What we built
 
-Sprint 13 � the procedural geometry foundation. Three parametric primitives in a new src/renderer/three/procedural/ module, pure-math skin weight computation with unit tests, and a watermelon head (cranium ellipsoid + jaw lathe + ears + neck sweep) that is genuinely skinned to the Neck/Head bones - the first procedural mesh in the app that deforms via the skeleton.
+Sprint 13 ù the procedural geometry foundation. Three parametric primitives in a new src/renderer/three/procedural/ module, pure-math skin weight computation with unit tests, and a watermelon head (cranium ellipsoid + jaw lathe + ears + neck sweep) that is genuinely skinned to the Neck/Head bones - the first procedural mesh in the app that deforms via the skeleton.
 
 ### Files created
 
@@ -2264,7 +2264,7 @@ Regression tests: frown apex clears skull across extreme shapes; smile bottom cl
 
 | Issue | Root Cause | Fix |
 |---|---|---|
-| Mouth invisible on many randomizes (both smiles AND frowns) | The mouth was a flat torus arc whose CIRCLE CENTER anchored it - the visible arc sits up to a full radius away from that center (frowns arch into deeper skull latitudes, smiles span �3cm vertically). A flat arc cannot hug a curved ellipsoid face: placement offsets + a tilt patch both failed on extreme head shapes (small headHeight -> surface slope > 45 deg) | Mouth rebuilt as a TubeGeometry whose 17 sample points are projected directly ONTO the cranium ellipsoid (z = surfaceZ(x, y) + 4mm). Every point hugs the surface by construction for any head shape. End caps added. FaceResult exposes mouthPoints for tests |
+| Mouth invisible on many randomizes (both smiles AND frowns) | The mouth was a flat torus arc whose CIRCLE CENTER anchored it - the visible arc sits up to a full radius away from that center (frowns arch into deeper skull latitudes, smiles span ▒3cm vertically). A flat arc cannot hug a curved ellipsoid face: placement offsets + a tilt patch both failed on extreme head shapes (small headHeight -> surface slope > 45 deg) | Mouth rebuilt as a TubeGeometry whose 17 sample points are projected directly ONTO the cranium ellipsoid (z = surfaceZ(x, y) + 4mm). Every point hugs the surface by construction for any head shape. End caps added. FaceResult exposes mouthPoints for tests |
 
 ### Metric lessons (sweep tooling)
 
