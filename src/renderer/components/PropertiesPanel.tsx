@@ -59,6 +59,24 @@ export default function PropertiesPanel() {
       </div>
 
       <div style={sectionStyle}>
+        <div style={sectionTitleStyle}>Clothes</div>
+        <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+            <div style={{ fontSize: 11, color: '#aaa' }}>Top Length (hip &#8594; crop)</div>
+            <input
+              type="range"
+              min={0}
+              max={1}
+              step={0.01}
+              value={morphs?.topLength ?? 0}
+              onChange={(e) => setMorph('topLength', parseFloat(e.target.value))}
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Body</div>
         <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
           {PROPORTION_MORPHS.map(({ name, label }) => {

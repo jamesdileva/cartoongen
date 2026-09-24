@@ -5,6 +5,60 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 044 - Sprint 22: Tops Variety
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 22 - 5 new tops (6 total in shirt slot) sharing a new
+`torsoShellStations` core with a `topLength` morph (0..1, hem 0.9->1.25).
+
+| Asset | Construction |
+|---|---|
+| `proc:longsleeve` | Torso shell + arm tubes deltoid-to-wrist tracking arm radii + wrist cuffs; Forearm skinning segments added |
+| `proc:tank` | Torso shell + bust-clearing shoulder strap tubes, no sleeves |
+| `proc:jacket` | Open-front partial sweep (0.55 rad half-gap) + collar ring + long sleeves; leather |
+| `proc:vest` | Open-front partial sweep, sleeveless, no collar; cloth |
+| `proc:polo` | T-shirt torso + collar ring + short sleeves |
+
+Infrastructure:
+
+- `makeSweep` gained optional `phiStart`/`phiLength` (default full circle,
+  bit-identical output - all 256 prior tests still pass unmodified).
+- `topLength` flows through catalog builders, `torsoKeyOf` (body + garment
+  rebuild on drag), a Clothes slider in PropertiesPanel (generic setMorph,
+  undoable), and the randomizer (skewed full-length).
+- `garmentDependsOnKey`: all tops map to torso.
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Probe flagged 270 failures incl. previously-clean tshirt | Two causes: (a) refactor verified innocent via side-by-side vertex compare; (b) real issue was probe bands below the cropped hem + bare-by-design zones. Bands now hem-aware; sleeveless tops exclude deltoid zone; open fronts exclude the wedge (jacket side rays crossing the opening were seeing intentional bare torso) |
+| Tank strap up-rays missed at tube edges | Band narrowed to strap centerline; analytic strap-clears-bust-peak unit test added |
+| Test edit corrupted `parent: 0` (caught in Sprint 21, same lesson) | Diff-check large edits before running suite |
+
+### Verification
+
+- `npm run typecheck` - 0 errors
+- `npm run lint` - 0 errors (4 pre-existing warnings)
+- `npm run test` - 264 tests passing (256 + 8 new), no regressions
+- `npm run build` - full production build succeeds
+- `npm run probe:clearance` - ALL PASSED (6 shirts x morph/length grid with
+  gap/deltoid/hem-aware bands, per-shirt deltoid checks, armX + strap bands)
+- Live visual check pending (app won't launch headless here): equip each top
+  at default camera, drag Top Length slider, randomize
+
+### Current status
+
+Sprint 22 complete. Next: Sprint 23 - archetype outfits (mage robe, elven
+tunic, dwarf vest + outfit presets + outfit randomizer).
+
+---
+
 ## Session 043 - Sprint 21: Lower Body + Headwear Variants
 
 ### Date

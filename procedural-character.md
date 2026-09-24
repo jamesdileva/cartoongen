@@ -297,12 +297,20 @@ sizes x 3 hats, cranium-in-dome raycasts all pass).
 
 ### Sprint 22 - Tops Variety
 
-- [ ] Long sleeves (sleeve sweeps down forearms), tank top (strap tubes, no
-      sleeves), jacket (open front gap + collar ring, leather material)
-- [ ] Top length parameter (crop/waist/hip) shared across tops
+- [x] Long sleeves (arm tubes deltoid-to-wrist tracking arm radii + wrist
+      cuffs, Forearm skinning segments), tank top (bust-clearing strap
+      tubes, no sleeves), jacket (open front via partial sweep + collar
+      ring, leather material)
+- [x] Top length parameter (crop/waist/hip) shared across tops: `topLength`
+      morph 0..1 (default 0) drives hemY 0.9->1.25 in the shared
+      torsoShellStations core; Clothes slider in PropertiesPanel (undoable
+      setMorph); in torsoKeyOf so tops rebuild; randomized skewed full
+- [x] 2 extra tops for 6 total in shirt slot: vest (open-front sleeveless,
+      cloth), polo (t-shirt + collar)
 
-**Acceptance**: 6+ distinct tops in shirt slot; layering order respected via
-slot render layers.
+**Acceptance**: 6+ distinct tops in shirt slot (tshirt/longsleeve/tank/
+jacket/vest/polo); layering order respected via slot render layers
+(single-asset slot, existing slot.layer path unchanged).
 
 ### Sprint 23 - Archetype Outfits
 

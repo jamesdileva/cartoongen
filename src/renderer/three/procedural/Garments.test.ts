@@ -6,10 +6,16 @@ import {
   buildShorts,
   buildBaggy,
   buildTights,
+  buildLongsleeve,
+  buildTank,
+  buildJacket,
+  buildVest,
+  buildPolo,
   buildBeanie,
   buildCap,
   buildSombrero,
   hatRimY,
+  hemYOf,
   garmentDependsOnKey,
   isProceduralAssetId,
   findProceduralAsset,
@@ -72,19 +78,29 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 8 procedural entries with correct slots', () => {
+  it('exposes all 13 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
       'proc:baggy',
       'proc:beanie',
       'proc:cap',
+      'proc:jacket',
       'proc:jeans',
+      'proc:longsleeve',
+      'proc:polo',
       'proc:shorts',
       'proc:sombrero',
+      'proc:tank',
       'proc:tights',
-      'proc:tshirt'
+      'proc:tshirt',
+      'proc:vest'
     ])
     expect(entries.find((e) => e.id === 'proc:tshirt')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:longsleeve')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:tank')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:jacket')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:vest')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:polo')?.slotId).toBe('shirt')
     expect(entries.find((e) => e.id === 'proc:jeans')?.slotId).toBe('pants')
     expect(entries.find((e) => e.id === 'proc:shorts')?.slotId).toBe('pants')
     expect(entries.find((e) => e.id === 'proc:baggy')?.slotId).toBe('pants')
@@ -94,10 +110,22 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:sombrero')?.slotId).toBe('helmet')
     expect(findProceduralAsset('proc:tshirt')?.label).toBe('T-Shirt')
     expect(findProceduralAsset('proc:sombrero')?.label).toBe('Sombrero')
+    expect(findProceduralAsset('proc:jacket')?.materialId).toBe('leather')
   })
 
   it('maps garments to rebuild keys', () => {
-    for (const id of ['proc:tshirt', 'proc:jeans', 'proc:shorts', 'proc:baggy', 'proc:tights']) {
+    for (const id of [
+      'proc:tshirt',
+      'proc:longsleeve',
+      'proc:tank',
+      'proc:jacket',
+      'proc:vest',
+      'proc:polo',
+      'proc:jeans',
+      'proc:shorts',
+      'proc:baggy',
+      'proc:tights'
+    ]) {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
       expect(garmentDependsOnKey(id, 'head')).toBe(false)
     }
@@ -590,6 +618,115 @@ describe('pants variants', () => {
         'RightUpperLeg',
         'RightCalf'
       ])
+    }
+  })
+})
+
+describe('tops variety', () => {
+  it('long sleeves reach the wrist with normalized weights', () => {
+    const { geometry, boneNames } = buildLongsleeve()
+    expect(weightSumViolations(geometry)).toBe(0)
+    expect(boneNames).toContain('LeftForearm')
+    expect(boneNames).toContain('RightForearm')
+    const ext = xExtent(geometry)
+    expect(ext.max).toBeGreaterThan(0.85)
+    expect(ext.min).toBeLessThan(-0.85)
+    expect(ext.min).toBeCloseTo(-ext.max, 3)
+  })
+
+  it('tank has shoulder straps and no sleeves', () => {
+    const geo = buildTank().geometry
+    expect(weightSumViolations(geo)).toBe(0)
+    // Straps arc over the shoulders above the chest band.
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let strapTop = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const x = Math.abs(pos.getX(i))
+      const y = pos.getY(i)
+      if (x > 0.05 && x < 0.3 && y > 1.5) strapTop = Math.max(strapTop, y)
+    }
+    expect(strapTop).toBeGreaterThan(1.55)
+    // No sleeve tubes outboard of the deltoid.
+    const ext = xExtent(geo)
+    expect(ext.max).toBeLessThan(0.45)
+  })
+
+  it('jacket has an open front gap', () => {
+    const geo = buildJacket().geometry
+    expect(weightSumViolations(geo)).toBe(0)
+    // Front-center wedge at chest height must be empty (the opening).
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let centerFront = 0
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i)
+      const y = pos.getY(i)
+      const z = pos.getZ(i)
+      if (y > 1.2 && y < 1.4 && z > 0.15 && Math.abs(x) < 0.1) centerFront++
+    }
+    expect(centerFront).toBe(0)
+    // But the sides at the same band exist.
+    let sideCount = 0
+    for (let i = 0; i < pos.count; i++) {
+      const x = Math.abs(pos.getX(i))
+      const y = pos.getY(i)
+      const z = pos.getZ(i)
+      if (y > 1.2 && y < 1.4 && z > 0.15 && x > 0.2) sideCount++
+    }
+    expect(sideCount).toBeGreaterThan(0)
+  })
+
+  it('jacket and polo have collars, vest does not', () => {
+    // Collar tube top (y≈1.604) pokes above the shell top ring (y=1.585).
+    const collarBand = (geo: THREE.BufferGeometry): number => {
+      const pos = geo.attributes.position as THREE.BufferAttribute
+      let n = 0
+      for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i)
+        const r = Math.hypot(pos.getX(i), pos.getZ(i))
+        if (y > 1.595 && y < 1.62 && r < 0.2) n++
+      }
+      return n
+    }
+    expect(collarBand(buildJacket().geometry)).toBeGreaterThan(0)
+    expect(collarBand(buildPolo().geometry)).toBeGreaterThan(0)
+    expect(collarBand(buildVest().geometry)).toBe(0)
+  })
+
+  it('topLength morph raises the hem for every closed top', () => {
+    const builds = [buildTShirt, buildLongsleeve, buildTank, buildVest, buildPolo, buildJacket]
+    for (const build of builds) {
+      const hip = yExtent(build(DEFAULT_BODY_SHAPE, 0.15, 0.5, 0.2, 0).geometry)
+      const cropped = yExtent(build(DEFAULT_BODY_SHAPE, 0.15, 0.5, 0.2, 1).geometry)
+      expect(cropped.min).toBeGreaterThan(hip.min + 0.2)
+      expect(hemYOf(1)).toBeGreaterThan(hemYOf(0))
+    }
+  })
+
+  it('tank straps clear the bust peak at max morph', () => {
+    const bust = 1
+    const bustR = 0.02 + 0.075 * bust
+    const peak = (0.155 + 0.045 * bust) * DEFAULT_BODY_SHAPE.chestDepth + bustR * 0.78
+    const geo = buildTank(DEFAULT_BODY_SHAPE, bust, 0.5, 0.2, 0).geometry
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let strapFront = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const x = Math.abs(pos.getX(i))
+      const y = pos.getY(i)
+      if (x > 0.08 && x < 0.2 && y > 1.3 && y < 1.42) {
+        strapFront = Math.max(strapFront, pos.getZ(i))
+      }
+    }
+    expect(strapFront).toBeGreaterThan(peak)
+  })
+
+  it('all tops bind torso chains with normalized weights', () => {
+    for (const build of [buildLongsleeve, buildTank, buildJacket, buildVest, buildPolo]) {
+      const { geometry, boneNames } = build()
+      expect(weightSumViolations(geometry)).toBe(0)
+      expect(boneNames).toContain('Root')
+      expect(boneNames).toContain('Spine1')
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
     }
   })
 })

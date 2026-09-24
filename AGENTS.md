@@ -2532,3 +2532,32 @@ Hats tagged `hat`; existing helmet rules untouched.
 
 Sprint 21 complete. Next: Sprint 22 - tops variety.
 
+---
+
+## Session 044 - Sprint 22: Tops Variety
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 22 - 5 new tops (longsleeve/tank/jacket/vest/polo, 6 total in shirt
+slot) sharing a torsoShellStations core with a topLength morph (hem
+0.9->1.25). Full entry in worklog.md.
+
+makeSweep gained phiStart/phiLength for open fronts (bit-identical default).
+topLength flows through catalog, torsoKeyOf, Clothes slider (setMorph),
+randomizer. Probe extended with hem/gap/deltoid-aware bands + armX mode.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 264 tests passing (256 + 8 new), no regressions
+- probe:clearance ALL PASSED
+- Live visual check pending (no headless Electron here)
+
+### Current status
+
+Sprint 22 complete. Next: Sprint 23 - archetype outfits.
+

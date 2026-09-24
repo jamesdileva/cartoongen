@@ -1,7 +1,12 @@
 import * as THREE from 'three'
-import { buildHead, buildTorso } from '../../src/renderer/three/procedural/BodyParts'
+import { buildArm, buildHead, buildTorso } from '../../src/renderer/three/procedural/BodyParts'
 import {
   buildTShirt,
+  buildLongsleeve,
+  buildTank,
+  buildJacket,
+  buildVest,
+  buildPolo,
   buildJeans,
   buildShorts,
   buildBaggy,
@@ -10,6 +15,7 @@ import {
   buildCap,
   buildSombrero,
   hatRimY,
+  hemYOf,
   buttRearDepth
 } from '../../src/renderer/three/procedural/Garments'
 import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../src/shared/types/bodyShape'
@@ -28,9 +34,11 @@ function countPokes(
   opts: {
     yMin: number
     yMax: number
-    mode: 'radial' | 'front' | 'rear' | 'sideX' | 'up'
+    mode: 'radial' | 'front' | 'rear' | 'sideX' | 'up' | 'armX'
     xMin?: number
     xMax?: number
+    /** ignore vertices with |z| beyond this (side rays that would cross an open front) */
+    zMax?: number
     minRadial?: number
     /** ignore vertices this close to the spine axis (centerline rays are meaningless) */
     minAbsZ?: number
@@ -52,13 +60,20 @@ function countPokes(
     if (by < opts.yMin || by > opts.yMax) continue
     if (opts.xMin !== undefined && bx < opts.xMin) continue
     if (opts.xMax !== undefined && bx > opts.xMax) continue
+    if (opts.zMax !== undefined && Math.abs(bz) > opts.zMax) continue
     if (opts.minAbsZ !== undefined && Math.abs(bz) < opts.minAbsZ) continue
 
     let dir: THREE.Vector3
     if (opts.mode === 'front') dir = new THREE.Vector3(0, 0, 1)
     else if (opts.mode === 'rear') dir = new THREE.Vector3(0, 0, -1)
     else if (opts.mode === 'up') dir = new THREE.Vector3(0, 1, 0)
-    else if (opts.mode === 'sideX') {
+    else if (opts.mode === 'armX') {
+      // Away from the arm axis (line y=1.5, z=0): covers arm tube walls.
+      if (bx <= 0) continue
+      const ax = new THREE.Vector3(0, by - 1.5, bz)
+      if (ax.lengthSq() < 1e-8) continue
+      dir = ax.normalize()
+    } else if (opts.mode === 'sideX') {
       if (bx <= 0) continue
       dir = new THREE.Vector3(1, 0, 0)
     } else {
@@ -171,60 +186,156 @@ const hatBuilders = {
   sombrero: (shape: BodyShape, face: FaceShape) => buildSombrero(shape, face)
 } as const
 
+const shirtBuilders = {
+  tshirt: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildTShirt(shape, bust, belly, butt, topLength),
+  longsleeve: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildLongsleeve(shape, bust, belly, butt, topLength),
+  tank: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildTank(shape, bust, belly, butt, topLength),
+  jacket: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildJacket(shape, bust, belly, butt, topLength),
+  vest: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildVest(shape, bust, belly, butt, topLength),
+  polo: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildPolo(shape, bust, belly, butt, topLength)
+} as const
+
 let failures = 0
 
 for (const { name, shape } of shapes) {
   for (const bust of [0, 0.5, 1]) {
     for (const butt of [0, 0.5, 1]) {
       for (const belly of [0, 0.5, 1]) {
-        const torso = buildTorso(shape, bust, butt, belly).geometry
-        const shirt = buildTShirt(shape, bust, belly, butt).geometry
-        const issues: string[] = []
+        for (const topLength of [0, 1]) {
+          const torso = buildTorso(shape, bust, butt, belly).geometry
+          const armR = buildArm(1).geometry
+          const hemY = hemYOf(topLength)
+          const issues: string[] = []
+          const aboveHem = (yMin: number): number => Math.max(yMin, hemY)
+          // Bare deltoids/arms are by design on sleeveless tops: bound |x|
+          // to the shell zone. Open fronts (jacket/vest) show skin by
+          // design: skip the front wedge (gap half-width ~0.16 + margin).
+          const delt = 0.36 * shape.shoulderWidth - 0.08
+          const strapX = 0.085 + 0.03 * bust + 0.02
 
-        report(
-          issues,
-          'chest front',
-          countPokes(torso, shirt, { yMin: 1.2, yMax: 1.42, mode: 'front', minAbsZ: 0.05 })
-        )
-        report(
-          issues,
-          'shirt rear',
-          countPokes(torso, shirt, { yMin: 0.9, yMax: 1.08, mode: 'rear', minAbsZ: 0.05 })
-        )
-        report(
-          issues,
-          'shirt side',
-          countPokes(torso, shirt, { yMin: 0.95, yMax: 1.4, mode: 'sideX' })
-        )
-
-        const clavEnd = 0.36 * shape.shoulderWidth
-        report(
-          issues,
-          'deltoid',
-          countPokes(torso, shirt, { yMin: 1.36, yMax: 1.56, mode: 'sideX', xMin: clavEnd - 0.1 })
-        )
-
-        for (const [pantsName, build] of Object.entries(pantsBuilders)) {
-          const pants = build(shape, butt, belly).geometry
-          report(
-            issues,
-            `${pantsName} rear`,
-            countPokes(torso, pants, { yMin: 0.82, yMax: 1.04, mode: 'rear', minAbsZ: 0.05 })
-          )
-          // Shorts have no tubes below mid-thigh: bare legs are by design.
-          if (pantsName !== 'shorts') {
+          for (const [shirtName, buildShirt] of Object.entries(shirtBuilders)) {
+            const shirt = buildShirt(shape, bust, belly, butt, topLength).geometry
+            const delt = 0.36 * shape.shoulderWidth - 0.08
+            const chestX =
+              shirtName === 'vest'
+                ? { xMin: 0.2, xMax: delt } // +X side only; symmetry covers -X
+                : shirtName === 'jacket'
+                  ? { xMin: 0.2 }
+                  : shirtName === 'tank'
+                    ? { xMin: -delt, xMax: delt }
+                    : {}
             report(
               issues,
-              `${pantsName} leg`,
-              countPokes(torso, pants, { yMin: 0.18, yMax: 0.86, mode: 'sideX', xMin: 0.12 })
+              `${shirtName} chest`,
+              countPokes(torso, shirt, {
+                yMin: aboveHem(1.2),
+                yMax: 1.42,
+                mode: 'front',
+                minAbsZ: 0.05,
+                ...chestX
+              })
+            )
+            report(
+              issues,
+              `${shirtName} rear`,
+              countPokes(torso, shirt, {
+                yMin: aboveHem(0.9),
+                yMax: 1.08,
+                mode: 'rear',
+                minAbsZ: 0.05
+              })
+            )
+            // Side rays from front-diagonal verts cross the open wedge
+            // (visible torso by design): keep |z| near the true silhouette.
+            // Sleeveless tops leave deltoids bare: bound x to the shell.
+            const sleevelessSide = shirtName === 'tank' || shirtName === 'vest'
+            const openSide = shirtName === 'jacket' || shirtName === 'vest'
+            report(
+              issues,
+              `${shirtName} side`,
+              countPokes(torso, shirt, {
+                yMin: aboveHem(0.95),
+                yMax: sleevelessSide ? 1.36 : 1.4,
+                mode: 'sideX',
+                ...(sleevelessSide ? { xMax: delt } : {}),
+                ...(openSide ? { zMax: 0.12 } : {})
+              })
+            )
+            if (shirtName === 'longsleeve' || shirtName === 'jacket') {
+              report(
+                issues,
+                `${shirtName} arm`,
+                countPokes(armR, shirt, {
+                  yMin: 1.3,
+                  yMax: 1.62,
+                  mode: 'armX',
+                  xMin: 0.5,
+                  xMax: 0.9
+                })
+              )
+            }
+            if (shirtName === 'tank') {
+              // Centerline under the strap footprint only: tube edges
+              // graze. Bare shoulder elsewhere is by design.
+              report(
+                issues,
+                `${shirtName} strap`,
+                countPokes(torso, shirt, {
+                  yMin: aboveHem(1.36),
+                  yMax: 1.52,
+                  mode: 'up',
+                  xMin: strapX - 0.02,
+                  xMax: strapX + 0.02
+                })
+              )
+            }
+          }
+
+          for (const shirtName of ['tshirt', 'longsleeve', 'jacket', 'polo'] as const) {
+            const shirt = shirtBuilders[shirtName](shape, bust, belly, butt, topLength).geometry
+            const clavEnd = 0.36 * shape.shoulderWidth
+            report(
+              issues,
+              `${shirtName} deltoid`,
+              countPokes(torso, shirt, {
+                yMin: 1.36,
+                yMax: 1.56,
+                mode: 'sideX',
+                xMin: clavEnd - 0.1
+              })
             )
           }
-        }
 
-        if (issues.length > 0) {
-          failures++
-          console.log(`FAIL ${name} bust=${bust} butt=${butt} belly=${belly}: ${issues.join('; ')}`)
-        }
+          for (const [pantsName, build] of Object.entries(pantsBuilders)) {
+            const pants = build(shape, butt, belly).geometry
+            report(
+              issues,
+              `${pantsName} rear`,
+              countPokes(torso, pants, { yMin: 0.82, yMax: 1.04, mode: 'rear', minAbsZ: 0.05 })
+            )
+            // Shorts have no tubes below mid-thigh: bare legs are by design.
+            if (pantsName !== 'shorts') {
+              report(
+                issues,
+                `${pantsName} leg`,
+                countPokes(torso, pants, { yMin: 0.18, yMax: 0.86, mode: 'sideX', xMin: 0.12 })
+              )
+            }
+          }
+
+          if (issues.length > 0) {
+            failures++
+            console.log(
+              `FAIL ${name} bust=${bust} butt=${butt} belly=${belly} len=${topLength}: ${issues.join('; ')}`
+            )
+          }
+        } // topLength
       }
     }
   }

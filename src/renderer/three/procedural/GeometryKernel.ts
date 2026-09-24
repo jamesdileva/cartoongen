@@ -47,11 +47,18 @@ export function makeSweep(
   stations: SweepStation[],
   radialSegments = 12,
   capStart = false,
-  capEnd = false
+  capEnd = false,
+  phiStart = 0,
+  phiLength = Math.PI * 2
 ): THREE.BufferGeometry {
   if (stations.length < 2) {
     throw new Error('makeSweep requires at least 2 stations')
   }
+  // Partial arcs (open-front jackets) need an open seam: no wrap, and one
+  // extra vertex per ring so both cut edges exist. Full circles keep the
+  // exact legacy layout (wrapped indices) for bit-identical output.
+  const fullCircle = Math.abs(phiLength - Math.PI * 2) < 1e-9
+  const vertsPerRing = fullCircle ? radialSegments : radialSegments + 1
 
   const centers = stations.map((s) => new THREE.Vector3(...s.center))
   const tangents: THREE.Vector3[] = []
@@ -69,14 +76,15 @@ export function makeSweep(
 
   for (let i = 0; i < ringCount; i++) {
     const tangent = tangents[i]
-    const refUp = Math.abs(tangent.y) > 0.999 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0)
+    const refUp =
+      Math.abs(tangent.y) > 0.999 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0)
     const side = new THREE.Vector3().crossVectors(tangent, refUp).normalize()
     const up2 = new THREE.Vector3().crossVectors(side, tangent).normalize()
     const c = centers[i]
     const { width, height } = stations[i]
 
-    for (let j = 0; j < radialSegments; j++) {
-      const a = (j / radialSegments) * Math.PI * 2
+    for (let j = 0; j < vertsPerRing; j++) {
+      const a = phiStart + (j / radialSegments) * phiLength
       const off = new THREE.Vector3()
         .addScaledVector(side, Math.cos(a) * width * 0.5)
         .addScaledVector(up2, Math.sin(a) * height * 0.5)
@@ -88,11 +96,11 @@ export function makeSweep(
   const indices: number[] = []
   for (let i = 0; i < ringCount - 1; i++) {
     for (let j = 0; j < radialSegments; j++) {
-      const jn = (j + 1) % radialSegments
-      const a = i * radialSegments + j
-      const b = i * radialSegments + jn
-      const c = (i + 1) * radialSegments + j
-      const d = (i + 1) * radialSegments + jn
+      const jn = fullCircle ? (j + 1) % radialSegments : j + 1
+      const a = i * vertsPerRing + j
+      const b = i * vertsPerRing + jn
+      const c = (i + 1) * vertsPerRing + j
+      const d = (i + 1) * vertsPerRing + jn
       indices.push(a, c, d)
       indices.push(a, d, b)
     }
@@ -103,8 +111,9 @@ export function makeSweep(
     const c0 = centers[0]
     positions.push(c0.x, c0.y, c0.z)
     uvs.push(0.5, 0)
-    for (let j = 0; j < radialSegments; j++) {
-      const jn = (j + 1) % radialSegments
+    const capQuads = fullCircle ? vertsPerRing : vertsPerRing - 1
+    for (let j = 0; j < capQuads; j++) {
+      const jn = fullCircle ? (j + 1) % vertsPerRing : j + 1
       indices.push(capCenterIndex, j, jn)
     }
   }
@@ -114,9 +123,10 @@ export function makeSweep(
     const cn = centers[ringCount - 1]
     positions.push(cn.x, cn.y, cn.z)
     uvs.push(0.5, 1)
-    const ringBase = (ringCount - 1) * radialSegments
-    for (let j = 0; j < radialSegments; j++) {
-      const jn = (j + 1) % radialSegments
+    const ringBase = (ringCount - 1) * vertsPerRing
+    const capQuads = fullCircle ? vertsPerRing : vertsPerRing - 1
+    for (let j = 0; j < capQuads; j++) {
+      const jn = fullCircle ? (j + 1) % vertsPerRing : j + 1
       indices.push(capCenterIndex, ringBase + jn, ringBase + j)
     }
   }

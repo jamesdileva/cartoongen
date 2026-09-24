@@ -92,6 +92,117 @@ function bustFrontSamples(shape: BodyShape, bust: number): Array<{ x: number; de
   return samples
 }
 
+export const TOP_LENGTH_DEFAULT = 0
+
+/** Hem height for the shared length param: hip 0.9 -> crop 1.25. */
+export function hemYOf(topLength: number): number {
+  return 0.9 + clamp01(topLength) * 0.35
+}
+
+interface TorsoShell {
+  stations: SweepStation[]
+  phiStart: number
+  phiLength: number
+}
+
+/**
+ * Shared torso shell for all tops. Rules follow station height: waist scales
+ * with belly, chest clears the bust silhouette, hip clears pelvis + butt.
+ * openFrontGap skips a front wedge (jackets/vests), in radians of half-angle.
+ */
+function torsoShellStations(
+  shape: BodyShape,
+  bust: number,
+  belly: number,
+  butt: number,
+  hemY: number,
+  openFrontGap = 0
+): TorsoShell {
+  const bellyScale = bellyScaleOf(belly)
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const bustSamples = bustFrontSamples(shape, bust)
+  const buttSamples = buttRearSamples(shape, butt)
+  const buttDepthFloor = buttRearDepth(shape, butt)
+
+  const stationOf = (y: number, w: number, d: number): SweepStation => {
+    const isWaist = y >= 1.0 && y <= 1.18
+    // Bust ellipsoids reach y ≈ 1.335 + bustR ≈ 1.42 — include the y=1.44
+    // shoulder station so interpolation never sags below the bust top.
+    const isChest = y >= 1.2 && y <= 1.44
+    // Butt ellipsoids reach y ≈ 0.925 + buttR ≈ 1.045 at butt=1 — include
+    // the y=1.06 waist station so the hip depth carries through the butt top.
+    const isHip = y <= 1.06
+    const halfW = Math.max(w * (isWaist ? bellyScale : 1) + CLOTH_OFFSET, isHip ? pelvisHalfW : 0)
+    let halfD = d * (isWaist ? bellyScale : 1) + CLOTH_OFFSET
+    // Per-station ellipse: narrower stations need more depth for the same
+    // body silhouette — never reuse a wider station's correction.
+    if (isChest) halfD = Math.max(halfD, halfDForProfile(halfW, bustSamples))
+    if (isHip) {
+      halfD = Math.max(
+        halfD,
+        0.23 + CLOTH_OFFSET,
+        halfDForProfile(halfW, buttSamples),
+        buttDepthFloor + CLOTH_OFFSET
+      )
+    }
+    return { center: [0, y, 0], width: halfW * 2, height: halfD * 2 }
+  }
+
+  const stations = torsoProfile(shape)
+    .filter((st) => st.y > hemY)
+    .map((st) => stationOf(st.y, st.w, st.d))
+
+  // Hem station lerps the body profile at hemY so cropped tops end cleanly.
+  const prof = torsoProfile(shape)
+  let hi = prof.findIndex((st) => st.y >= hemY)
+  if (hi < 0) hi = prof.length - 1
+  const lo = Math.max(0, hi - 1)
+  const span = prof[hi].y - prof[lo].y || 1
+  const t = Math.max(0, Math.min(1, (hemY - prof[lo].y) / span))
+  const hemW = prof[lo].w + (prof[hi].w - prof[lo].w) * t
+  const hemD = prof[lo].d + (prof[hi].d - prof[lo].d) * t
+  stations.unshift(stationOf(hemY, hemW, hemD))
+
+  return {
+    stations,
+    phiStart: Math.PI / 2 + openFrontGap,
+    phiLength: Math.PI * 2 - openFrontGap * 2
+  }
+}
+
+/** Torso + clavicle + arm segments for top skinning. */
+function topSegments(clavEnd: number, armStart: number, longSleeves: boolean): BoneSegment[] {
+  const segs: BoneSegment[] = [
+    { name: 'Root', start: [0, 0.86, 0], end: [0, 1.15, 0] },
+    { name: 'Spine', start: [0, 1.15, 0], end: [0, 1.3, 0] },
+    { name: 'Spine1', start: [0, 1.3, 0], end: [0, 1.45, 0] },
+    { name: 'Spine2', start: [0, 1.45, 0], end: [0, 1.6, 0] },
+    { name: 'LeftClavicle', start: [-0.1, 1.47, 0], end: [-(clavEnd + 0.02), 1.46, 0] },
+    { name: 'RightClavicle', start: [0.1, 1.47, 0], end: [clavEnd + 0.02, 1.46, 0] },
+    // Start upperarm inboard of the deltoid so sleeve verts bind primarily to
+    // the arm (tracks muscleMass) while still blending to clavicle at the cap.
+    { name: 'LeftUpperArm', start: [-armStart, 1.5, 0], end: [-0.66, 1.5, 0] },
+    { name: 'RightUpperArm', start: [armStart, 1.5, 0], end: [0.66, 1.5, 0] }
+  ]
+  if (longSleeves) {
+    segs.push(
+      { name: 'LeftForearm', start: [-0.66, 1.5, 0], end: [-0.91, 1.51, 0] },
+      { name: 'RightForearm', start: [0.66, 1.5, 0], end: [0.91, 1.51, 0] }
+    )
+  }
+  return segs
+}
+
+function bindTop(parts: THREE.BufferGeometry[], segments: BoneSegment[]): GarmentBuildResult {
+  const merged = mergeGeometries(parts)
+  if (!merged) {
+    throw new Error('bindTop: mergeGeometries returned null')
+  }
+  const binding = computeSkinBindings(merged.attributes.position.array as Float32Array, segments)
+  applySkinAttributes(merged, binding)
+  return { geometry: merged, boneNames: segments.map((s) => s.name) }
+}
+
 /**
  * Torso-hugging shell offset outside the body surface, with short
  * sleeve stubs over the upper arms. Clearance accounts for the pelvis
@@ -101,79 +212,45 @@ export function buildTShirt(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
   bust = BUST_DEFAULT,
   belly = 0.5,
-  butt = BUTT_DEFAULT
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
 ): GarmentBuildResult {
-  const bellyScale = bellyScaleOf(belly)
-  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
-  const bustSamples = bustFrontSamples(shape, bust)
-  const buttSamples = buttRearSamples(shape, butt)
-  const buttDepthFloor = buttRearDepth(shape, butt)
+  const { stations, phiStart, phiLength } = torsoShellStations(
+    shape,
+    bust,
+    belly,
+    butt,
+    hemYOf(topLength)
+  )
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
 
-  const stations = torsoProfile(shape)
-    .filter((st) => st.y >= 0.96 && st.y <= 1.585)
-    .map((st) => {
-      const isWaist = st.y >= 1.0 && st.y <= 1.18
-      // Bust ellipsoids reach y ≈ 1.335 + bustR ≈ 1.42 — include the y=1.44
-      // shoulder station so interpolation never sags below the bust top.
-      const isChest = st.y >= 1.2 && st.y <= 1.44
-      // Butt ellipsoids reach y ≈ 0.925 + buttR ≈ 1.045 at butt=1 — include
-      // the y=1.06 waist station so the hip depth carries through the butt top.
-      const isHip = st.y <= 1.06
-      const halfW = Math.max(
-        st.w * (isWaist ? bellyScale : 1) + CLOTH_OFFSET,
-        isHip ? pelvisHalfW : 0
-      )
-      let halfD = st.d * (isWaist ? bellyScale : 1) + CLOTH_OFFSET
-      // Per-station ellipse: narrower stations need more depth for the same
-      // body silhouette — never reuse a wider station's correction.
-      if (isChest) halfD = Math.max(halfD, halfDForProfile(halfW, bustSamples))
-      if (isHip) {
-        halfD = Math.max(
-          halfD,
-          0.23 + CLOTH_OFFSET,
-          halfDForProfile(halfW, buttSamples),
-          buttDepthFloor + CLOTH_OFFSET
-        )
-      }
-      return {
-        center: [0, st.y, 0] as [number, number, number],
-        width: halfW * 2,
-        height: halfD * 2
-      }
-    })
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const sleeves = shortSleeves(shape, armStart)
+  return bindTop([body, ...sleeves], topSegments(clavEnd, armStart, false))
+}
 
-  // Hem sits on the pelvis band so the shirt never floats above the hips.
-  if (stations.length > 0 && stations[0].center[1] > 0.9) {
-    const hemHalfD = Math.max(
-      0.23 + CLOTH_OFFSET,
-      halfDForProfile(pelvisHalfW, buttSamples),
-      buttDepthFloor + CLOTH_OFFSET
-    )
-    stations.unshift({
-      center: [0, 0.9, 0],
-      width: pelvisHalfW * 2,
-      height: hemHalfD * 2
-    })
-  }
+/** Inboard sleeve start so the open ring tucks under the body shell. */
+function sleeveArmStart(shape: BodyShape): number {
+  const deltoidCx = 0.36 * shape.shoulderWidth + 0.005
+  // Open ring must sit inside the body shell half-width at shoulder height
+  // (~0.283 * shoulderWidth) so the tube tucks under cloth, not float outside.
+  const bodyHalfShoulder = 0.283 * shape.shoulderWidth + CLOTH_OFFSET
+  return Math.max(0.2, Math.min(deltoidCx - 0.095 - CLOTH_OFFSET, bodyHalfShoulder - 0.005))
+}
 
-  const body = makeSweep(stations, 20)
-
-  // Sleeves encapsulate the body deltoid ellipsoid (rx=0.095, ry=0.115, rz=0.1
-  // centered at x=clavEnd+0.005, y=CLAVICLE_Y-0.005) with cloth offset.
-  // Horizontal sweep: width → Z, height → Y. Muscle headroom covers upperarm
-  // xz bone scale out-growing a clavicle-weighted sleeve ring.
+/**
+ * Short sleeve stubs encapsulating the deltoid ellipsoid (rx=0.095,
+ * ry=0.115, rz=0.1) with cloth offset. Horizontal sweep: width → Z,
+ * height → Y. Muscle headroom covers upperarm xz bone scale out-growing
+ * a clavicle-weighted sleeve ring.
+ */
+function shortSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[] {
   const clavEnd = 0.36 * shape.shoulderWidth
   const deltoidCx = clavEnd + 0.005
   const deltoidCy = 1.465
   const shoulderHalfY = 0.115 + CLOTH_OFFSET * 1.5
   const shoulderHalfZ = 0.1 + CLOTH_OFFSET * 1.5
-  // Open ring must sit inside the body shell half-width at shoulder height
-  // (~0.283 * shoulderWidth) so the tube tucks under cloth, not float outside.
-  const bodyHalfShoulder = 0.283 * shape.shoulderWidth + CLOTH_OFFSET
-  const armStart = Math.max(
-    0.2,
-    Math.min(deltoidCx - 0.095 - CLOTH_OFFSET, bodyHalfShoulder - 0.005)
-  )
   const sleeveLen = 0.58
   const upperArmR = 0.075 * MUSCLE_HEADROOM + CLOTH_OFFSET
   const sleeves: THREE.BufferGeometry[] = []
@@ -205,40 +282,189 @@ export function buildTShirt(
       )
     )
   }
+  return sleeves
+}
 
-  const merged = mergeGeometries([body, ...sleeves])
-  if (!merged) {
-    throw new Error('buildTShirt: mergeGeometries returned null')
+/** Full-length arm tubes from deltoid to wrist, tracking arm radii. */
+function longSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[] {
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const deltoidCx = clavEnd + 0.005
+  const deltoidCy = 1.465
+  const shoulderHalfY = 0.115 + CLOTH_OFFSET * 1.5
+  const shoulderHalfZ = 0.1 + CLOTH_OFFSET * 1.5
+  const r = (armR: number): number => armR * MUSCLE_HEADROOM + CLOTH_OFFSET
+  const sleeves: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const s = side
+    sleeves.push(
+      makeSweep(
+        [
+          {
+            center: [s * armStart, deltoidCy, 0],
+            width: shoulderHalfZ * 2,
+            height: shoulderHalfY * 2
+          },
+          {
+            center: [s * deltoidCx, deltoidCy, 0],
+            width: shoulderHalfZ * 2,
+            height: shoulderHalfY * 2
+          },
+          { center: [s * 0.58, 1.495, 0], width: r(0.0625) * 2, height: r(0.0625) * 2 },
+          { center: [s * 0.72, 1.5, 0], width: r(0.055) * 2, height: r(0.055) * 2 },
+          { center: [s * 0.86, 1.505, 0], width: r(0.044) * 2, height: r(0.044) * 2 },
+          { center: [s * 0.93, 1.51, 0], width: r(0.0375) * 2, height: r(0.0375) * 2 }
+        ],
+        14,
+        false,
+        true
+      )
+    )
+    // Wrist cuff ring.
+    const cuff = new THREE.TorusGeometry(r(0.0375) + 0.008, 0.02, 10, 20)
+    cuff.rotateY(Math.PI / 2)
+    cuff.translate(s * 0.9, 1.508, 0)
+    sleeves.push(cuff)
   }
+  return sleeves
+}
 
-  const segments: BoneSegment[] = [
-    { name: 'Root', start: [0, 0.86, 0], end: [0, 1.15, 0] },
-    { name: 'Spine', start: [0, 1.15, 0], end: [0, 1.3, 0] },
-    { name: 'Spine1', start: [0, 1.3, 0], end: [0, 1.45, 0] },
-    { name: 'Spine2', start: [0, 1.45, 0], end: [0, 1.6, 0] },
-    {
-      name: 'LeftClavicle',
-      start: [-0.1, 1.47, 0],
-      end: [-(clavEnd + 0.02), 1.46, 0]
-    },
-    {
-      name: 'RightClavicle',
-      start: [0.1, 1.47, 0],
-      end: [clavEnd + 0.02, 1.46, 0]
-    },
-    // Start upperarm inboard of the deltoid so sleeve verts bind primarily to
-    // the arm (tracks muscleMass) while still blending to clavicle at the cap.
-    { name: 'LeftUpperArm', start: [-armStart, 1.5, 0], end: [-0.66, 1.5, 0] },
-    { name: 'RightUpperArm', start: [armStart, 1.5, 0], end: [0.66, 1.5, 0] }
-  ]
+/** Collar ring standing at the neck base. */
+function collarRing(): THREE.BufferGeometry {
+  const collar = new THREE.TorusGeometry(0.145, 0.03, 10, 24)
+  collar.rotateX(Math.PI / 2)
+  collar.translate(0, 1.575, 0.005)
+  return collar
+}
 
-  const binding = computeSkinBindings(merged.attributes.position.array as Float32Array, segments)
-  applySkinAttributes(merged, binding)
+/** Long-sleeve shirt: torso shell + arm tubes to the wrist with cuffs. */
+export function buildLongsleeve(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const { stations, phiStart, phiLength } = torsoShellStations(
+    shape,
+    bust,
+    belly,
+    butt,
+    hemYOf(topLength)
+  )
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const sleeves = longSleeves(shape, armStart)
+  return bindTop([body, ...sleeves], topSegments(clavEnd, armStart, true))
+}
 
-  return {
-    geometry: merged,
-    boneNames: segments.map((s) => s.name)
+/** Tank top: torso shell + shoulder straps, no sleeves. */
+export function buildTank(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const { stations, phiStart, phiLength } = torsoShellStations(
+    shape,
+    bust,
+    belly,
+    butt,
+    hemYOf(topLength)
+  )
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  // Straps arc over the shoulders, clearing the bust peak in front.
+  const bustR = 0.02 + 0.075 * bust
+  const peakZ = (0.155 + 0.045 * bust) * shape.chestDepth + bustR * 0.78
+  const strapX = 0.085 + 0.03 * bust + 0.02
+  const strapR = 0.035
+  const straps: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const s = side
+    straps.push(
+      makeSweep(
+        [
+          { center: [s * strapX, 1.34, peakZ + 0.04], width: strapR * 2, height: strapR * 2 },
+          { center: [s * (strapX + 0.03), 1.5, 0.1], width: strapR * 2, height: strapR * 2 },
+          { center: [s * (strapX + 0.04), 1.585, 0], width: strapR * 2, height: strapR * 2 },
+          { center: [s * (strapX + 0.03), 1.5, -0.1], width: strapR * 2, height: strapR * 2 },
+          { center: [s * strapX, 1.34, -(0.19 + 0.04)], width: strapR * 2, height: strapR * 2 }
+        ],
+        10
+      )
+    )
   }
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  return bindTop([body, ...straps], topSegments(clavEnd, armStart, false))
+}
+
+/** Open-front jacket: partial torso shell + collar + long sleeves, leather. */
+export function buildJacket(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const { stations, phiStart, phiLength } = torsoShellStations(
+    shape,
+    bust,
+    belly,
+    butt,
+    hemYOf(topLength),
+    0.55
+  )
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const sleeves = longSleeves(shape, armStart)
+  return bindTop([body, collarRing(), ...sleeves], topSegments(clavEnd, armStart, true))
+}
+
+/** Open-front vest: partial torso shell, sleeveless, no collar. */
+export function buildVest(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const { stations, phiStart, phiLength } = torsoShellStations(
+    shape,
+    bust,
+    belly,
+    butt,
+    hemYOf(topLength),
+    0.55
+  )
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  return bindTop([body], topSegments(clavEnd, armStart, false))
+}
+
+/** Polo shirt: t-shirt torso + collar ring + short sleeves. */
+export function buildPolo(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const { stations, phiStart, phiLength } = torsoShellStations(
+    shape,
+    bust,
+    belly,
+    butt,
+    hemYOf(topLength)
+  )
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const sleeves = shortSleeves(shape, armStart)
+  return bindTop([body, collarRing(), ...sleeves], topSegments(clavEnd, armStart, false))
 }
 
 /**
@@ -550,7 +776,83 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
       const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
       const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
-      return buildTShirt(shape, bust, belly, butt)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildTShirt(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:longsleeve',
+    slotId: 'shirt',
+    label: 'Long-Sleeve Shirt',
+    tags: ['shirt', 'chest', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildLongsleeve(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:tank',
+    slotId: 'shirt',
+    label: 'Tank Top',
+    tags: ['shirt', 'chest', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildTank(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:jacket',
+    slotId: 'shirt',
+    label: 'Jacket',
+    tags: ['shirt', 'jacket', 'procedural'],
+    materialId: 'leather',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildJacket(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:vest',
+    slotId: 'shirt',
+    label: 'Vest',
+    tags: ['shirt', 'vest', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildVest(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:polo',
+    slotId: 'shirt',
+    label: 'Polo Shirt',
+    tags: ['shirt', 'chest', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildPolo(shape, bust, belly, butt, topLength)
     }
   },
   {
@@ -665,6 +967,11 @@ export type GarmentKey = 'torso' | 'head' | 'face'
 export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
   if (
     assetId === 'proc:tshirt' ||
+    assetId === 'proc:longsleeve' ||
+    assetId === 'proc:tank' ||
+    assetId === 'proc:jacket' ||
+    assetId === 'proc:vest' ||
+    assetId === 'proc:polo' ||
     assetId === 'proc:jeans' ||
     assetId === 'proc:shorts' ||
     assetId === 'proc:baggy' ||

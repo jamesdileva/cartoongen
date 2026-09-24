@@ -118,4 +118,34 @@ describe('makeSweep', () => {
       expect(idx).toBeGreaterThanOrEqual(0)
     }
   })
+
+  it('partial arcs leave an open front gap without wrapping', () => {
+    const gapHalfAngle = Math.PI / 5 // 36 deg half-gap around +Z front (arc angle 90deg)
+    const geo = makeSweep(
+      [
+        { center: [0, 0, 0], width: 0.2, height: 0.2 },
+        { center: [0, 0.5, 0], width: 0.2, height: 0.2 }
+      ],
+      12,
+      false,
+      false,
+      Math.PI / 2 + gapHalfAngle,
+      Math.PI * 2 - gapHalfAngle * 2
+    )
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    // Open seam: radialSegments + 1 verts per ring.
+    expect(pos.count).toBe(2 * 13)
+    // No vertex inside the front wedge (|angle from +Z| < gap).
+    // For vertical tangents width maps to X and height to Z.
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i)
+      const z = pos.getZ(i)
+      const angFromFront = Math.abs(Math.atan2(x, z))
+      expect(angFromFront).toBeGreaterThan(gapHalfAngle - 0.02)
+    }
+    for (const idx of geo.index!.array) {
+      expect(idx).toBeLessThan(pos.count)
+      expect(idx).toBeGreaterThanOrEqual(0)
+    }
+  })
 })

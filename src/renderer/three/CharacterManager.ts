@@ -19,6 +19,7 @@ import {
   findProceduralAsset,
   garmentDependsOnKey,
   isProceduralAssetId,
+  TOP_LENGTH_DEFAULT,
   type GarmentKey
 } from './procedural/Garments'
 import { sanitizeBodyShape } from '../../shared/types/bodyShape'
@@ -157,7 +158,13 @@ function headKeyOf(shape: BodyShape, neckWidth: number): string {
   ])
 }
 
-function torsoKeyOf(shape: BodyShape, bust: number, butt: number, belly: number): string {
+function torsoKeyOf(
+  shape: BodyShape,
+  bust: number,
+  butt: number,
+  belly: number,
+  topLength: number
+): string {
   return JSON.stringify([
     shape.shoulderWidth,
     shape.chestDepth,
@@ -165,7 +172,8 @@ function torsoKeyOf(shape: BodyShape, bust: number, butt: number, belly: number)
     shape.hipWidth,
     bust,
     butt,
-    belly
+    belly,
+    topLength
   ])
 }
 
@@ -301,7 +309,8 @@ export class CharacterManager {
       sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape),
       clamp01(useCharacterStore.getState().present?.morphs?.bust ?? BUST_DEFAULT),
       clamp01(useCharacterStore.getState().present?.morphs?.butt ?? BUTT_DEFAULT),
-      clamp01(useCharacterStore.getState().present?.morphs?.bellySize ?? 0.5)
+      clamp01(useCharacterStore.getState().present?.morphs?.bellySize ?? 0.5),
+      clamp01(useCharacterStore.getState().present?.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
     )
     this.rebuildHeadMesh(
       sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape),
@@ -362,10 +371,16 @@ export class CharacterManager {
     }
   }
 
-  private rebuildTorsoMesh(shape: BodyShape, bust: number, butt: number, belly: number): void {
+  private rebuildTorsoMesh(
+    shape: BodyShape,
+    bust: number,
+    butt: number,
+    belly: number,
+    topLength = TOP_LENGTH_DEFAULT
+  ): void {
     this.removeTorsoMesh()
     const skinMat = this.skinMaterial ?? this.materialManager.getMaterial('skin')
-    this.lastTorsoShapeKey = torsoKeyOf(shape, bust, butt, belly)
+    this.lastTorsoShapeKey = torsoKeyOf(shape, bust, butt, belly, topLength)
 
     const geo = buildTorso(shape, bust, butt, belly).geometry
     const mesh =
@@ -955,10 +970,11 @@ export class CharacterManager {
     const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
     const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
     const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+    const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
     const neckWidth = clamp01(dna.morphs?.neckWidth ?? 0.5)
     const face = sanitizeFaceShape(dna.face)
     const nextHeadKey = headKeyOf(shape, neckWidth)
-    const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly)
+    const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly, topLength)
     const nextFaceKey = faceKeyOf(shape, face)
     const torsoChanged = nextTorsoKey !== this.lastTorsoShapeKey
     // Snapshot before the rebuild block below updates the stored keys.
@@ -976,7 +992,7 @@ export class CharacterManager {
       }
       if (torsoChanged) {
         actions.push('torso')
-        this.rebuildTorsoMesh(shape, bust, butt, belly)
+        this.rebuildTorsoMesh(shape, bust, butt, belly, topLength)
       }
       if (actions.length > 0) {
         console.log(

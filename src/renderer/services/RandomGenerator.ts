@@ -77,9 +77,7 @@ export function generateRandomDNA(params: RandomGeneratorParams): CharacterDNA {
     if (slot.id === 'body') continue
     let available = params.assets.filter((a) => a.slotId === slot.id)
     if (gender) {
-      available = available.filter(
-        (a) => !a.tags?.some((t) => t === oppositeGender)
-      )
+      available = available.filter((a) => !a.tags?.some((t) => t === oppositeGender))
     }
     if (available.length === 0) {
       dna.slots[slot.id] = null
@@ -100,7 +98,16 @@ export function generateRandomDNA(params: RandomGeneratorParams): CharacterDNA {
     }
   }
 
-  const morphKeys = ['height', 'shoulderWidth', 'neckWidth', 'bellySize', 'headSize', 'legLength', 'armLength', 'muscleMass']
+  const morphKeys = [
+    'height',
+    'shoulderWidth',
+    'neckWidth',
+    'bellySize',
+    'headSize',
+    'legLength',
+    'armLength',
+    'muscleMass'
+  ]
   for (const key of morphKeys) {
     dna.morphs[key] = Math.round(rng.next() * 100) / 100
   }
@@ -112,6 +119,8 @@ export function generateRandomDNA(params: RandomGeneratorParams): CharacterDNA {
   const bustBias = shape.hipWidth > 1.04 ? 1.2 : 1.9
   dna.morphs.bust = Math.round(Math.pow(rng.next(), bustBias) * 100) / 100
   dna.morphs.butt = Math.round((0.2 + 0.8 * Math.pow(rng.next(), 1.4)) * 100) / 100
+  // top length skews to full length so cropped tops stay occasional
+  dna.morphs.topLength = Math.round(Math.pow(rng.next(), 2.2) * 100) / 100
 
   dna.face = randomFaceShape(rng)
 
@@ -138,11 +147,38 @@ interface Archetype {
 
 const ARCHETYPES: Archetype[] = [
   // slim
-  { headWidth: 0.235, headHeight: 0.225, headLength: 0.25, jawChin: 0.5, shoulderWidth: 0.9, chestDepth: 0.88, waistTaper: 0.85, hipWidth: 0.95 },
+  {
+    headWidth: 0.235,
+    headHeight: 0.225,
+    headLength: 0.25,
+    jawChin: 0.5,
+    shoulderWidth: 0.9,
+    chestDepth: 0.88,
+    waistTaper: 0.85,
+    hipWidth: 0.95
+  },
   // average
-  { headWidth: 0.25, headHeight: 0.22, headLength: 0.26, jawChin: 0.35, shoulderWidth: 1.0, chestDepth: 1.0, waistTaper: 1.0, hipWidth: 1.0 },
+  {
+    headWidth: 0.25,
+    headHeight: 0.22,
+    headLength: 0.26,
+    jawChin: 0.35,
+    shoulderWidth: 1.0,
+    chestDepth: 1.0,
+    waistTaper: 1.0,
+    hipWidth: 1.0
+  },
   // stocky
-  { headWidth: 0.27, headHeight: 0.21, headLength: 0.27, jawChin: 0.45, shoulderWidth: 1.12, chestDepth: 1.12, waistTaper: 1.18, hipWidth: 1.08 }
+  {
+    headWidth: 0.27,
+    headHeight: 0.21,
+    headLength: 0.27,
+    jawChin: 0.45,
+    shoulderWidth: 1.12,
+    chestDepth: 1.12,
+    waistTaper: 1.18,
+    hipWidth: 1.08
+  }
 ]
 
 function noise(rng: SeededPRNG, amount = 0.05): number {
@@ -194,7 +230,10 @@ function randomFaceShape(rng: SeededPRNG): FaceShape {
     eyeScale: Math.round((1 + jitter(0.22)) * 100) / 100,
     eyeSpacing: Math.round((1 + jitter(0.14)) * 100) / 100,
     browTilt: Math.max(-1, Math.min(1, Math.round((mood.browTilt + jitter(0.25)) * 100) / 100)),
-    browHeight: Math.max(0.8, Math.min(1.25, Math.round((mood.browHeight + jitter(0.1)) * 100) / 100)),
+    browHeight: Math.max(
+      0.8,
+      Math.min(1.25, Math.round((mood.browHeight + jitter(0.1)) * 100) / 100)
+    ),
     mouthCurve: Math.max(-1, Math.min(1, Math.round((mood.mouthCurve + jitter(0.3)) * 100) / 100)),
     mouthWidth: Math.round((1 + jitter(0.16)) * 100) / 100,
     noseSize: Math.round((1 + jitter(0.25)) * 100) / 100
