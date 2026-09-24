@@ -51,11 +51,13 @@ Infrastructure:
   gap/deltoid/hem-aware bands, per-shirt deltoid checks, armX + strap bands)
 - Live visual check pending (app won't launch headless here): equip each top
   at default camera, drag Top Length slider, randomize
+- Update 2026-09-24: user launched via `npm run dev` and visually verified -
+  all 6 tops look good. No white-screen or render issues.
 
 ### Current status
 
-Sprint 22 complete. Next: Sprint 23 - archetype outfits (mage robe, elven
-tunic, dwarf vest + outfit presets + outfit randomizer).
+Sprint 22 complete and user-verified. Next: Sprint 23 - archetype outfits
+(mage robe, elven tunic, dwarf vest + outfit presets + outfit randomizer).
 
 ---
 

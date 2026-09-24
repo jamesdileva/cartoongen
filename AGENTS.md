@@ -2559,5 +2559,6 @@ randomizer. Probe extended with hem/gap/deltoid-aware bands + armX mode.
 
 ### Current status
 
-Sprint 22 complete. Next: Sprint 23 - archetype outfits.
+Sprint 22 complete and user-verified (launched via npm run dev, all tops
+look good). Next: Sprint 23 - archetype outfits.
 
