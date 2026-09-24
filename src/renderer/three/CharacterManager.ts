@@ -17,7 +17,9 @@ import { buildHead, buildTorso, buildArm, buildLeg } from './procedural/BodyPart
 import { buildFace } from './procedural/FaceFeatures'
 import {
   findProceduralAsset,
-  isProceduralAssetId
+  garmentDependsOnKey,
+  isProceduralAssetId,
+  type GarmentKey
 } from './procedural/Garments'
 import { sanitizeBodyShape } from '../../shared/types/bodyShape'
 import { sanitizeFaceShape, type FaceShape } from '../../shared/types/faceShape'
@@ -146,11 +148,25 @@ const BUST_DEFAULT = 0.15
 const BUTT_DEFAULT = 0.2
 
 function headKeyOf(shape: BodyShape, neckWidth: number): string {
-  return JSON.stringify([shape.headWidth, shape.headHeight, shape.headLength, shape.jawChin, neckWidth])
+  return JSON.stringify([
+    shape.headWidth,
+    shape.headHeight,
+    shape.headLength,
+    shape.jawChin,
+    neckWidth
+  ])
 }
 
 function torsoKeyOf(shape: BodyShape, bust: number, butt: number, belly: number): string {
-  return JSON.stringify([shape.shoulderWidth, shape.chestDepth, shape.waistTaper, shape.hipWidth, bust, butt, belly])
+  return JSON.stringify([
+    shape.shoulderWidth,
+    shape.chestDepth,
+    shape.waistTaper,
+    shape.hipWidth,
+    bust,
+    butt,
+    belly
+  ])
 }
 
 function faceKeyOf(shape: BodyShape, face: FaceShape): string {
@@ -181,7 +197,10 @@ export class CharacterManager {
   private proceduralMeshes: THREE.Mesh[] = []
   private baseBodyGroup: THREE.Group | null = null
   private baseBodyMeshes: THREE.Mesh[] = []
-  private baseBodyFeatures: { eyebrows: THREE.Mesh[]; eyes: THREE.Mesh[] } = { eyebrows: [], eyes: [] }
+  private baseBodyFeatures: { eyebrows: THREE.Mesh[]; eyes: THREE.Mesh[] } = {
+    eyebrows: [],
+    eyes: []
+  }
   private baseBodySkeletonHelper: THREE.SkeletonHelper | null = null
   private mixer: THREE.AnimationMixer | null = null
   private breathingAction: THREE.AnimationAction | null = null
@@ -319,7 +338,10 @@ export class CharacterManager {
       })
       this.restInversesCache.set(cacheKey, inverses)
     }
-    const skeleton = new THREE.Skeleton(typedBones, inverses.map((m) => m.clone()))
+    const skeleton = new THREE.Skeleton(
+      typedBones,
+      inverses.map((m) => m.clone())
+    )
     const mesh = new THREE.SkinnedMesh(geometry, material)
     // Pass an explicit bindMatrix: the 1-arg form of bind() calls
     // skeleton.calculateInverses(), which overwrites our cached rest inverses
@@ -347,7 +369,11 @@ export class CharacterManager {
 
     const geo = buildTorso(shape, bust, butt, belly).geometry
     const mesh =
-      this.bindToBones(geo, ['Root', 'Spine', 'Spine1', 'Spine2', 'LeftClavicle', 'RightClavicle'], skinMat) ??
+      this.bindToBones(
+        geo,
+        ['Root', 'Spine', 'Spine1', 'Spine2', 'LeftClavicle', 'RightClavicle'],
+        skinMat
+      ) ??
       (() => {
         const fallback = new THREE.Mesh(new THREE.CylinderGeometry(0.35, 0.45, 0.65, 12), skinMat)
         fallback.position.set(0, 0.9, 0)
@@ -379,9 +405,7 @@ export class CharacterManager {
 
     const geo = buildHead(shape, neckWidth).geometry
     const mesh = this.bindToBones(geo, ['Neck', 'Head'], skinMat)
-    this.headMesh =
-      mesh ??
-      new THREE.Mesh(geo, skinMat)
+    this.headMesh = mesh ?? new THREE.Mesh(geo, skinMat)
     this.scene.add(this.headMesh)
     this.proceduralMeshes.push(this.headMesh)
 
@@ -476,11 +500,12 @@ export class CharacterManager {
     }
   }
 
-  private rebuildEquippedGarments(dna: CharacterDNA): void {
+  private rebuildEquippedGarments(dna: CharacterDNA, onlyKeys?: GarmentKey[]): void {
     for (const slot of this.currentSlots) {
       const id = dna.slots[slot.id]
       if (!id || !isProceduralAssetId(id)) continue
       if (this.lastAssetIds[slot.id] !== id) continue
+      if (onlyKeys && !onlyKeys.some((k) => garmentDependsOnKey(id, k))) continue
       const group = this.buildProceduralSlotGroup(id, dna, slot.layer)
       if (!group) continue
       this.disposeAttachedSlotGeometry(slot.id)
@@ -550,7 +575,9 @@ export class CharacterManager {
   }
 
   private async tryLoadBaseBody(dnaAssetId?: string): Promise<void> {
-    if (this.hasBaseBody || this.loadingBaseBody) { return }
+    if (this.hasBaseBody || this.loadingBaseBody) {
+      return
+    }
     if (!dnaAssetId) {
       const dna = useCharacterStore.getState().present
       if (dna && !dna.slots?.body) return
@@ -566,15 +593,24 @@ export class CharacterManager {
       const baseBodyAsset = dnaAssetId
         ? assets.find((a) => a.id === dnaAssetId)
         : assets.find((a) => a.tags?.includes('base_body'))
-      if (!baseBodyAsset) { this.loadingBaseBody = false; return }
+      if (!baseBodyAsset) {
+        this.loadingBaseBody = false
+        return
+      }
 
       const buffer = await window.electronAPI.asset.readFile(baseBodyAsset.id)
-      if (!buffer) { this.loadingBaseBody = false; return }
+      if (!buffer) {
+        this.loadingBaseBody = false
+        return
+      }
 
       const gltf = await gltfLoader.parseAsync(buffer, '')
 
       const skeletonRoot = this.findRootBone(gltf.scene)
-      if (!skeletonRoot) { this.loadingBaseBody = false; return }
+      if (!skeletonRoot) {
+        this.loadingBaseBody = false
+        return
+      }
 
       this.slotManager.dispose()
       const bodyId = this.lastAssetIds['body']
@@ -669,7 +705,10 @@ export class CharacterManager {
         let parent = child.parent
         let hasBoneParent = false
         while (parent) {
-          if (parent instanceof THREE.Bone) { hasBoneParent = true; break }
+          if (parent instanceof THREE.Bone) {
+            hasBoneParent = true
+            break
+          }
           parent = parent.parent
         }
         if (!hasBoneParent) found = child
@@ -681,7 +720,12 @@ export class CharacterManager {
   private clearProceduralBody(): void {
     const toRemove: THREE.Object3D[] = []
     this.scene.traverse((child) => {
-      if (child instanceof THREE.Mesh || child instanceof THREE.Bone || child instanceof THREE.SkeletonHelper || child instanceof THREE.LineSegments) {
+      if (
+        child instanceof THREE.Mesh ||
+        child instanceof THREE.Bone ||
+        child instanceof THREE.SkeletonHelper ||
+        child instanceof THREE.LineSegments
+      ) {
         toRemove.push(child)
       }
     })
@@ -739,31 +783,43 @@ export class CharacterManager {
 
   private remapBaseMaterial(mat: THREE.Material): THREE.Material {
     const name = mat.name?.toLowerCase() ?? ''
-    if (name.includes('skin') || name.includes('superhero')) return this.materialManager.getMaterial('skin')
-    if (name.includes('hair') || name.includes('eyebrow') || name.includes('beard')) return this.materialManager.getMaterial('hair')
-    if (name.includes('cloth') || name.includes('body') || name.includes('hood') || name.includes('arm') || name.includes('pants') || name.includes('leg') || name.includes('pauldron') || name.includes('cape')) return this.materialManager.getMaterial('cloth')
-    if (name.includes('metal') || name.includes('armor')) return this.materialManager.getMaterial('metal')
-    if (name.includes('leather') || name.includes('boot') || name.includes('shoe')) return this.materialManager.getMaterial('leather')
+    if (name.includes('skin') || name.includes('superhero'))
+      return this.materialManager.getMaterial('skin')
+    if (name.includes('hair') || name.includes('eyebrow') || name.includes('beard'))
+      return this.materialManager.getMaterial('hair')
+    if (
+      name.includes('cloth') ||
+      name.includes('body') ||
+      name.includes('hood') ||
+      name.includes('arm') ||
+      name.includes('pants') ||
+      name.includes('leg') ||
+      name.includes('pauldron') ||
+      name.includes('cape')
+    )
+      return this.materialManager.getMaterial('cloth')
+    if (name.includes('metal') || name.includes('armor'))
+      return this.materialManager.getMaterial('metal')
+    if (name.includes('leather') || name.includes('boot') || name.includes('shoe'))
+      return this.materialManager.getMaterial('leather')
     if (name.includes('eye')) return this.materialManager.getMaterial('eye')
-    if (name.includes('mouth') || name.includes('lip')) return this.materialManager.getMaterial('mouth')
+    if (name.includes('mouth') || name.includes('lip'))
+      return this.materialManager.getMaterial('mouth')
     return mat
   }
 
   private setupBreathing(rootBone: THREE.Bone): void {
     this.mixer = new THREE.AnimationMixer(rootBone)
-    const spineBone = this.boneMap.get('spine_01')
-      ?? this.boneMap.get('Spine')
-      ?? this.boneMap.get('spine')
-      ?? [...this.boneMap.values()].find(b => b.name.toLowerCase().includes('spine'))
+    const spineBone =
+      this.boneMap.get('spine_01') ??
+      this.boneMap.get('Spine') ??
+      this.boneMap.get('spine') ??
+      [...this.boneMap.values()].find((b) => b.name.toLowerCase().includes('spine'))
     if (!spineBone) return
 
     const times = [0, 1.5, 3]
     const values = [1, 1.02, 1]
-    const scaleTrack = new THREE.VectorKeyframeTrack(
-      `${spineBone.name}.scale[y]`,
-      times,
-      values
-    )
+    const scaleTrack = new THREE.VectorKeyframeTrack(`${spineBone.name}.scale[y]`, times, values)
 
     const clip = new THREE.AnimationClip('idle_breathing', 3, [scaleTrack])
     this.breathingAction = this.mixer.clipAction(clip)
@@ -781,7 +837,9 @@ export class CharacterManager {
       const oldAssetId = this.lastAssetIds[slot.id] ?? null
 
       if (slot.id === 'body') {
-        if (this.processingBodySlot) { continue }
+        if (this.processingBodySlot) {
+          continue
+        }
         this.processingBodySlot = true
         try {
           if (newAssetId === null) {
@@ -811,11 +869,15 @@ export class CharacterManager {
       if (newAssetId !== oldAssetId) {
         if (slot.id === 'eyebrows') {
           const visible = newAssetId === null
-          for (const mesh of this.baseBodyFeatures.eyebrows) { mesh.visible = visible }
+          for (const mesh of this.baseBodyFeatures.eyebrows) {
+            mesh.visible = visible
+          }
         }
         if (slot.id === 'eyes') {
           const visible = newAssetId === null
-          for (const mesh of this.baseBodyFeatures.eyes) { mesh.visible = visible }
+          for (const mesh of this.baseBodyFeatures.eyes) {
+            mesh.visible = visible
+          }
         }
         if (oldAssetId !== null) {
           if (isProceduralAssetId(oldAssetId)) {
@@ -899,6 +961,9 @@ export class CharacterManager {
     const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly)
     const nextFaceKey = faceKeyOf(shape, face)
     const torsoChanged = nextTorsoKey !== this.lastTorsoShapeKey
+    // Snapshot before the rebuild block below updates the stored keys.
+    const headChanged = nextHeadKey !== this.lastHeadShapeKey
+    const faceChanged = nextFaceKey !== this.lastFaceKey
 
     if (!this.hasBaseBody && this.boneMap.get('Root')) {
       const actions: string[] = []
@@ -914,7 +979,14 @@ export class CharacterManager {
         this.rebuildTorsoMesh(shape, bust, butt, belly)
       }
       if (actions.length > 0) {
-        console.log('[Rebuild]', actions.join('+'), 'faceGroup:', !!this.faceGroup, 'headMesh:', !!this.headMesh)
+        console.log(
+          '[Rebuild]',
+          actions.join('+'),
+          'faceGroup:',
+          !!this.faceGroup,
+          'headMesh:',
+          !!this.headMesh
+        )
       }
     } else if (torsoChanged) {
       this.lastTorsoShapeKey = nextTorsoKey
@@ -922,8 +994,11 @@ export class CharacterManager {
 
     // Cloth shells must track belly/bust/butt/shape changes on both
     // procedural and GLB bodies (geometry is authored, not just bone-scaled).
+    // Hats track head/face changes the same way.
     if (torsoChanged) {
       this.rebuildEquippedGarments(dna)
+    } else if (headChanged || faceChanged) {
+      this.rebuildEquippedGarments(dna, ['head', 'face'])
     }
 
     if (gen !== this.updateGeneration) return
@@ -936,7 +1011,10 @@ export class CharacterManager {
     if (!this.hasBaseBody || this.baseBodyMeshes.length === 0) return
 
     const allCovered = [...this.COVERAGE_SLOTS].every((slotId) => dna.slots[slotId] != null)
-    const featuresSet = new Set<THREE.Mesh>([...this.baseBodyFeatures.eyebrows, ...this.baseBodyFeatures.eyes])
+    const featuresSet = new Set<THREE.Mesh>([
+      ...this.baseBodyFeatures.eyebrows,
+      ...this.baseBodyFeatures.eyes
+    ])
 
     if (allCovered) {
       const neckBone = this.boneMap.get('neck_01') ?? this.boneMap.get('Neck')
@@ -980,7 +1058,8 @@ export class CharacterManager {
     for (const mesh of this.baseBodyMeshes) {
       const meshName = mesh.name.toLowerCase()
       let category: string | null = null
-      if (meshName.includes('superhero') || meshName.includes('body') || meshName.includes('skin')) category = 'skin'
+      if (meshName.includes('superhero') || meshName.includes('body') || meshName.includes('skin'))
+        category = 'skin'
       else if (meshName.includes('eyebrow')) category = 'hair'
       else if (meshName.includes('eye')) category = 'eye'
       else if (meshName.includes('mouth') || meshName.includes('lip')) category = 'mouth'

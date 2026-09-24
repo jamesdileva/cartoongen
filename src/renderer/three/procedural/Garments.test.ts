@@ -3,12 +3,21 @@ import * as THREE from 'three'
 import {
   buildTShirt,
   buildJeans,
+  buildShorts,
+  buildBaggy,
+  buildTights,
+  buildBeanie,
+  buildCap,
+  buildSombrero,
+  hatRimY,
+  garmentDependsOnKey,
   isProceduralAssetId,
   findProceduralAsset,
   getProceduralAssetEntries,
   buttRearDepth
 } from './Garments'
 import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
+import { DEFAULT_FACE_SHAPE } from '../../../shared/types/faceShape'
 import type { CharacterDNA } from '../../../shared/types/dna'
 
 function weightSumViolations(geometry: THREE.BufferGeometry): number {
@@ -63,12 +72,41 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes t-shirt and jeans entries for shirt/pants slots', () => {
+  it('exposes all 8 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
-    expect(entries.map((e) => e.id).sort()).toEqual(['proc:jeans', 'proc:tshirt'])
+    expect(entries.map((e) => e.id).sort()).toEqual([
+      'proc:baggy',
+      'proc:beanie',
+      'proc:cap',
+      'proc:jeans',
+      'proc:shorts',
+      'proc:sombrero',
+      'proc:tights',
+      'proc:tshirt'
+    ])
     expect(entries.find((e) => e.id === 'proc:tshirt')?.slotId).toBe('shirt')
     expect(entries.find((e) => e.id === 'proc:jeans')?.slotId).toBe('pants')
+    expect(entries.find((e) => e.id === 'proc:shorts')?.slotId).toBe('pants')
+    expect(entries.find((e) => e.id === 'proc:baggy')?.slotId).toBe('pants')
+    expect(entries.find((e) => e.id === 'proc:tights')?.slotId).toBe('pants')
+    expect(entries.find((e) => e.id === 'proc:beanie')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:cap')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:sombrero')?.slotId).toBe('helmet')
     expect(findProceduralAsset('proc:tshirt')?.label).toBe('T-Shirt')
+    expect(findProceduralAsset('proc:sombrero')?.label).toBe('Sombrero')
+  })
+
+  it('maps garments to rebuild keys', () => {
+    for (const id of ['proc:tshirt', 'proc:jeans', 'proc:shorts', 'proc:baggy', 'proc:tights']) {
+      expect(garmentDependsOnKey(id, 'torso')).toBe(true)
+      expect(garmentDependsOnKey(id, 'head')).toBe(false)
+    }
+    for (const id of ['proc:beanie', 'proc:cap', 'proc:sombrero']) {
+      expect(garmentDependsOnKey(id, 'head')).toBe(true)
+      expect(garmentDependsOnKey(id, 'face')).toBe(true)
+      expect(garmentDependsOnKey(id, 'torso')).toBe(false)
+    }
+    expect(garmentDependsOnKey('proc:nope', 'torso')).toBe(false)
   })
 })
 
@@ -470,5 +508,172 @@ describe('garment skinned deformation', () => {
     const fatR = skinMaxRadius(geometry, orderedBones, orderedInv, band)
 
     expect(fatR).toBeGreaterThan(restR * 1.1)
+  })
+})
+
+function yExtent(geometry: THREE.BufferGeometry): { min: number; max: number } {
+  const pos = geometry.attributes.position as THREE.BufferAttribute
+  let min = Infinity
+  let max = -Infinity
+  for (let i = 0; i < pos.count; i++) {
+    min = Math.min(min, pos.getY(i))
+    max = Math.max(max, pos.getY(i))
+  }
+  return { min, max }
+}
+
+function xExtentAtY(
+  geometry: THREE.BufferGeometry,
+  y0: number,
+  y1: number
+): { min: number; max: number } {
+  const pos = geometry.attributes.position as THREE.BufferAttribute
+  let min = Infinity
+  let max = -Infinity
+  for (let i = 0; i < pos.count; i++) {
+    const y = pos.getY(i)
+    if (y < y0 || y > y1) continue
+    min = Math.min(min, pos.getX(i))
+    max = Math.max(max, pos.getX(i))
+  }
+  return { min, max }
+}
+
+describe('pants variants', () => {
+  it('shorts end mid-thigh with hip coverage intact', () => {
+    const geo = buildShorts(DEFAULT_BODY_SHAPE, 0.2, 0.5).geometry
+    expect(weightSumViolations(geo)).toBe(0)
+    const ext = xExtent(geo)
+    expect(ext.min).toBeCloseTo(-ext.max, 3)
+    // Leg tubes stop at y=0.52 (+cuff); hip shell still reaches the seat.
+    const legBox = yExtent(geo)
+    expect(legBox.min).toBeLessThan(0.78)
+    let lowestLegX = 0
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    for (let i = 0; i < pos.count; i++) {
+      if (pos.getY(i) < 0.6 && Math.abs(pos.getX(i)) > 0.05) {
+        lowestLegX = Math.max(lowestLegX, Math.abs(pos.getX(i)))
+      }
+    }
+    expect(lowestLegX).toBeGreaterThan(0.15)
+    // Rear still clears butt at max morph.
+    const rear = -zExtentAtY(buildShorts(DEFAULT_BODY_SHAPE, 1, 0.5).geometry, 0.8, 1.0, true)
+    expect(rear).toBeGreaterThan(buttRearDepth(DEFAULT_BODY_SHAPE, 1))
+  })
+
+  it('baggy legs are wider than jeans at the calf', () => {
+    const jeans = xExtentAtY(buildJeans(DEFAULT_BODY_SHAPE, 0.2, 0.5).geometry, 0.3, 0.5)
+    const baggy = xExtentAtY(buildBaggy(DEFAULT_BODY_SHAPE, 0.2, 0.5).geometry, 0.3, 0.5)
+    expect(weightSumViolations(buildBaggy().geometry)).toBe(0)
+    // Tube radius is 1.4x but the fixed +/-0.18 leg centers dilute the ratio.
+    expect(baggy.max).toBeGreaterThan(jeans.max * 1.1)
+    expect(baggy.min).toBeLessThan(jeans.min * 1.1)
+  })
+
+  it('tights hug tighter than jeans', () => {
+    const jeans = xExtentAtY(buildJeans(DEFAULT_BODY_SHAPE, 0.2, 0.5).geometry, 0.3, 0.5)
+    const tights = xExtentAtY(buildTights(DEFAULT_BODY_SHAPE, 0.2, 0.5).geometry, 0.3, 0.5)
+    expect(weightSumViolations(buildTights().geometry)).toBe(0)
+    expect(tights.max).toBeLessThan(jeans.max)
+    // But still clear the leg: tights use a 4mm offset, not zero.
+    expect(tights.max).toBeGreaterThan(0.15)
+  })
+
+  it('all pants bind to the leg chains', () => {
+    for (const build of [buildShorts, buildBaggy, buildTights]) {
+      const { boneNames } = build()
+      expect(boneNames).toEqual([
+        'Root',
+        'Spine',
+        'LeftUpperLeg',
+        'LeftCalf',
+        'RightUpperLeg',
+        'RightCalf'
+      ])
+    }
+  })
+})
+
+describe('hats', () => {
+  it('bind 100% to the Head bone with normalized weights', () => {
+    for (const build of [buildBeanie, buildCap, buildSombrero]) {
+      const { geometry, boneNames } = build()
+      expect(boneNames).toEqual(['Head'])
+      expect(weightSumViolations(geometry)).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
+    }
+  })
+
+  it('brims sit above the eye tops', () => {
+    for (const eyeScale of [0.7, 1, 1.3]) {
+      const face = { ...DEFAULT_FACE_SHAPE, eyeScale }
+      const rim = hatRimY(DEFAULT_BODY_SHAPE, face)
+      const eyeTop = 1.86 + DEFAULT_BODY_SHAPE.headHeight * 0.12 + 0.062 * eyeScale
+      expect(rim).toBeGreaterThan(eyeTop)
+    }
+  })
+
+  it('sombrero brim is the widest silhouette', () => {
+    const beanie = xExtent(buildBeanie().geometry)
+    const cap = xExtent(buildCap().geometry)
+    const sombrero = xExtent(buildSombrero().geometry)
+    expect(sombrero.max).toBeGreaterThan(0.3)
+    expect(sombrero.max).toBeGreaterThan(beanie.max)
+    expect(sombrero.max).toBeGreaterThan(cap.max)
+  })
+
+  it('cap brim extends forward past the forehead', () => {
+    const front = zExtentAtY(buildCap().geometry, 1.9, 2.0)
+    // Forehead surface at rim is ~0.24; brim disc reaches ~0.1 beyond it.
+    expect(front).toBeGreaterThan(0.3)
+  })
+
+  it('cranium stays inside every hat dome across extreme head shapes', () => {
+    const shapes: BodyShape[] = [
+      DEFAULT_BODY_SHAPE,
+      { ...DEFAULT_BODY_SHAPE, headWidth: 1.3, headHeight: 1.3, headLength: 1.3 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.75, headHeight: 0.75, headLength: 0.75 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.75, headHeight: 1.3, headLength: 1.3 }
+    ]
+    const builders = [buildBeanie, buildCap, buildSombrero] as const
+    for (const shape of shapes) {
+      for (const build of builders) {
+        const hat = build(shape, DEFAULT_FACE_SHAPE).geometry
+        const rim = hatRimY(shape, DEFAULT_FACE_SHAPE)
+        const ray = new THREE.Raycaster()
+        ray.far = 1.0
+        const hatMesh = new THREE.Mesh(hat, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+        hatMesh.updateMatrixWorld(true)
+        const W = shape.headWidth
+        const H = shape.headHeight
+        const L = shape.headLength
+        let checked = 0
+        for (let ti = 0; ti <= 6; ti++) {
+          for (let pi = 0; pi < 12; pi++) {
+            const theta = (ti / 6) * Math.PI * 0.5
+            const phi = (pi / 12) * Math.PI * 2
+            const px = W * Math.sin(theta) * Math.cos(phi)
+            const py = 1.86 + H * Math.cos(theta)
+            const pz = 0.005 + L * Math.sin(theta) * Math.sin(phi)
+            if (py < rim + 0.005) continue
+            if (Math.abs(px) > 0.8 * W) continue // ears exempt: hats don't cover ears
+            const dir = new THREE.Vector3(px, 0, pz - 0.005)
+            if (dir.lengthSq() < 1e-8) dir.set(0, 1, 0)
+            else dir.normalize()
+            // Near-vertical top verts go straight up.
+            const useDir = theta < 0.25 ? new THREE.Vector3(0, 1, 0) : dir
+            ray.set(new THREE.Vector3(px, py, pz), useDir)
+            const hits = ray.intersectObject(hatMesh, false)
+            expect(
+              hits.length,
+              `shape ${W.toFixed(2)}/${H.toFixed(2)}/${L.toFixed(2)} theta=${theta.toFixed(2)}`
+            ).toBeGreaterThan(0)
+            checked++
+          }
+        }
+        expect(checked).toBeGreaterThan(0)
+      }
+    }
   })
 })

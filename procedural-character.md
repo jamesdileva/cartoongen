@@ -280,15 +280,20 @@ Belly/Bust/Butt sliders, exports in GLB, undo/redo works.
 
 ### Sprint 21 - Lower Body + Headwear Variants
 
-- [ ] Pants fits: shorts (cutoff mid-calf), loose/baggy (larger radius sweep,
-      cuff), tight/spandex (body-hugging offset)
-- [ ] Hats: baseball cap (dome + brim disc), sombrero (wide lathe brim +
-      domed crown), beanie (skull-hugging shell)
-- [ ] Hat placement on Head bone surface (reuses face-projection math);
-      helmet-hides-hair rules keep working
+- [x] Pants fits: shorts (hip shell + thigh tubes cut at y=0.52 with hem
+      cuffs), loose/baggy (1.4x leg radius sweep, ankle cuffs),
+      tight/spandex (4mm offset, 0.92x slim tubes) - all share the
+      belly-scaled hip shell core with jeans
+- [x] Hats: baseball cap (dome + forward brim disc placed via surfaceZ +
+      top button), sombrero (wide lathe brim with upturned lip + tall
+      crown), beanie (skull-hugging shell + folded brim torus)
+- [x] Hat placement on Head bone surface (brims sit above eye tops via
+      eyeTopY, bound 100% to Head bone = rigid follow); helmet-hides-hair
+      rules keep working (hats tagged `hat`, existing helmet rules untouched)
 
 **Acceptance**: Each variant visually distinct at default camera; hats sit on
-any head shape from bodyShape randomization.
+any head shape from bodyShape randomization (probe: 5 head shapes x 3 eye
+sizes x 3 hats, cranium-in-dome raycasts all pass).
 
 ### Sprint 22 - Tops Variety
 

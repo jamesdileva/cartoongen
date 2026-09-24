@@ -1,9 +1,15 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { makeSweep } from './GeometryKernel'
+import { makeLathe, makeSweep, type SweepStation } from './GeometryKernel'
 import { applySkinAttributes, computeSkinBindings, type BoneSegment } from './SkinWeights'
 import { torsoProfile } from './BodyParts'
+import { CRANIUM_CENTER_Y, CRANIUM_CENTER_Z, surfaceZ } from './FaceFeatures'
 import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
+import {
+  DEFAULT_FACE_SHAPE,
+  sanitizeFaceShape,
+  type FaceShape
+} from '../../../shared/types/faceShape'
 import type { AssetEntry } from '../../../shared/types/asset'
 import type { CharacterDNA } from '../../../shared/types/dna'
 import { sanitizeBodyShape } from '../../../shared/types/bodyShape'
@@ -236,15 +242,14 @@ export function buildTShirt(
 }
 
 /**
- * Hip shell + two leg tubes down to the ankle. Hip shell clears the pelvis
- * ellipsoid (0.32 * hipWidth) and butt rear projection so skin never pokes
- * through at the sides or back.
+ * Shared hip shell for all full pants: waist tracks the belly-scaled body
+ * tube, hip depth clears pelvis + full butt silhouette, seat reaches y=0.74.
  */
-export function buildJeans(
-  shape: BodyShape = DEFAULT_BODY_SHAPE,
-  butt = BUTT_DEFAULT,
-  belly = 0.5
-): GarmentBuildResult {
+function hipShellStations(
+  shape: BodyShape,
+  butt: number,
+  belly: number
+): { stations: SweepStation[]; pelvisHalfW: number; hipHalfD: number } {
   const bellyScale = bellyScaleOf(belly)
   const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
   const buttSamples = buttRearSamples(shape, butt)
@@ -263,25 +268,11 @@ export function buildJeans(
   // Waist station must stay close to hip depth: butt geometry tops out near
   // y=1.045, and a shallow y=1.06 station interpolates below the butt peak.
   const waistHalfD = Math.max(0.19 * bellyScale, 0.2 + 0.02 * butt, hipHalfD * 0.85) + CLOTH_OFFSET
-  const legR = MUSCLE_HEADROOM
-
-  const hip = makeSweep(
-    [
-      {
-        center: [0, 1.06, 0],
-        width: waistHalfW * 2,
-        height: waistHalfD * 2
-      },
-      {
-        center: [0, 0.96, 0],
-        width: pelvisHalfW * 2,
-        height: hipHalfD * 2
-      },
-      {
-        center: [0, 0.88, 0],
-        width: pelvisHalfW * 2,
-        height: hipHalfD * 2
-      },
+  return {
+    stations: [
+      { center: [0, 1.06, 0], width: waistHalfW * 2, height: waistHalfD * 2 },
+      { center: [0, 0.96, 0], width: pelvisHalfW * 2, height: hipHalfD * 2 },
+      { center: [0, 0.88, 0], width: pelvisHalfW * 2, height: hipHalfD * 2 },
       {
         // Seat must reach past the pelvis bottom (y=0.76) and butt bottom
         // (≈0.79 at butt=1) — ending at 0.8 leaves skin exposed between legs.
@@ -290,55 +281,252 @@ export function buildJeans(
         height: hipHalfD * 2 * 0.92
       }
     ],
-    20
-  )
+    pelvisHalfW,
+    hipHalfD
+  }
+}
 
-  const legs: THREE.BufferGeometry[] = []
-  const legStation = (r: number): { width: number; height: number } => ({
-    width: (r * legR + CLOTH_OFFSET) * 2,
-    height: (r * legR + CLOTH_OFFSET) * 2
-  })
+const PANTS_SEGMENTS: BoneSegment[] = [
+  { name: 'Root', start: [0, 0.86, 0], end: [0, 1.15, 0] },
+  { name: 'Spine', start: [0, 1.15, 0], end: [0, 1.3, 0] },
+  { name: 'LeftUpperLeg', start: [-0.18, 0.86, 0], end: [-0.18, 0.5, 0] },
+  { name: 'LeftCalf', start: [-0.18, 0.5, 0], end: [-0.18, 0.12, 0] },
+  { name: 'RightUpperLeg', start: [0.18, 0.86, 0], end: [0.18, 0.5, 0] },
+  { name: 'RightCalf', start: [0.18, 0.5, 0], end: [0.18, 0.12, 0] }
+]
+
+function bindPants(parts: THREE.BufferGeometry[]): GarmentBuildResult {
+  const merged = mergeGeometries(parts)
+  if (!merged) {
+    throw new Error('bindPants: mergeGeometries returned null')
+  }
+  const binding = computeSkinBindings(
+    merged.attributes.position.array as Float32Array,
+    PANTS_SEGMENTS
+  )
+  applySkinAttributes(merged, binding)
+  return { geometry: merged, boneNames: PANTS_SEGMENTS.map((s) => s.name) }
+}
+
+interface LegStation {
+  y: number
+  r: number
+}
+
+/** Paired leg tubes at x=+/-0.18 with muscle headroom + cloth offset. */
+function legPair(
+  stations: LegStation[],
+  offset: number,
+  radiusScale = 1,
+  capEnd = true
+): THREE.BufferGeometry[] {
+  const out: THREE.BufferGeometry[] = []
   for (const side of [-1, 1] as const) {
-    const s = side
-    legs.push(
+    out.push(
       makeSweep(
-        [
-          { center: [s * 0.18, 0.88, 0], ...legStation(0.105) },
-          { center: [s * 0.18, 0.72, 0], ...legStation(0.0925) },
-          { center: [s * 0.18, 0.56, 0], ...legStation(0.0775) },
-          { center: [s * 0.18, 0.5, 0], ...legStation(0.0825) },
-          { center: [s * 0.18, 0.4, 0], ...legStation(0.0725) },
-          { center: [s * 0.18, 0.24, 0], ...legStation(0.05) },
-          { center: [s * 0.18, 0.13, 0], ...legStation(0.0375) }
-        ],
+        stations.map(({ y, r }) => ({
+          center: [side * 0.18, y, 0] as [number, number, number],
+          width: (r * MUSCLE_HEADROOM * radiusScale + offset) * 2,
+          height: (r * MUSCLE_HEADROOM * radiusScale + offset) * 2
+        })),
         14,
         false,
-        true
+        capEnd
       )
     )
   }
+  return out
+}
 
-  const merged = mergeGeometries([hip, ...legs])
-  if (!merged) {
-    throw new Error('buildJeans: mergeGeometries returned null')
-  }
+/** Flat cuff ring around a leg tube (hem/cuff accent). */
+function cuffRing(cx: number, y: number, tubeR: number, tube = 0.018): THREE.BufferGeometry {
+  const geo = new THREE.TorusGeometry(tubeR + 0.008, tube, 10, 20)
+  geo.rotateX(Math.PI / 2)
+  geo.translate(cx, y, 0)
+  return geo
+}
 
-  const segments: BoneSegment[] = [
-    { name: 'Root', start: [0, 0.86, 0], end: [0, 1.15, 0] },
-    { name: 'Spine', start: [0, 1.15, 0], end: [0, 1.3, 0] },
-    { name: 'LeftUpperLeg', start: [-0.18, 0.86, 0], end: [-0.18, 0.5, 0] },
-    { name: 'LeftCalf', start: [-0.18, 0.5, 0], end: [-0.18, 0.12, 0] },
-    { name: 'RightUpperLeg', start: [0.18, 0.86, 0], end: [0.18, 0.5, 0] },
-    { name: 'RightCalf', start: [0.18, 0.5, 0], end: [0.18, 0.12, 0] }
+const FULL_LEG_STATIONS: LegStation[] = [
+  { y: 0.88, r: 0.105 },
+  { y: 0.72, r: 0.0925 },
+  { y: 0.56, r: 0.0775 },
+  { y: 0.5, r: 0.0825 },
+  { y: 0.4, r: 0.0725 },
+  { y: 0.24, r: 0.05 },
+  { y: 0.13, r: 0.0375 }
+]
+
+/**
+ * Hip shell + two leg tubes down to the ankle. Hip shell clears the pelvis
+ * ellipsoid (0.32 * hipWidth) and butt rear projection so skin never pokes
+ * through at the sides or back.
+ */
+export function buildJeans(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const { stations } = hipShellStations(shape, butt, belly)
+  const hip = makeSweep(stations, 20)
+  return bindPants([hip, ...legPair(FULL_LEG_STATIONS, CLOTH_OFFSET)])
+}
+
+/** Hip shell + thigh tubes cut mid-thigh with hem cuffs. Legs below are bare. */
+export function buildShorts(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const { stations } = hipShellStations(shape, butt, belly)
+  const hip = makeSweep(stations, 20)
+  const thigh: LegStation[] = [
+    { y: 0.88, r: 0.105 },
+    { y: 0.72, r: 0.0925 },
+    { y: 0.6, r: 0.085 },
+    { y: 0.52, r: 0.085 }
   ]
-
-  const binding = computeSkinBindings(merged.attributes.position.array as Float32Array, segments)
-  applySkinAttributes(merged, binding)
-
-  return {
-    geometry: merged,
-    boneNames: segments.map((s) => s.name)
+  const legs = legPair(thigh, CLOTH_OFFSET)
+  const cuffs: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1]) {
+    cuffs.push(cuffRing(side * 0.18, 0.52, 0.085 * MUSCLE_HEADROOM + CLOTH_OFFSET))
   }
+  return bindPants([hip, ...legs, ...cuffs])
+}
+
+/** Hip shell + wide baggy tubes with ankle cuffs. */
+export function buildBaggy(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const { stations } = hipShellStations(shape, butt, belly)
+  const hip = makeSweep(stations, 20)
+  const legs = legPair(FULL_LEG_STATIONS, CLOTH_OFFSET, 1.4)
+  const cuffs: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1]) {
+    cuffs.push(cuffRing(side * 0.18, 0.17, 0.0375 * MUSCLE_HEADROOM * 1.4 + CLOTH_OFFSET, 0.022))
+  }
+  return bindPants([hip, ...legs, ...cuffs])
+}
+
+/** Hip shell + body-hugging spandex tubes (tight offset, slim silhouette). */
+export function buildTights(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const TIGHT_OFFSET = 0.004
+  const { stations } = hipShellStations(shape, butt, belly)
+  const hip = makeSweep(stations, 20)
+  return bindPants([hip, ...legPair(FULL_LEG_STATIONS, TIGHT_OFFSET, 0.92)])
+}
+
+// ---------------------------------------------------------------------------
+// Hats (helmet slot). Authored in world coordinates, bound 100% to the Head
+// bone (rigid follow, same trick as the cranium) so they track headSize and
+// head-shape rebuilds with zero drift. Brims sit above the eye tops, which
+// move with eyeScale — hence the FaceShape parameter.
+// ---------------------------------------------------------------------------
+
+const HEAD_SEGMENTS: BoneSegment[] = [{ name: 'Head', start: [0, 1.75, 0], end: [0, 2.08, 0] }]
+
+function bindHat(parts: THREE.BufferGeometry[]): GarmentBuildResult {
+  const merged = mergeGeometries(parts)
+  if (!merged) {
+    throw new Error('bindHat: mergeGeometries returned null')
+  }
+  const binding = computeSkinBindings(
+    merged.attributes.position.array as Float32Array,
+    HEAD_SEGMENTS
+  )
+  applySkinAttributes(merged, binding)
+  return { geometry: merged, boneNames: HEAD_SEGMENTS.map((s) => s.name) }
+}
+
+/** Y of the eye tops for a shape + face (hat brims must stay above this). */
+function eyeTopY(shape: BodyShape, face: FaceShape): number {
+  return CRANIUM_CENTER_Y + shape.headHeight * 0.12 + 0.062 * face.eyeScale + 0.01
+}
+
+/**
+ * Brim/rim Y shared by all hats, exported for the clearance probe. Every hat
+ * sits above the eye tops so randomized eyes are never covered.
+ */
+export function hatRimY(shape: BodyShape, face: FaceShape): number {
+  return eyeTopY(shape, face) + 0.005
+}
+
+/** Skull-hugging shell + folded brim torus. */
+export function buildBeanie(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const rx = shape.headWidth + 0.02
+  const ry = shape.headHeight + 0.02
+  const rz = shape.headLength + 0.02
+  const rimY = hatRimY(shape, face)
+  const cosTheta = Math.max(-0.9, Math.min(0.9, (rimY - CRANIUM_CENTER_Y) / ry))
+  const thetaLength = Math.acos(cosTheta)
+  const shell = new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, thetaLength)
+  shell.scale(rx, ry, rz)
+  shell.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  const ringR = rx * Math.sin(thetaLength) + 0.005
+  const brim = new THREE.TorusGeometry(ringR, 0.028, 10, 24)
+  brim.rotateX(Math.PI / 2)
+  brim.translate(0, rimY, CRANIUM_CENTER_Z)
+  return bindHat([shell, brim])
+}
+
+/** Dome + flat front brim disc + top button. */
+export function buildCap(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const rimY = hatRimY(shape, face)
+  const rx = shape.headWidth + 0.015
+  const ry = shape.headHeight * 0.75 + 0.02
+  const rz = shape.headLength + 0.015
+  // Dome segment just past the equator; translate so its rim lands on rimY.
+  const thetaLength = Math.PI * 0.52
+  const dome = new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, thetaLength)
+  dome.scale(rx, ry, rz)
+  dome.translate(0, rimY - Math.cos(thetaLength) * ry, CRANIUM_CENTER_Z)
+  // Brim: flat disc extending forward from the forehead surface, tilted down.
+  const brim = new THREE.CircleGeometry(0.11, 20)
+  brim.rotateX(-Math.PI / 2 + 0.12)
+  brim.translate(0, rimY - 0.005, surfaceZ(shape, 0, rimY) + 0.12)
+  const button = new THREE.SphereGeometry(0.02, 10, 8)
+  button.translate(0, rimY - Math.cos(thetaLength) * ry + ry + 0.005, CRANIUM_CENTER_Z)
+  return bindHat([dome, brim, button])
+}
+
+/** Wide lathe brim with upturned edge + tall crown. */
+export function buildSombrero(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const rimY = hatRimY(shape, face)
+  // Tall crown, same center as the cranium but larger on every axis, so the
+  // skull is strictly inside by construction.
+  const rx = shape.headWidth + 0.015
+  const ry = shape.headHeight * 1.15 + 0.01
+  const rz = shape.headLength + 0.015
+  const cosTheta = Math.max(-0.9, Math.min(0.9, (rimY - CRANIUM_CENTER_Y) / ry))
+  const thetaLength = Math.acos(cosTheta)
+  const crown = new THREE.SphereGeometry(1, 24, 12, 0, Math.PI * 2, 0, thetaLength)
+  crown.scale(rx, ry, rz)
+  crown.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  // Brim: flat disc out to 0.30 with an upturned lip, via lathe profile.
+  const brim = makeLathe(
+    [
+      [0.02, rimY + 0.012],
+      [0.15, rimY + 0.006],
+      [0.3, rimY],
+      [0.345, rimY + 0.025]
+    ],
+    28
+  )
+  return bindHat([crown, brim])
 }
 
 export interface ProceduralAssetDef {
@@ -377,6 +565,81 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
       return buildJeans(shape, butt, belly)
     }
+  },
+  {
+    id: 'proc:shorts',
+    slotId: 'pants',
+    label: 'Shorts',
+    tags: ['pants', 'legs', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      return buildShorts(shape, butt, belly)
+    }
+  },
+  {
+    id: 'proc:baggy',
+    slotId: 'pants',
+    label: 'Baggy Pants',
+    tags: ['pants', 'legs', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      return buildBaggy(shape, butt, belly)
+    }
+  },
+  {
+    id: 'proc:tights',
+    slotId: 'pants',
+    label: 'Tights',
+    tags: ['pants', 'legs', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      return buildTights(shape, butt, belly)
+    }
+  },
+  {
+    id: 'proc:beanie',
+    slotId: 'helmet',
+    label: 'Beanie',
+    tags: ['hat', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildBeanie(shape, face)
+    }
+  },
+  {
+    id: 'proc:cap',
+    slotId: 'helmet',
+    label: 'Baseball Cap',
+    tags: ['hat', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildCap(shape, face)
+    }
+  },
+  {
+    id: 'proc:sombrero',
+    slotId: 'helmet',
+    label: 'Sombrero',
+    tags: ['hat', 'procedural'],
+    materialId: 'leather',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildSombrero(shape, face)
+    }
   }
 ]
 
@@ -396,9 +659,19 @@ export function getProceduralAssetEntries(): AssetEntry[] {
   }))
 }
 
+export type GarmentKey = 'torso' | 'head' | 'face'
+
 /** True when a DNA change requires rebuilding an equipped procedural garment. */
-export function garmentDependsOnKey(assetId: string, key: 'torso' | 'head'): boolean {
-  if (assetId === 'proc:tshirt') return key === 'torso'
-  if (assetId === 'proc:jeans') return key === 'torso'
+export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
+  if (
+    assetId === 'proc:tshirt' ||
+    assetId === 'proc:jeans' ||
+    assetId === 'proc:shorts' ||
+    assetId === 'proc:baggy' ||
+    assetId === 'proc:tights'
+  )
+    return key === 'torso'
+  if (assetId === 'proc:beanie' || assetId === 'proc:cap' || assetId === 'proc:sombrero')
+    return key === 'head' || key === 'face'
   return false
 }

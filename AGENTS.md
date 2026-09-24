@@ -2501,3 +2501,34 @@ Went from mass false positives to ALL PASSED, fixing 7 real geometry bugs:
 Sprint 20 clearance hardening complete. Next: Sprint 21 - pants fits
 (shorts/loose/tight) + hats (baseball cap/sombrero/beanie).
 
+---
+
+## Session 043 - Sprint 21: Lower Body + Headwear Variants
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 21 - 3 pants fits (shorts/baggy/tights) + 3 hats (beanie/cap/sombrero)
+as virtual proc: slot assets. Full entry in worklog.md (new running log;
+prior history stays here in AGENTS.md).
+
+Pants share a hipShellStations core + legPair helper with jeans. Hats are
+bound 100% to Head (rigid follow), brims above eye tops via eyeTopY.
+garmentDependsOnKey wired into head/face rebuild path (was dead code).
+Hats tagged `hat`; existing helmet rules untouched.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 256 tests passing (246 + 10 new), no regressions
+- probe:clearance ALL PASSED (4 pants in morph grid, hats on 5 head shapes
+  x 3 eye sizes; new `up` ray mode)
+- Live visual check pending (no headless Electron here)
+
+### Current status
+
+Sprint 21 complete. Next: Sprint 22 - tops variety.
+

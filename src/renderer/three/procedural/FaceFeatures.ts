@@ -7,8 +7,8 @@ import { DEFAULT_FACE_SHAPE } from '../../../shared/types/faceShape'
 const EYE_WHITE = new THREE.MeshStandardMaterial({ color: '#ffffff', roughness: 0.15 })
 const PUPIL_BLACK = new THREE.MeshStandardMaterial({ color: '#151515', roughness: 0.3 })
 
-const CRANIUM_CENTER_Y = 1.86
-const CRANIUM_CENTER_Z = 0.005
+export const CRANIUM_CENTER_Y = 1.86
+export const CRANIUM_CENTER_Z = 0.005
 const HEAD_BONE_Y = 1.75
 
 export interface FaceMaterials {
@@ -26,7 +26,8 @@ export interface FaceResult {
   mouthPoints: THREE.Vector3[]
 }
 
-function surfaceZ(shape: BodyShape, x: number, worldY: number): number {
+/** Z of the cranium ellipsoid surface at (x, worldY). Hats reuse this. */
+export function surfaceZ(shape: BodyShape, x: number, worldY: number): number {
   const nx = x / shape.headWidth
   const ny = (worldY - CRANIUM_CENTER_Y) / shape.headHeight
   const k = Math.max(1 - nx * nx - ny * ny, 0.02)
@@ -60,10 +61,7 @@ export function buildFace(
     group.add(sclera)
     eyes.push(sclera)
 
-    const iris = new THREE.Mesh(
-      new THREE.CircleGeometry(0.027 * faceShape.eyeScale, 16),
-      mats.eye
-    )
+    const iris = new THREE.Mesh(new THREE.CircleGeometry(0.027 * faceShape.eyeScale, 16), mats.eye)
     iris.name = side < 0 ? 'Iris_Left' : 'Iris_Right'
     iris.position.set(side * eyeX, eyeY, scleraZ + scleraHalfZ + 0.002)
     group.add(iris)
@@ -83,7 +81,11 @@ export function buildFace(
     const archCenter = 0.5 * Math.PI
     brow.rotation.z = archCenter - browArc / 2 + side * faceShape.browTilt * 0.3
     const browWorldY = eyeWorldY + (0.075 + (H - 0.22) * 0.35) * faceShape.browHeight
-    brow.position.set(side * eyeX, browWorldY - HEAD_BONE_Y, surfaceZ(bodyShape, side * eyeX, browWorldY) + 0.006)
+    brow.position.set(
+      side * eyeX,
+      browWorldY - HEAD_BONE_Y,
+      surfaceZ(bodyShape, side * eyeX, browWorldY) + 0.006
+    )
     group.add(brow)
     eyebrows.push(brow)
   }
@@ -94,7 +96,11 @@ export function buildFace(
   const nose = new THREE.Mesh(noseGeo, mats.skin)
   nose.name = 'Nose'
   const noseWorldY = CRANIUM_CENTER_Y - H * 0.15
-  nose.position.set(0, noseWorldY - HEAD_BONE_Y, surfaceZ(bodyShape, 0, noseWorldY) - 0.008 * noseSize)
+  nose.position.set(
+    0,
+    noseWorldY - HEAD_BONE_Y,
+    surfaceZ(bodyShape, 0, noseWorldY) - 0.008 * noseSize
+  )
   group.add(nose)
 
   const curve = Math.max(-1, Math.min(1, faceShape.mouthCurve))
@@ -106,10 +112,7 @@ export function buildFace(
   const noseBottomY = noseWorldY - 0.05 * faceShape.noseSize
   // Smile arcs dip R below the anchor; keep the dip above the chin underside.
   const chinFloor = 1.66 + (curve >= 0 ? radius : 0)
-  const mouthWorldY = Math.max(
-    chinFloor,
-    noseBottomY - 0.02 - (curve < 0 ? radius : 0)
-  )
+  const mouthWorldY = Math.max(chinFloor, noseBottomY - 0.02 - (curve < 0 ? radius : 0))
   // Sample the mouth arc directly ON the cranium ellipsoid surface: every
   // point is projected onto the surface (+4mm), so the mouth hugs any head
   // shape regardless of slope or curvature. Smile = lower arc, frown = upper.
