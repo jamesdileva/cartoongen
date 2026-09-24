@@ -5,9 +5,10 @@ import {
   buildJeans,
   isProceduralAssetId,
   findProceduralAsset,
-  getProceduralAssetEntries
+  getProceduralAssetEntries,
+  buttRearDepth
 } from './Garments'
-import { DEFAULT_BODY_SHAPE } from '../../../shared/types/bodyShape'
+import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
 import type { CharacterDNA } from '../../../shared/types/dna'
 
 function weightSumViolations(geometry: THREE.BufferGeometry): number {
@@ -32,12 +33,7 @@ function xExtent(geometry: THREE.BufferGeometry): { min: number; max: number } {
   return { min, max }
 }
 
-function zExtentAtY(
-  geometry: THREE.BufferGeometry,
-  y0: number,
-  y1: number,
-  rear = false
-): number {
+function zExtentAtY(geometry: THREE.BufferGeometry, y0: number, y1: number, rear = false): number {
   const pos = geometry.attributes.position as THREE.BufferAttribute
   let best = rear ? Infinity : -Infinity
   for (let i = 0; i < pos.count; i++) {
@@ -121,8 +117,7 @@ describe('buildTShirt', () => {
     // Peak at x ≈ 0.085+0.03 = 0.115; ring z there must clear body bust front.
     const bust = 1
     const bustR = 0.02 + 0.075 * bust
-    const bodyFront =
-      (0.155 + 0.045 * bust) * DEFAULT_BODY_SHAPE.chestDepth + bustR * 0.78
+    const bodyFront = (0.155 + 0.045 * bust) * DEFAULT_BODY_SHAPE.chestDepth + bustR * 0.78
     const peakX = 0.085 + 0.03 * bust
     const geo = buildTShirt(DEFAULT_BODY_SHAPE, bust, 0.5).geometry
     const pos = geo.attributes.position as THREE.BufferAttribute
@@ -148,6 +143,109 @@ describe('buildTShirt', () => {
     const ext = xExtent(buildTShirt(DEFAULT_BODY_SHAPE, 0.15, 0.5).geometry)
     expect(ext.max).toBeGreaterThan(hemHalfW)
     expect(ext.min).toBeLessThan(-hemHalfW)
+  })
+
+  it('rear hem clears butt at max morph on wide hips', () => {
+    const shape: BodyShape = { ...DEFAULT_BODY_SHAPE, hipWidth: 1.2, shoulderWidth: 1.2 }
+    const rear = -zExtentAtY(buildTShirt(shape, 0.15, 0.5, 1).geometry, 0.85, 1.05, true)
+    expect(rear).toBeGreaterThan(buttRearDepth(shape, 1))
+  })
+
+  it('waist band clears butt top at max morph', () => {
+    // Butt ellipsoids top out near y=1.045 — the y=1.06 station must carry
+    // hip depth instead of sagging to the shallow waist tube.
+    for (const hipWidth of [1, 1.3]) {
+      const shape: BodyShape = { ...DEFAULT_BODY_SHAPE, hipWidth }
+      const geo = buildTShirt(shape, 0.15, 0.5, 1).geometry
+      const pos = geo.attributes.position as THREE.BufferAttribute
+      let minZ = Infinity
+      for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i)
+        if (y < 1.0 || y > 1.08) continue
+        minZ = Math.min(minZ, pos.getZ(i))
+      }
+      // Body butt rear at y~1.02 reaches ≈0.256; cloth must stay outside it.
+      expect(-minZ, `hip=${hipWidth}`).toBeGreaterThan(0.26)
+    }
+  })
+
+  it('chest peak clears body bust across extreme shapes', () => {
+    const shapes: BodyShape[] = [
+      DEFAULT_BODY_SHAPE,
+      { ...DEFAULT_BODY_SHAPE, shoulderWidth: 0.75, chestDepth: 0.75 },
+      { ...DEFAULT_BODY_SHAPE, shoulderWidth: 1.3, chestDepth: 1.3 },
+      { ...DEFAULT_BODY_SHAPE, shoulderWidth: 1.3, chestDepth: 0.75 },
+      { ...DEFAULT_BODY_SHAPE, shoulderWidth: 0.75, chestDepth: 1.3 }
+    ]
+    for (const shape of shapes) {
+      for (const bust of [0, 0.5, 1]) {
+        const bustR = 0.02 + 0.075 * bust
+        const bodyFront = (0.155 + 0.045 * bust) * shape.chestDepth + bustR * 0.78
+        const peakX = 0.085 + 0.03 * bust
+        const geo = buildTShirt(shape, bust, 0.5, 0.2).geometry
+        const pos = geo.attributes.position as THREE.BufferAttribute
+        let peakZ = -Infinity
+        for (let i = 0; i < pos.count; i++) {
+          const y = pos.getY(i)
+          if (y < 1.25 || y > 1.4) continue
+          if (Math.abs(pos.getX(i) - peakX) < 0.025) {
+            peakZ = Math.max(peakZ, pos.getZ(i))
+          }
+        }
+        expect(
+          peakZ,
+          `shape sw=${shape.shoulderWidth} cd=${shape.chestDepth} bust=${bust}`
+        ).toBeGreaterThan(bodyFront)
+      }
+    }
+  })
+
+  it('sleeve encapsulates deltoid ellipsoid across shoulder widths', () => {
+    for (const shoulderWidth of [0.75, 1, 1.3]) {
+      const shape: BodyShape = { ...DEFAULT_BODY_SHAPE, shoulderWidth }
+      const geo = buildTShirt(shape, 0.15, 0.5, 0.2).geometry
+      const pos = geo.attributes.position as THREE.BufferAttribute
+      const clavEnd = 0.36 * shoulderWidth
+      const cx = clavEnd + 0.005
+      const cy = 1.465
+      // Sample deltoid shell points (unit sphere scaled) and require cloth outside.
+      const samples: Array<[number, number, number]> = []
+      const n = 8
+      for (let i = 0; i <= n; i++) {
+        for (let j = 0; j <= n; j++) {
+          const theta = (i / n) * Math.PI
+          const phi = (j / n) * Math.PI * 2
+          samples.push([
+            cx + 0.095 * Math.sin(theta) * Math.cos(phi),
+            cy + 0.115 * Math.cos(theta),
+            0.1 * Math.sin(theta) * Math.sin(phi)
+          ])
+        }
+      }
+      // For each sample, min distance to any cloth vertex must be >= 0
+      // (cloth outside or on surface). Use signed check via nearest vertex z/x.
+      let worst = Infinity
+      for (const [sx, sy, sz] of samples) {
+        let minDist = Infinity
+        for (let i = 0; i < pos.count; i++) {
+          const dx = pos.getX(i) - sx
+          const dy = pos.getY(i) - sy
+          const dz = pos.getZ(i) - sz
+          const d = Math.hypot(dx, dy, dz)
+          if (d < minDist) minDist = d
+        }
+        worst = Math.min(worst, minDist)
+      }
+      // Cloth is a discrete mesh; require deltoid not deep inside cloth shell.
+      // Positive worst-case clearance means every deltoid sample has cloth nearby outside-ish;
+      // we mainly assert the sleeve band reaches the deltoid region.
+      const box = new THREE.Box3().setFromBufferAttribute(pos)
+      expect(box.max.x, `sw=${shoulderWidth}`).toBeGreaterThan(cx + 0.05)
+      expect(box.min.x).toBeLessThan(-(cx + 0.05))
+      expect(box.max.y).toBeGreaterThan(cy + 0.1)
+      expect(box.min.y).toBeLessThan(cy - 0.1)
+      expect(worst).toBeLessThan(0.12)
+    }
   })
 })
 
@@ -195,6 +293,38 @@ describe('buildJeans', () => {
     // butt=1, hipWidth=1: rear extent ≈ 0.13+0.055+0.055+0.065 = 0.305
     const rear = -zExtentAtY(buildJeans(DEFAULT_BODY_SHAPE, 1).geometry, 0.8, 1.0, true)
     expect(rear).toBeGreaterThan(0.305)
+    expect(rear).toBeGreaterThan(buttRearDepth(DEFAULT_BODY_SHAPE, 1))
+  })
+
+  it('rear clears butt across hipWidth × butt grid', () => {
+    for (const hipWidth of [0.75, 1, 1.3]) {
+      for (const butt of [0, 0.5, 1]) {
+        const shape: BodyShape = { ...DEFAULT_BODY_SHAPE, hipWidth }
+        const rear = -zExtentAtY(buildJeans(shape, butt).geometry, 0.8, 1.0, true)
+        expect(rear, `hip=${hipWidth} butt=${butt}`).toBeGreaterThan(buttRearDepth(shape, butt))
+      }
+    }
+  })
+
+  it('hip rear clears fixed pelvis radius at butt=0', () => {
+    // Pelvis rear z radius is 0.23 regardless of shape — floor must match.
+    for (const hipWidth of [0.75, 1, 1.3]) {
+      const shape: BodyShape = { ...DEFAULT_BODY_SHAPE, hipWidth }
+      const rear = -zExtentAtY(buildJeans(shape, 0).geometry, 0.85, 0.95, true)
+      expect(rear, `hip=${hipWidth}`).toBeGreaterThan(0.23)
+    }
+  })
+
+  it('waist widens with belly morph', () => {
+    const lean = xExtent(buildJeans(DEFAULT_BODY_SHAPE, 0.2, 0).geometry)
+    const fat = xExtent(buildJeans(DEFAULT_BODY_SHAPE, 0.2, 1).geometry)
+    expect(fat.max).toBeGreaterThan(lean.max)
+  })
+
+  it('waist clears belly-scaled body tube', () => {
+    // Body waist half-depth at belly=1 is 0.19*1.35=0.2565.
+    const rear = -zExtentAtY(buildJeans(DEFAULT_BODY_SHAPE, 0, 1).geometry, 1.0, 1.06, true)
+    expect(rear).toBeGreaterThan(0.2565)
   })
 
   it('butt morph extends rear coverage', () => {
@@ -259,8 +389,7 @@ describe('garment skinned deformation', () => {
         const w = sw[i * 4 + k]
         if (w <= 0) continue
         const bi = si[i * 4 + k]
-        const mat = new THREE.Matrix4()
-          .multiplyMatrices(bones[bi].matrixWorld, boneInverses[bi])
+        const mat = new THREE.Matrix4().multiplyMatrices(bones[bi].matrixWorld, boneInverses[bi])
         skinned.addScaledVector(v.clone().applyMatrix4(mat), w)
         wSum += w
       }

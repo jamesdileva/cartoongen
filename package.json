@@ -11,6 +11,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit",
+    "probe:clearance": "npx tsx scripts/debug/clearance-check.mts",
     "format": "prettier --write \"src/**/*.{ts,tsx}\" \"electron/**/*.ts\" \"**/*.json\"",
     "clean": "node -e \"const fs=require('fs'); ['out','dist','.vite'].forEach(d=>fs.rmSync(d,{recursive:true,force:true}))\""
   },

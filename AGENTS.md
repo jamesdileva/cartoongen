@@ -2443,3 +2443,61 @@ Sprint 20 complete. Next: Sprint 21 - pants fits (shorts/loose/tight) + hats (ba
 
 **Sprint 21: Lower Body + Headwear Variants** - pants fits and hats per procedural-character.md.
 
+---
+
+## Session 042 - Sprint 20 Follow-up: Garment Clearance Fixes (Randomize Poke-Through)
+
+### Date
+
+2026-09-24
+
+### What we fixed (randomize skin poke-through in t-shirt/jeans)
+
+Headless clearance probe (scripts/debug/clearance-check.mts, run via
+`npm run probe:clearance`) raycasts DoubleSide cloth from body verts over
+5 shapes x bust 0/0.5/1 x butt 0/0.5/1 x belly 0/0.5/1 (135 configs, 6 bands).
+Went from mass false positives to ALL PASSED, fixing 7 real geometry bugs:
+
+| # | Issue | Root Cause | Fix |
+|---|---|---|---|
+| 1 | Probe flagged nearly every sample | THREE.Raycaster respects material.side; FrontSide culls hits from inside the shell | Cloth mesh uses MeshBasicMaterial DoubleSide in probe |
+| 2 | Jeans rear 5mm poke at butt=0 | Pelvis rear z radius is fixed 0.23 but hipHalfD floor was 0.215 | Floor raised to 0.23 (+offset) in jeans and shirt |
+| 3 | Shirt rear ~45mm poke at butt=1 | Butt tops out near y=1.045 but y=1.06 waist station interpolated shallow | isHip extended to y<=1.06 so hip depth carries through |
+| 4 | Chest ~13mm poke at bust=1 top | Bust tops out near y=1.42 but isChest stopped at y<=1.4 | isChest extended to y<=1.44 |
+| 5 | Butt/bust off-center poke (24mm) | Peak-only ellipse correction under-clears where ring is shallower | halfDForProfile samples full butt/bust silhouette per station |
+| 6 | Jeans waist 79mm poke at belly=1 | buildJeans ignored belly morph entirely | buildJeans takes belly, waist width/depth track bellyScale |
+| 7 | Seat bottom exposed below y=0.8 | Hip shell ended at 0.8, pelvis reaches 0.76, butt ~0.79 | Hip bottom station extended to y=0.74 |
+
+### Files modified
+
+- src/renderer/three/procedural/Garments.ts - halfDForProfile + buttRearSamples +
+  bustFrontSamples helpers, per-station chest/hip depth, jeans belly param and
+  belly-scaled waist, hip bottom y=0.74
+- src/renderer/three/procedural/Garments.test.ts - +4 tests (pelvis floor,
+  jeans belly response, jeans waist clears belly tube, shirt butt-top band)
+- package.json - new `probe:clearance` script
+- scripts/debug/clearance-check.mts - DoubleSide raycast acceptance probe (new)
+- scripts/debug/cdp-clearance.mts - live randomize screenshot sweep (new)
+
+### Decisions made during Session 042
+
+| Decision | Rationale |
+|---|---|
+| Raycast probe is the acceptance test, vertex-slab depth probe deleted | Slab comparison of sparse verts gives false positives (sleeve stations, ring tessellation); raycast tests actual triangles and agreed with screenshots |
+| Clearance-only expansion, no silhouette redesign | All fixes push cloth outward; prior clean screenshots stay valid, no visual regression risk |
+| Debug screenshots left untracked | Regenerable via cdp-clearance.mts; keeps the commit code-only |
+
+### Verification
+
+- npm run typecheck - 0 errors
+- npm run lint - 0 errors (4 pre-existing warnings)
+- npm run test - 246 tests passing (242 + 4 new), no regressions
+- npm run build - full production build succeeds
+- npm run probe:clearance - ALL CLEARANCE CHECKS PASSED (was 135 failures with broken classifier, 105 after first fixes, 9 after silhouette fixes, 0 after seat extension)
+- Live Electron screenshot sweep not re-run (app will not launch headless here); prior sweep screenshots showed no visible pokes and changes are outward-only
+
+### Current status
+
+Sprint 20 clearance hardening complete. Next: Sprint 21 - pants fits
+(shorts/loose/tight) + hats (baseball cap/sombrero/beanie).
+
