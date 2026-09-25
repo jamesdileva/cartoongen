@@ -170,6 +170,22 @@ function torsoShellStations(
   }
 }
 
+/** Waist ring dims shared by pants waistbands and the dwarf belt. */
+export function waistDims(
+  shape: BodyShape,
+  belly: number,
+  butt: number,
+  hipHalfD: number,
+  pelvisHalfW: number
+): { halfW: number; halfD: number } {
+  const bellyScale = bellyScaleOf(belly)
+  return {
+    halfW:
+      Math.max(0.255 * shape.waistTaper * bellyScale + 0.025, pelvisHalfW * 0.92) + CLOTH_OFFSET,
+    halfD: Math.max(0.19 * bellyScale, 0.2 + 0.02 * butt, hipHalfD * 0.85) + CLOTH_OFFSET
+  }
+}
+
 /** Torso + clavicle + arm segments for top skinning. */
 function topSegments(clavEnd: number, armStart: number, longSleeves: boolean): BoneSegment[] {
   const segs: BoneSegment[] = [
@@ -467,6 +483,176 @@ export function buildPolo(
   return bindTop([body, collarRing(), ...sleeves], topSegments(clavEnd, armStart, false))
 }
 
+// ---------------------------------------------------------------------------
+// Archetype outfits (Sprint 23). One-piece shirt-slot garments.
+// ---------------------------------------------------------------------------
+
+/** Wide bell sleeves flaring to the wrist with flared cuffs. */
+function bellSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[] {
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const deltoidCx = clavEnd + 0.005
+  const deltoidCy = 1.465
+  const shoulderHalfY = 0.115 + CLOTH_OFFSET * 1.5
+  const shoulderHalfZ = 0.1 + CLOTH_OFFSET * 1.5
+  const r = (armR: number): number => armR * MUSCLE_HEADROOM + CLOTH_OFFSET
+  const sleeves: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const s = side
+    sleeves.push(
+      makeSweep(
+        [
+          {
+            center: [s * armStart, deltoidCy, 0],
+            width: shoulderHalfZ * 2,
+            height: shoulderHalfY * 2
+          },
+          {
+            center: [s * deltoidCx, deltoidCy, 0],
+            width: shoulderHalfZ * 2,
+            height: shoulderHalfY * 2
+          },
+          { center: [s * 0.58, 1.495, 0], width: r(0.0625) * 2, height: r(0.0625) * 2 },
+          { center: [s * 0.72, 1.5, 0], width: r(0.06) * 2, height: r(0.06) * 2 },
+          { center: [s * 0.86, 1.505, 0], width: r(0.075) * 2, height: r(0.075) * 2 },
+          { center: [s * 0.95, 1.51, 0], width: r(0.095) * 2, height: r(0.095) * 2 }
+        ],
+        14,
+        false,
+        true
+      )
+    )
+    const cuff = new THREE.TorusGeometry(r(0.095) + 0.008, 0.024, 10, 20)
+    cuff.rotateY(Math.PI / 2)
+    cuff.translate(s * 0.92, 1.508, 0)
+    sleeves.push(cuff)
+  }
+  return sleeves
+}
+
+/**
+ * Mage robe: torso shell flowing into a floor-length flared skirt,
+ * bell sleeves, standing collar. Fixed hem (a cropped floor robe is nonsense).
+ */
+export function buildMageRobe(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT
+): GarmentBuildResult {
+  const { stations: torsoStations } = torsoShellStations(shape, bust, belly, butt, 0.9)
+  // Skirt flares past the legs (0.18 + leg radius + muscle + offset) and the
+  // feet below; butt/pelvis need full hip depth down past y=0.74.
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const hipHalfD = Math.max(
+    0.23 + CLOTH_OFFSET,
+    halfDForProfile(pelvisHalfW, buttRearSamples(shape, butt)),
+    buttRearDepth(shape, butt) + CLOTH_OFFSET
+  )
+  const skirt: SweepStation[] = [
+    {
+      center: [0, 0.74, 0],
+      width: (0.3 * shape.hipWidth + CLOTH_OFFSET) * 2,
+      height: hipHalfD * 2 * 0.92
+    },
+    { center: [0, 0.55, 0], width: 0.68, height: hipHalfD * 2 * 0.95 },
+    { center: [0, 0.35, 0], width: 0.74, height: 0.68 },
+    { center: [0, 0.18, 0], width: 0.8, height: 0.7 },
+    { center: [0, 0.06, 0], width: 0.84, height: 0.72 }
+  ]
+  // Torso stations ascend from the 0.9 hem; the skirt list above descends,
+  // so reverse it to keep one continuous ascending path (else the sweep
+  // jumps from the neck back down and cuts a diagonal sheet).
+  const skirtAscending = [...skirt].reverse()
+  const body = makeSweep([...skirtAscending, ...torsoStations], 20)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const sleeves = bellSleeves(shape, armStart)
+  return bindTop([body, collarRing(), ...sleeves], topSegments(clavEnd, armStart, true))
+}
+
+/** Lerp the torso profile width/depth at an arbitrary height. */
+function profileAt(shape: BodyShape, y: number): { w: number; d: number } {
+  const prof = torsoProfile(shape)
+  let hi = prof.findIndex((st) => st.y >= y)
+  if (hi < 0) hi = prof.length - 1
+  const lo = Math.max(0, hi - 1)
+  const span = prof[hi].y - prof[lo].y || 1
+  const t = Math.max(0, Math.min(1, (y - prof[lo].y) / span))
+  return {
+    w: prof[lo].w + (prof[hi].w - prof[lo].w) * t,
+    d: prof[lo].d + (prof[hi].d - prof[lo].d) * t
+  }
+}
+
+/**
+ * Elven tunic: fitted long top (fixed mid-thigh hem) + V collar accent
+ * riding on the upper-chest tube surface.
+ */
+export function buildElvenTunic(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const hemY = 0.68 + clamp01(topLength) * 0.25
+  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, hemY)
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  // V accent: bottom in the cleavage dip (tube surface), arms rising outward.
+  const vBottom = profileAt(shape, 1.43).d + CLOTH_OFFSET + 0.015
+  const vTop = profileAt(shape, 1.5).d + CLOTH_OFFSET + 0.01
+  const vR = 0.016
+  const accent = makeSweep(
+    [
+      { center: [-0.09, 1.5, vTop], width: vR * 2, height: vR * 2 },
+      { center: [0, 1.43, vBottom], width: vR * 2, height: vR * 2 },
+      { center: [0.09, 1.5, vTop], width: vR * 2, height: vR * 2 }
+    ],
+    8
+  )
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const sleeves = shortSleeves(shape, armStart)
+  return bindTop([body, accent, ...sleeves], topSegments(clavEnd, armStart, false))
+}
+
+/**
+ * Dwarf vest: open-front chest piece + elliptical belt torus at the waist.
+ * Bare arms; belly-tracked so stocky bodies stay covered.
+ */
+export function buildDwarfVest(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const { stations, phiStart, phiLength } = torsoShellStations(
+    shape,
+    bust,
+    belly,
+    butt,
+    hemYOf(topLength),
+    0.6
+  )
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  // Elliptical belt: torus scaled to the belly-tracked waist ring + margin.
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const hipHalfD = Math.max(
+    0.23 + CLOTH_OFFSET,
+    halfDForProfile(pelvisHalfW, buttRearSamples(shape, butt)),
+    buttRearDepth(shape, butt) + CLOTH_OFFSET
+  )
+  const { halfW: beltW, halfD: beltD } = waistDims(shape, belly, butt, hipHalfD, pelvisHalfW)
+  const belt = new THREE.TorusGeometry(1, 0.022, 10, 28)
+  belt.rotateX(Math.PI / 2)
+  belt.scale(beltW + 0.02, 1, beltD + 0.02)
+  belt.translate(0, 1.0, 0)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  return bindTop([body, belt], topSegments(clavEnd, armStart, false))
+}
+
 /**
  * Shared hip shell for all full pants: waist tracks the belly-scaled body
  * tube, hip depth clears pelvis + full butt silhouette, seat reaches y=0.74.
@@ -476,7 +662,6 @@ function hipShellStations(
   butt: number,
   belly: number
 ): { stations: SweepStation[]; pelvisHalfW: number; hipHalfD: number } {
-  const bellyScale = bellyScaleOf(belly)
   const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
   const buttSamples = buttRearSamples(shape, butt)
   // Pelvis ellipsoid rear z radius is fixed 0.23 (see buildTorso) — floor must
@@ -487,13 +672,13 @@ function hipShellStations(
     halfDForProfile(pelvisHalfW, buttSamples),
     buttRearDepth(shape, butt) + CLOTH_OFFSET
   )
-  // Waist must track the belly-scaled body tube (0.255/0.19 stations), or fat
-  // characters poke out the sides/back of the waistband.
-  const waistHalfW =
-    Math.max(0.255 * shape.waistTaper * bellyScale + 0.025, pelvisHalfW * 0.92) + CLOTH_OFFSET
-  // Waist station must stay close to hip depth: butt geometry tops out near
-  // y=1.045, and a shallow y=1.06 station interpolates below the butt peak.
-  const waistHalfD = Math.max(0.19 * bellyScale, 0.2 + 0.02 * butt, hipHalfD * 0.85) + CLOTH_OFFSET
+  const { halfW: waistHalfW, halfD: waistHalfD } = waistDims(
+    shape,
+    belly,
+    butt,
+    hipHalfD,
+    pelvisHalfW
+  )
   return {
     stations: [
       { center: [0, 1.06, 0], width: waistHalfW * 2, height: waistHalfD * 2 },
@@ -856,6 +1041,50 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
     }
   },
   {
+    id: 'proc:mage_robe',
+    slotId: 'shirt',
+    label: 'Mage Robe',
+    tags: ['shirt', 'robe', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      return buildMageRobe(shape, bust, belly, butt)
+    }
+  },
+  {
+    id: 'proc:elven_tunic',
+    slotId: 'shirt',
+    label: 'Elven Tunic',
+    tags: ['shirt', 'tunic', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildElvenTunic(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:dwarf_vest',
+    slotId: 'shirt',
+    label: 'Dwarf Vest',
+    tags: ['shirt', 'vest', 'procedural'],
+    materialId: 'leather',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildDwarfVest(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
     id: 'proc:jeans',
     slotId: 'pants',
     label: 'Jeans',
@@ -972,6 +1201,9 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
     assetId === 'proc:jacket' ||
     assetId === 'proc:vest' ||
     assetId === 'proc:polo' ||
+    assetId === 'proc:mage_robe' ||
+    assetId === 'proc:elven_tunic' ||
+    assetId === 'proc:dwarf_vest' ||
     assetId === 'proc:jeans' ||
     assetId === 'proc:shorts' ||
     assetId === 'proc:baggy' ||

@@ -122,5 +122,32 @@
       "waistTaper": 0.82,
       "hipWidth": 0.92
     }
+  },
+  {
+    "id": "mage",
+    "name": "Mage",
+    "description": "Tall and gaunt with sharp features, ready for robes",
+    "icon": "🔮",
+    "morphs": {
+      "shoulderWidth": 0.25,
+      "neckWidth": 0.3,
+      "height": 0.9,
+      "headSize": 0.4,
+      "legLength": 0.7,
+      "armLength": 0.75,
+      "bust": 0.2,
+      "butt": 0.25
+    },
+    "colors": { "skin": "#fce4c8", "hair": "#2a2038", "eye": "#7a5ac8" },
+    "bodyShape": {
+      "headWidth": 0.22,
+      "headHeight": 0.25,
+      "headLength": 0.24,
+      "jawChin": 0.8,
+      "shoulderWidth": 0.85,
+      "chestDepth": 0.82,
+      "waistTaper": 0.8,
+      "hipWidth": 0.9
+    }
   }
 ]

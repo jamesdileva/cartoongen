@@ -314,12 +314,18 @@ jacket/vest/polo); layering order respected via slot render layers
 
 ### Sprint 23 - Archetype Outfits
 
-- [ ] Mage robe: flared floor-length skirt sweep + wide bell sleeves + collar;
-      elven tunic: fitted long top + V collar accent; dwarf vest: open-front
-      chest piece + belt torus
-- [ ] Outfit presets combining multiple garments + matching palettes
-      (registered like existing presets, shown in PresetPanel)
-- [ ] Randomizer occasionally dresses characters in complete outfits
+- [x] Mage robe: torso shell into floor-length flared skirt sweep + wide
+      bell sleeves + collarRing; fixed hem (ignores topLength)
+- [x] Elven tunic: fitted long top (fixed mid-thigh hem + topLength range)
+      + V collar accent riding the chest tube surface
+- [x] Dwarf vest: open-front chest piece + elliptical belt torus from
+      shared waistDims (belly-tracked)
+- [x] Outfit presets combining multiple garments + matching palettes
+      (mage/elven/dwarven-outfit in presets.json with slots + outfit flag;
+      shown in PresetPanel via useDataStore, no UI changes)
+- [x] Randomizer occasionally dresses characters in complete outfits (25%
+      chance in App handleRandomize; morphs/shape preserved)
 
-**Acceptance**: Ctrl+N mage template + outfit preset reads unmistakably as a
-mage; export includes all garments.
+**Acceptance**: Ctrl+N mage template (new, tall/gaunt) + outfit preset reads
+unmistakably as a mage; export includes all garments (skinned meshes,
+existing path).

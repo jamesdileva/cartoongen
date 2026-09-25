@@ -7,6 +7,9 @@ import {
   buildJacket,
   buildVest,
   buildPolo,
+  buildMageRobe,
+  buildElvenTunic,
+  buildDwarfVest,
   buildJeans,
   buildShorts,
   buildBaggy,
@@ -151,19 +154,19 @@ const headShapes: Array<{ name: string; shape: BodyShape }> = [
   { name: 'default', shape: DEFAULT_BODY_SHAPE },
   {
     name: 'big-head',
-    shape: { ...DEFAULT_BODY_SHAPE, headWidth: 1.3, headHeight: 1.3, headLength: 1.3 }
+    shape: { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.28, headLength: 0.32 }
   },
   {
     name: 'small-head',
-    shape: { ...DEFAULT_BODY_SHAPE, headWidth: 0.75, headHeight: 0.75, headLength: 0.75 }
+    shape: { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.16, headLength: 0.18 }
   },
   {
     name: 'wide-short-head',
-    shape: { ...DEFAULT_BODY_SHAPE, headWidth: 1.3, headHeight: 0.75, headLength: 1.3 }
+    shape: { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.16, headLength: 0.32 }
   },
   {
     name: 'tall-head',
-    shape: { ...DEFAULT_BODY_SHAPE, headWidth: 0.75, headHeight: 1.3, headLength: 0.75 }
+    shape: { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.28, headLength: 0.18 }
   }
 ]
 
@@ -198,7 +201,13 @@ const shirtBuilders = {
   vest: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
     buildVest(shape, bust, belly, butt, topLength),
   polo: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
-    buildPolo(shape, bust, belly, butt, topLength)
+    buildPolo(shape, bust, belly, butt, topLength),
+  mage_robe: (shape: BodyShape, bust: number, belly: number, butt: number, _topLength: number) =>
+    buildMageRobe(shape, bust, belly, butt),
+  elven_tunic: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildElvenTunic(shape, bust, belly, butt, topLength),
+  dwarf_vest: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildDwarfVest(shape, bust, belly, butt, topLength)
 } as const
 
 let failures = 0
@@ -214,16 +223,18 @@ for (const { name, shape } of shapes) {
           const issues: string[] = []
           const aboveHem = (yMin: number): number => Math.max(yMin, hemY)
           // Bare deltoids/arms are by design on sleeveless tops: bound |x|
-          // to the shell zone. Open fronts (jacket/vest) show skin by
-          // design: skip the front wedge (gap half-width ~0.16 + margin).
+          // to the shell zone. Open fronts show skin by design: skip wedge.
           const delt = 0.36 * shape.shoulderWidth - 0.08
           const strapX = 0.085 + 0.03 * bust + 0.02
 
           for (const [shirtName, buildShirt] of Object.entries(shirtBuilders)) {
             const shirt = buildShirt(shape, bust, belly, butt, topLength).geometry
-            const delt = 0.36 * shape.shoulderWidth - 0.08
+            const openShirt =
+              shirtName === 'jacket' || shirtName === 'vest' || shirtName === 'dwarf_vest'
+            const bareShirt =
+              shirtName === 'tank' || shirtName === 'vest' || shirtName === 'dwarf_vest'
             const chestX =
-              shirtName === 'vest'
+              shirtName === 'vest' || shirtName === 'dwarf_vest'
                 ? { xMin: 0.2, xMax: delt } // +X side only; symmetry covers -X
                 : shirtName === 'jacket'
                   ? { xMin: 0.2 }
@@ -254,8 +265,10 @@ for (const { name, shape } of shapes) {
             // Side rays from front-diagonal verts cross the open wedge
             // (visible torso by design): keep |z| near the true silhouette.
             // Sleeveless tops leave deltoids bare: bound x to the shell.
-            const sleevelessSide = shirtName === 'tank' || shirtName === 'vest'
-            const openSide = shirtName === 'jacket' || shirtName === 'vest'
+            const sleevelessSide =
+              shirtName === 'tank' || shirtName === 'vest' || shirtName === 'dwarf_vest'
+            const openSide =
+              shirtName === 'jacket' || shirtName === 'vest' || shirtName === 'dwarf_vest'
             report(
               issues,
               `${shirtName} side`,
@@ -267,7 +280,7 @@ for (const { name, shape } of shapes) {
                 ...(openSide ? { zMax: 0.12 } : {})
               })
             )
-            if (shirtName === 'longsleeve' || shirtName === 'jacket') {
+            if (shirtName === 'longsleeve' || shirtName === 'jacket' || shirtName === 'mage_robe') {
               report(
                 issues,
                 `${shirtName} arm`,
@@ -277,6 +290,19 @@ for (const { name, shape } of shapes) {
                   mode: 'armX',
                   xMin: 0.5,
                   xMax: 0.9
+                })
+              )
+            }
+            if (shirtName === 'mage_robe') {
+              // Flared skirt must cover pelvis/butt down past the seat.
+              report(
+                issues,
+                `${shirtName} skirt`,
+                countPokes(torso, shirt, {
+                  yMin: 0.6,
+                  yMax: 0.9,
+                  mode: 'rear',
+                  minAbsZ: 0.05
                 })
               )
             }

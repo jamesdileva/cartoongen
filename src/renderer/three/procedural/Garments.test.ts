@@ -11,6 +11,9 @@ import {
   buildJacket,
   buildVest,
   buildPolo,
+  buildMageRobe,
+  buildElvenTunic,
+  buildDwarfVest,
   buildBeanie,
   buildCap,
   buildSombrero,
@@ -78,15 +81,18 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 13 procedural entries with correct slots', () => {
+  it('exposes all 16 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
       'proc:baggy',
       'proc:beanie',
       'proc:cap',
+      'proc:dwarf_vest',
+      'proc:elven_tunic',
       'proc:jacket',
       'proc:jeans',
       'proc:longsleeve',
+      'proc:mage_robe',
       'proc:polo',
       'proc:shorts',
       'proc:sombrero',
@@ -108,9 +114,28 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:beanie')?.slotId).toBe('helmet')
     expect(entries.find((e) => e.id === 'proc:cap')?.slotId).toBe('helmet')
     expect(entries.find((e) => e.id === 'proc:sombrero')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:mage_robe')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:elven_tunic')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:dwarf_vest')?.slotId).toBe('shirt')
     expect(findProceduralAsset('proc:tshirt')?.label).toBe('T-Shirt')
     expect(findProceduralAsset('proc:sombrero')?.label).toBe('Sombrero')
     expect(findProceduralAsset('proc:jacket')?.materialId).toBe('leather')
+    expect(findProceduralAsset('proc:mage_robe')?.label).toBe('Mage Robe')
+  })
+
+  it('outfit preset slots resolve to real procedural assets', async () => {
+    const { default: presets } = await import('../../../shared/data/presets.json')
+    const outfits = (
+      presets as Array<{ id: string; outfit?: boolean; slots?: Record<string, string | null> }>
+    ).filter((p) => p.outfit === true)
+    expect(outfits.length).toBeGreaterThanOrEqual(3)
+    for (const preset of outfits) {
+      expect(preset.slots, preset.id).toBeDefined()
+      for (const assetId of Object.values(preset.slots ?? {})) {
+        if (assetId === null) continue
+        expect(findProceduralAsset(assetId), `${preset.id} -> ${assetId}`).toBeDefined()
+      }
+    }
   })
 
   it('maps garments to rebuild keys', () => {
@@ -121,6 +146,9 @@ describe('procedural asset catalog', () => {
       'proc:jacket',
       'proc:vest',
       'proc:polo',
+      'proc:mage_robe',
+      'proc:elven_tunic',
+      'proc:dwarf_vest',
       'proc:jeans',
       'proc:shorts',
       'proc:baggy',
@@ -731,6 +759,72 @@ describe('tops variety', () => {
   })
 })
 
+describe('archetype outfits', () => {
+  it('mage robe reaches the floor flared past the legs', () => {
+    const { geometry, boneNames } = buildMageRobe()
+    expect(weightSumViolations(geometry)).toBe(0)
+    expect(boneNames).toContain('LeftForearm')
+    const box = yExtent(geometry)
+    expect(box.min).toBeLessThan(0.1)
+    const ext = xExtent(geometry)
+    expect(ext.max).toBeGreaterThan(0.4)
+    expect(ext.min).toBeCloseTo(-ext.max, 3)
+  })
+
+  it('mage robe keeps a fixed hem regardless of topLength', () => {
+    const short = yExtent(buildMageRobe(DEFAULT_BODY_SHAPE, 0.15, 0.5, 0.2).geometry)
+    expect(short.min).toBeLessThan(0.1)
+  })
+
+  it('elven tunic has a mid-thigh hem and a forward V accent', () => {
+    const geo = buildElvenTunic().geometry
+    expect(weightSumViolations(geo)).toBe(0)
+    const box = yExtent(geo)
+    expect(box.min).toBeGreaterThan(0.6)
+    expect(box.min).toBeLessThan(0.8)
+    // V accent verts sit forward of the chest tube surface (~0.2).
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let accentFront = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const x = Math.abs(pos.getX(i))
+      const y = pos.getY(i)
+      if (x < 0.12 && y > 1.4 && y < 1.55) {
+        accentFront = Math.max(accentFront, pos.getZ(i))
+      }
+    }
+    expect(accentFront).toBeGreaterThan(0.2)
+    const ext = xExtent(geo)
+    expect(ext.min).toBeCloseTo(-ext.max, 3)
+  })
+
+  it('dwarf vest has an open front gap and a waist belt ring', () => {
+    const geo = buildDwarfVest().geometry
+    expect(weightSumViolations(geo)).toBe(0)
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let centerFront = 0
+    let beltCount = 0
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i)
+      const y = pos.getY(i)
+      const z = pos.getZ(i)
+      if (y > 1.2 && y < 1.4 && z > 0.15 && Math.abs(x) < 0.1) centerFront++
+      const r = Math.hypot(x, z)
+      if (y > 0.96 && y < 1.04 && r > 0.2 && r < 0.45) beltCount++
+    }
+    expect(centerFront).toBe(0)
+    expect(beltCount).toBeGreaterThan(0)
+  })
+
+  it('all archetypes bind torso chains with normalized weights', () => {
+    for (const build of [buildMageRobe, buildElvenTunic, buildDwarfVest]) {
+      const { geometry, boneNames } = build()
+      expect(weightSumViolations(geometry)).toBe(0)
+      expect(boneNames).toContain('Root')
+      expect(boneNames).toContain('Spine1')
+    }
+  })
+})
+
 describe('hats', () => {
   it('bind 100% to the Head bone with normalized weights', () => {
     for (const build of [buildBeanie, buildCap, buildSombrero]) {
@@ -767,11 +861,12 @@ describe('hats', () => {
   })
 
   it('cranium stays inside every hat dome across extreme head shapes', () => {
+    // In-sanitize-range extremes (head dims are absolute meters).
     const shapes: BodyShape[] = [
       DEFAULT_BODY_SHAPE,
-      { ...DEFAULT_BODY_SHAPE, headWidth: 1.3, headHeight: 1.3, headLength: 1.3 },
-      { ...DEFAULT_BODY_SHAPE, headWidth: 0.75, headHeight: 0.75, headLength: 0.75 },
-      { ...DEFAULT_BODY_SHAPE, headWidth: 0.75, headHeight: 1.3, headLength: 1.3 }
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.28, headLength: 0.32 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.16, headLength: 0.18 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.28, headLength: 0.18 }
     ]
     const builders = [buildBeanie, buildCap, buildSombrero] as const
     for (const shape of shapes) {

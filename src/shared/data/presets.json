@@ -85,5 +85,53 @@
       "hair": "#ff6600",
       "eye": "#4a7a4a"
     }
+  },
+  {
+    "id": "mage-outfit",
+    "name": "Mage Outfit",
+    "description": "Floor-length robe with bell sleeves and arcane violet cloth",
+    "icon": "🔮",
+    "outfit": true,
+    "slots": { "shirt": "proc:mage_robe", "pants": null, "helmet": null },
+    "colors": {
+      "cloth": "#5b2d91",
+      "metal": "#c0c0c0",
+      "leather": "#3e2723",
+      "skin": "#fce4c8",
+      "hair": "#2a2038",
+      "eye": "#7a5ac8"
+    }
+  },
+  {
+    "id": "elven-outfit",
+    "name": "Elven Outfit",
+    "description": "Fitted woodland tunic with forest greens",
+    "icon": "🏹",
+    "outfit": true,
+    "slots": { "shirt": "proc:elven_tunic", "pants": "proc:tights", "helmet": null },
+    "colors": {
+      "cloth": "#2e6b34",
+      "metal": "#8a8a8a",
+      "leather": "#5d4037",
+      "skin": "#ffe0b0",
+      "hair": "#a08060",
+      "eye": "#6a9abc"
+    }
+  },
+  {
+    "id": "dwarven-outfit",
+    "name": "Dwarven Outfit",
+    "description": "Rugged leather vest and baggy work pants",
+    "icon": "⛏",
+    "outfit": true,
+    "slots": { "shirt": "proc:dwarf_vest", "pants": "proc:baggy", "helmet": null },
+    "colors": {
+      "cloth": "#6d4c41",
+      "metal": "#808080",
+      "leather": "#4e2a1a",
+      "skin": "#dbb080",
+      "hair": "#6e3a1a",
+      "eye": "#5a8a5a"
+    }
   }
 ]

@@ -28,7 +28,9 @@ import type { Preset } from '../shared/types/preset'
 export default function App() {
   const viewportRef = useRef<ViewportHandle>(null)
   const [showImport, setShowImport] = useState(false)
-  const [importData, setImportData] = useState<{ buffer: ArrayBuffer; fileName: string } | null>(null)
+  const [importData, setImportData] = useState<{ buffer: ArrayBuffer; fileName: string } | null>(
+    null
+  )
   const [showCharacterList, setShowCharacterList] = useState(false)
   const [showCharacterBrowser, setShowCharacterBrowser] = useState(false)
   const [showExport, setShowExport] = useState(false)
@@ -109,9 +111,25 @@ export default function App() {
     const palettes = useDataStore.getState().palettes
 
     const currentBody = useCharacterStore.getState().present?.slots?.body ?? null
-    const dna = generateRandomDNA({ seed, slots, assets, palettes, rules, bodyAssetId: currentBody })
+    const dna = generateRandomDNA({
+      seed,
+      slots,
+      assets,
+      palettes,
+      rules,
+      bodyAssetId: currentBody
+    })
     dna.slots.body = currentBody
     overwriteDNA(dna)
+    // Occasionally dress the result in a complete outfit (slots + palette).
+    // Outfit presets define no morphs/shape, so the random body is preserved.
+    if (Math.random() < 0.25) {
+      const outfits = useDataStore.getState().presets.filter((p) => p.outfit)
+      if (outfits.length > 0) {
+        const pick = outfits[Math.floor(Math.random() * outfits.length)]
+        useCharacterStore.getState().applyPreset(pick)
+      }
+    }
   }, [overwriteDNA])
 
   useEffect(() => {
@@ -258,7 +276,9 @@ export default function App() {
         centerPanel={<Viewport ref={viewportRef} onFileDrop={handleFileDrop} />}
         rightPanel={<PropertiesPanel />}
       />
-      {showImport && <ImportDialog onClose={handleImportClose} initialFileData={importData ?? undefined} />}
+      {showImport && (
+        <ImportDialog onClose={handleImportClose} initialFileData={importData ?? undefined} />
+      )}
       {showCharacterList && <CharacterList onClose={() => setShowCharacterList(false)} />}
       {showCharacterBrowser && <CharacterBrowser onClose={() => setShowCharacterBrowser(false)} />}
       {showExport && (

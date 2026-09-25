@@ -61,6 +61,59 @@ Sprint 22 complete and user-verified. Next: Sprint 23 - archetype outfits
 
 ---
 
+## Session 045 - Sprint 23: Archetype Outfits
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 23 (final procedural sprint) - 3 archetype garments + outfit presets
+with slots + outfit randomizer + Mage template.
+
+| Asset | Construction |
+|---|---|
+| `proc:mage_robe` | Torso shell into floor-length flared skirt (0.42 half-width hem) + bell sleeves with flared cuffs + collar; fixed hem |
+| `proc:elven_tunic` | Long fitted top (hem 0.68 + length range) + V accent tube on chest surface + short sleeves |
+| `proc:dwarf_vest` | Open-front chest piece (0.6 half-gap) + elliptical belt torus from shared `waistDims` (belly-tracked) |
+
+Data + wiring (no new UI components):
+
+- `presets.json`: mage/elven/dwarven-outfit with `slots` + `colors` + new
+  `outfit: true` flag (Preset type extended). Shown in PresetPanel via
+  useDataStore with zero UI changes; applyPreset merges slots per-slot.
+- `templates.json`: Mage template (tall, gaunt, sharp jaw) for Ctrl+N.
+- `App.tsx` handleRandomize: 25% chance applies a random outfit preset
+  after overwriteDNA (presets define no morphs/shape, random body kept).
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Robe skirt left 25-28 pelvis misses per config | Skirt stations descended while torso stations ascend - sweep jumped neck-to-floor cutting a diagonal fin. Concatenate skirt-first ascending |
+| PowerShell `Set-Content` mojibake'd presets.json emoji | Restored from git, re-applied via file tools; verified 48 insertions 0 deletions |
+| Sprint 21 probe/test used out-of-range head shapes (1.3m!) | Corrected to sanitize ranges (0.31/0.18); containment holds |
+
+### Verification
+
+- `npm run typecheck` - 0 errors
+- `npm run lint` - 0 errors (4 pre-existing warnings)
+- `npm run test` - 270 tests passing (264 + 6 new), no regressions
+- `npm run build` - full production build succeeds
+- `npm run probe:clearance` - ALL PASSED (robe skirt/leg/arm bands, tunic,
+  dwarf vest open-front bands alongside all prior garments)
+- Live visual check pending: Ctrl+N Mage + mage-outfit preset, randomize
+  until an outfit hits (~25%), export dressed character
+
+### Current status
+
+All 23 sprints complete: fully procedural, DNA-driven characters with
+expressions, 16 garments, 3 archetype outfits. Remaining: user testing,
+real-asset packs optional, packaging/installer (no sprint covers it yet).
+
+---
+
 ## Session 043 - Sprint 21: Lower Body + Headwear Variants
 
 ### Date

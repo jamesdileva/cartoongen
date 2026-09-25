@@ -11,4 +11,6 @@ export interface Preset {
   colors?: Record<string, string>
   bodyShape?: Partial<BodyShape>
   face?: Partial<FaceShape>
+  /** Complete outfits (garments + palette) the randomizer can apply. */
+  outfit?: boolean
 }
