@@ -10,6 +10,10 @@ import {
   buildMageRobe,
   buildElvenTunic,
   buildDwarfVest,
+  buildCropHair,
+  buildPonytail,
+  buildMohawk,
+  buildLongHair,
   buildJeans,
   buildShorts,
   buildBaggy,
@@ -189,6 +193,13 @@ const hatBuilders = {
   sombrero: (shape: BodyShape, face: FaceShape) => buildSombrero(shape, face)
 } as const
 
+const hairBuilders = {
+  crop_hair: (shape: BodyShape, _butt: number, _belly: number) => buildCropHair(shape),
+  ponytail: (shape: BodyShape, _butt: number, _belly: number) => buildPonytail(shape),
+  mohawk: (shape: BodyShape, _butt: number, _belly: number) => buildMohawk(shape),
+  long_hair: (shape: BodyShape, butt: number, belly: number) => buildLongHair(shape, butt, belly)
+} as const
+
 const shirtBuilders = {
   tshirt: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
     buildTShirt(shape, bust, belly, butt, topLength),
@@ -355,6 +366,39 @@ for (const { name, shape } of shapes) {
             }
           }
 
+          // Ponytail tail and long-hair fall must hang outside the back.
+          // Only the tube centerline: off-center sightlines pass beside the
+          // thin tail by design (nothing needs covering there).
+          for (const [hairName, buildHair] of Object.entries(hairBuilders)) {
+            const hair = buildHair(shape, butt, belly).geometry
+            if (hairName === 'ponytail') {
+              report(
+                issues,
+                'ponytail tail',
+                countPokes(torso, hair, {
+                  yMin: 1.4,
+                  yMax: 1.65,
+                  mode: 'rear',
+                  xMin: -0.03,
+                  xMax: 0.03
+                })
+              )
+            }
+            if (hairName === 'long_hair') {
+              report(
+                issues,
+                'long_hair fall',
+                countPokes(torso, hair, {
+                  yMin: 1.12,
+                  yMax: 1.62,
+                  mode: 'rear',
+                  xMin: -0.12,
+                  xMax: 0.12
+                })
+              )
+            }
+          }
+
           if (issues.length > 0) {
             failures++
             console.log(
@@ -400,6 +444,50 @@ for (const { name, shape } of headShapes) {
         failures++
         console.log(`FAIL hat ${name}/${faceName}: ${issues.join('; ')}`)
       }
+    }
+  }
+  // Hair shells cover the cranium above their lower edge (per-style band).
+  // Ears are covered by design (shell rx clears ear tips); jaw/neck below.
+  // Hair shell = cranium ellipsoid grown by (gx, gy, gz) with a face wedge
+  // (half-angle 0.7) cut around +Z. A cranium vert is covered when it is
+  // inside the grown ellipsoid; verts in the wedge azimuth are exposed by
+  // design (face opening). Ray checks can't express this (up-rays exit the
+  // opening, edge rays graze the rim), so test containment directly.
+  const hairShells = {
+    crop_hair: { yMin: 1.72, gx: 0.05, gy: 0.015, gz: 0.03 },
+    ponytail: { yMin: 1.83, gx: 0.03, gy: 0.015, gz: 0.02 },
+    long_hair: { yMin: 1.68, gx: 0.035, gy: 0.015, gz: 0.03 }
+  } as const
+  for (const [hairName, shell] of Object.entries(hairShells)) {
+    const hp = head.attributes.position as THREE.BufferAttribute
+    let pokes = 0
+    let samples = 0
+    let worstAt: [number, number, number] | null = null
+    for (let i = 0; i < hp.count; i++) {
+      const bx = hp.getX(i)
+      const by = hp.getY(i)
+      const bz = hp.getZ(i)
+      if (by < shell.yMin || by > 2.3) continue
+      samples++
+      const nx = bx / (shape.headWidth + shell.gx)
+      const ny = (by - 1.86) / (shape.headHeight + shell.gy)
+      const nz = (bz - 0.005) / (shape.headLength + shell.gz)
+      const inside = nx * nx + ny * ny + nz * nz < 1.01
+      const azimuth = Math.abs(Math.atan2(bx, bz - 0.005))
+      const inWedge = azimuth < 0.7
+      if (!inside && !inWedge) {
+        pokes++
+        if (!worstAt) worstAt = [bx, by, bz]
+      }
+    }
+    if (samples === 0) {
+      failures++
+      console.log(`FAIL hair ${name} ${hairName}: empty band (vacuous)`)
+    } else if (pokes > 0) {
+      failures++
+      console.log(
+        `FAIL hair ${name} ${hairName} containment ${pokes}/${samples} at ${worstAt?.map((v) => v.toFixed(2)).join(',')}`
+      )
     }
   }
 }

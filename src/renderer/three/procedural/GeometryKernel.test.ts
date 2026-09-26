@@ -148,4 +148,42 @@ describe('makeSweep', () => {
       expect(idx).toBeGreaterThanOrEqual(0)
     }
   })
+
+  it('keeps ring winding continuous when tangent z-sign flips (no bowties)', () => {
+    // Near-vertical path wiggling in z: station 0 sees tangent.z > 0 while
+    // station 1 sees tangent.z < 0, so the raw cross-product side flips 180
+    // degrees between rings and quads pinch through the tube (found via
+    // long-hair fall probe misses at belly=0).
+    const geo = makeSweep(
+      [
+        { center: [0, 1.5, -0.25], width: 0.3, height: 0.075 },
+        { center: [0, 1.3, -0.24], width: 0.3, height: 0.075 },
+        { center: [0, 1.12, -0.26], width: 0.3, height: 0.075 }
+      ],
+      14
+    )
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    // Cross-section midway between the lower two rings must span the full
+    // ring width: collect triangle crossings with the y=1.21 plane.
+    const crossings: number[] = []
+    const idx = geo.index!.array as ArrayLike<number>
+    const v = (i: number): [number, number, number] => [pos.getX(i), pos.getY(i), pos.getZ(i)]
+    for (let t = 0; t < idx.length; t += 3) {
+      const p = [v(idx[t]), v(idx[t + 1]), v(idx[t + 2])]
+      const pairs: Array<[[number, number, number], [number, number, number]]> = [
+        [p[0], p[1]],
+        [p[1], p[2]],
+        [p[2], p[0]]
+      ]
+      for (const [a, b] of pairs) {
+        if ((a[1] - 1.21) * (b[1] - 1.21) < 0) {
+          const s = (1.21 - a[1]) / (b[1] - a[1])
+          crossings.push(a[0] + (b[0] - a[0]) * s)
+        }
+      }
+    }
+    expect(crossings.length).toBeGreaterThan(0)
+    const span = Math.max(...crossings) - Math.min(...crossings)
+    expect(span).toBeGreaterThan(0.2)
+  })
 })

@@ -74,11 +74,22 @@ export function makeSweep(
   const positions: number[] = []
   const uvs: number[] = []
 
+  // Twist-free frames: consecutive rings must share the same phase (vertex j
+  // at the same geometric angle), or quads pinch through the tube. The
+  // cross-product frame has a sign discontinuity (near-vertical paths: side
+  // flips when tangent.z crosses zero), so carry the previous side forward
+  // and un-flip on mismatch. Paths that never flipped are bit-identical.
+  let prevSide: THREE.Vector3 | null = null
+
   for (let i = 0; i < ringCount; i++) {
     const tangent = tangents[i]
     const refUp =
       Math.abs(tangent.y) > 0.999 ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(0, 1, 0)
     const side = new THREE.Vector3().crossVectors(tangent, refUp).normalize()
+    if (prevSide && side.dot(prevSide) < 0) {
+      side.negate()
+    }
+    prevSide = side.clone()
     const up2 = new THREE.Vector3().crossVectors(side, tangent).normalize()
     const c = centers[i]
     const { width, height } = stations[i]

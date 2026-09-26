@@ -2593,3 +2593,33 @@ All 23 sprints complete: procedural characters with expressions, 16
 garments, 3 archetype outfits. Open items: user testing, packaging
 installer (no sprint covers it - user asked, answered).
 
+---
+
+## Session 046 - Sprint 24: Procedural Hair
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 24 - 4 hairstyles (crop/ponytail/mohawk/long) in hair slot,
+Head-bound rigid, hair material. hat-hides-hair rule + tag resolver wired
+into useRuleStore (tag triggers were dormant). Full entry in worklog.md.
+
+makeSweep ring-winding flip fixed (twist-free frames; belly=0 fall bowtie).
+Sprints 24-27 appended to procedural-character.md (hair/accessories/
+extremities-beard/win-unpack-last per user lineup).
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 277 tests passing (270 + 7 new), no regressions
+- probe:clearance ALL PASSED (hair containment + tail/fall bands)
+- Twist regression test fails without fix (span 0.067), passes with it
+- Live visual check pending (no headless Electron here)
+
+### Current status
+
+Sprint 24 complete. Next: Sprint 25 - face accessories + more hats.
+

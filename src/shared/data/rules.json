@@ -32,5 +32,11 @@
     "trigger": { "slotId": "helmet" },
     "conditions": [{ "slotId": "beard", "equipped": true }],
     "actions": [{ "type": "warn", "message": "Beard may clip through helmet" }]
+  },
+  {
+    "id": "hat-hides-hair",
+    "description": "Hat covers procedural hair to avoid clipping",
+    "trigger": { "slotId": "helmet", "tag": "hat" },
+    "actions": [{ "type": "hide_slot", "target": "hair" }]
   }
 ]

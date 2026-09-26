@@ -114,6 +114,57 @@ real-asset packs optional, packaging/installer (no sprint covers it yet).
 
 ---
 
+## Session 046 - Sprint 24: Procedural Hair
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 24 - 4 hairstyles in the `hair` slot, Head-bound rigid (zero drift),
+`hair` material (ColorPicker works with no UI changes).
+
+| Asset | Construction |
+|---|---|
+| `proc:crop_hair` | Skull-hugging partial-sphere shell over ears, face wedge open |
+| `proc:ponytail` | Cap + tail sweep rooted inside skull (hidden joint) + tie torus |
+| `proc:mohawk` | Thin fin, bottom embedded 0.07 into crown, shaved sides |
+| `proc:long_hair` | Skull shell + back mane panel clearing tube/belly/butt |
+
+Plus: `hat-hides-hair` rule (helmet tag `hat` -> hide hair) and the tag
+resolver wired into useRuleStore's auto-evaluate (tag triggers were
+dormant without it - `full_face`/`heavy_armor` rules now live too, no
+assets carry those tags so nothing else changes).
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| makeSweep ring-winding flip: near-vertical paths whose tangent.z crosses zero get a 180-degree side flip, twisting quads into bowties that pinch the tube (long-hair fall missed 81 rays at belly=0) | Twist-free frames in makeSweep: carry previous side forward, un-flip on dot<0. Paths that never flipped are bit-identical (full suite + probe confirm no regressions) |
+| Catalog edit ate `proc:beanie` and duplicated cap/sombrero | Repaired by direct inspection; catalog asserts exact 20-entry list |
+| Test edit corrupted `parent: 0` again (same Sprint 22 lesson) | Restored; verify diffs after large edits |
+| PowerShell `Set-Content` mojibake (same Sprint 23 lesson) | File tools only for JSON with emoji |
+
+### Verification
+
+- `npm run typecheck` - 0 errors
+- `npm run lint` - 0 errors (4 pre-existing warnings)
+- `npm run test` - 277 tests passing (270 + 7 new), no regressions
+- `npm run build` - full production build succeeds
+- `npm run probe:clearance` - ALL PASSED (hair containment bands on 5 head
+  shapes, tail/fall rear bands on morph grid; twist test fails without fix)
+- Live visual check pending: equip all 4 styles, wear hat over each,
+  randomize
+
+### Current status
+
+Sprint 24 complete. Next: Sprint 25 - face accessories + more hats
+(sunglasses/goggles via surfaceZ, mask, top hat/hood). Sprints 24-27
+appended to procedural-character.md.
+
+---
+
 ## Session 043 - Sprint 21: Lower Body + Headwear Variants
 
 ### Date

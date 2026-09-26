@@ -949,6 +949,121 @@ export interface ProceduralAssetDef {
   materialId: string
 }
 
+// ---------------------------------------------------------------------------
+// Hair (hair slot). Shells leave a face wedge open around +Z. Sphere phi
+// convention: +Z surface sits at phi=PI/2, so the excluded wedge centers
+// there (same convention as open-front sweeps).
+// ---------------------------------------------------------------------------
+
+const HAIR_SEGMENTS: BoneSegment[] = [{ name: 'Head', start: [0, 1.75, 0], end: [0, 2.08, 0] }]
+
+function bindHair(parts: THREE.BufferGeometry[]): GarmentBuildResult {
+  const merged = mergeGeometries(parts)
+  if (!merged) {
+    throw new Error('bindHair: mergeGeometries returned null')
+  }
+  const binding = computeSkinBindings(
+    merged.attributes.position.array as Float32Array,
+    HAIR_SEGMENTS
+  )
+  applySkinAttributes(merged, binding)
+  return { geometry: merged, boneNames: HAIR_SEGMENTS.map((s) => s.name) }
+}
+
+/** Partial sphere shell around the cranium with a face wedge cut out. */
+function hairShell(
+  shape: BodyShape,
+  growX: number,
+  growY: number,
+  growZ: number,
+  thetaLength: number,
+  gapHalf: number
+): THREE.BufferGeometry {
+  const geo = new THREE.SphereGeometry(
+    1,
+    24,
+    16,
+    Math.PI / 2 + gapHalf,
+    Math.PI * 2 - gapHalf * 2,
+    0,
+    thetaLength
+  )
+  geo.scale(shape.headWidth + growX, shape.headHeight + growY, shape.headLength + growZ)
+  geo.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  return geo
+}
+
+/** Short crop: skull-hugging shell over ears to the nape, face open. */
+export function buildCropHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  return bindHair([hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.72, 0.7)])
+}
+
+/** Ponytail: cap plus a tail sweep rooted under the crown. */
+export function buildPonytail(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  const cap = hairShell(shape, 0.03, 0.015, 0.02, Math.PI * 0.55, 0.7)
+  // Tail root starts inside the skull (hidden joint), emerging below the cap.
+  // Widths/heights are full extents (diameter).
+  const tail = makeSweep(
+    [
+      { center: [0, 2.06, -0.17], width: 0.1, height: 0.1 },
+      { center: [0, 1.9, -0.23], width: 0.096, height: 0.096 },
+      { center: [0, 1.68, -0.27], width: 0.084, height: 0.084 },
+      { center: [0, 1.5, -0.28], width: 0.068, height: 0.068 },
+      { center: [0, 1.38, -0.27], width: 0.056, height: 0.056 }
+    ],
+    12,
+    false,
+    true
+  )
+  const tie = new THREE.TorusGeometry(0.055, 0.015, 10, 20)
+  tie.rotateX(Math.PI / 2)
+  tie.translate(0, 1.84, -0.25)
+  return bindHair([cap, tail, tie])
+}
+
+/** Mohawk: thin fin rooted into the crown, shaved sides by design. */
+export function buildMohawk(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  const top = CRANIUM_CENTER_Y + shape.headHeight
+  const fin = new THREE.SphereGeometry(1, 12, 10)
+  fin.scale(0.028, 0.1, 0.17)
+  // Bottom sits 0.07 below the crown (embedded root, never floats).
+  fin.translate(0, top + 0.03, CRANIUM_CENTER_Z - 0.01)
+  return bindHair([fin])
+}
+
+/** Rear depth of the butt ellipsoid at height y (or -Infinity above it). */
+function buttRearAtY(shape: BodyShape, butt: number, y: number): number {
+  const buttR = 0.055 * shape.hipWidth + 0.065 * butt
+  const dy = (y - 0.925) / buttR
+  if (Math.abs(dy) >= 1) return -Infinity
+  return 0.13 + 0.055 * butt + buttR * Math.sqrt(1 - dy * dy)
+}
+
+/**
+ * Long hair: skull shell plus a mane panel down the back. The panel front
+ * clears tube, belly-scaled waist, and butt; only the Head bone carries it.
+ */
+export function buildLongHair(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const shell = hairShell(shape, 0.035, 0.015, 0.03, Math.PI * 0.8, 0.7)
+  const bellyScale = bellyScaleOf(belly)
+  const stations: SweepStation[] = []
+  for (const y of [1.95, 1.7, 1.5, 1.3, 1.12]) {
+    const tubeD = profileAt(shape, y).d * (y >= 1.0 && y <= 1.18 ? bellyScale : 1)
+    const front = Math.max(tubeD, buttRearAtY(shape, butt, y)) + 0.035
+    stations.push({
+      center: [0, y, -(front + 0.0375)],
+      width: 0.3,
+      height: 0.075
+    })
+  }
+  const fall = makeSweep(stations, 14, false, true)
+  return bindHair([shell, fall])
+}
+
 export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
   {
     id: 'proc:tshirt',
@@ -1171,6 +1286,43 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const face = sanitizeFaceShape(dna.face)
       return buildSombrero(shape, face)
     }
+  },
+  {
+    id: 'proc:crop_hair',
+    slotId: 'hair',
+    label: 'Short Crop',
+    tags: ['hair', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => buildCropHair(sanitizeBodyShape(dna.bodyShape))
+  },
+  {
+    id: 'proc:ponytail',
+    slotId: 'hair',
+    label: 'Ponytail',
+    tags: ['hair', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => buildPonytail(sanitizeBodyShape(dna.bodyShape))
+  },
+  {
+    id: 'proc:mohawk',
+    slotId: 'hair',
+    label: 'Mohawk',
+    tags: ['hair', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => buildMohawk(sanitizeBodyShape(dna.bodyShape))
+  },
+  {
+    id: 'proc:long_hair',
+    slotId: 'hair',
+    label: 'Long Hair',
+    tags: ['hair', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      return buildLongHair(shape, butt, belly)
+    }
   }
 ]
 
@@ -1212,5 +1364,8 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
     return key === 'torso'
   if (assetId === 'proc:beanie' || assetId === 'proc:cap' || assetId === 'proc:sombrero')
     return key === 'head' || key === 'face'
+  if (assetId === 'proc:crop_hair' || assetId === 'proc:ponytail' || assetId === 'proc:mohawk')
+    return key === 'head'
+  if (assetId === 'proc:long_hair') return key === 'head' || key === 'torso'
   return false
 }

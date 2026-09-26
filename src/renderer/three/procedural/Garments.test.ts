@@ -14,6 +14,10 @@ import {
   buildMageRobe,
   buildElvenTunic,
   buildDwarfVest,
+  buildCropHair,
+  buildPonytail,
+  buildMohawk,
+  buildLongHair,
   buildBeanie,
   buildCap,
   buildSombrero,
@@ -81,19 +85,23 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 16 procedural entries with correct slots', () => {
+  it('exposes all 20 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
       'proc:baggy',
       'proc:beanie',
       'proc:cap',
+      'proc:crop_hair',
       'proc:dwarf_vest',
       'proc:elven_tunic',
       'proc:jacket',
       'proc:jeans',
+      'proc:long_hair',
       'proc:longsleeve',
       'proc:mage_robe',
+      'proc:mohawk',
       'proc:polo',
+      'proc:ponytail',
       'proc:shorts',
       'proc:sombrero',
       'proc:tank',
@@ -117,6 +125,11 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:mage_robe')?.slotId).toBe('shirt')
     expect(entries.find((e) => e.id === 'proc:elven_tunic')?.slotId).toBe('shirt')
     expect(entries.find((e) => e.id === 'proc:dwarf_vest')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:crop_hair')?.slotId).toBe('hair')
+    expect(entries.find((e) => e.id === 'proc:ponytail')?.slotId).toBe('hair')
+    expect(entries.find((e) => e.id === 'proc:mohawk')?.slotId).toBe('hair')
+    expect(entries.find((e) => e.id === 'proc:long_hair')?.slotId).toBe('hair')
+    expect(findProceduralAsset('proc:ponytail')?.materialId).toBe('hair')
     expect(findProceduralAsset('proc:tshirt')?.label).toBe('T-Shirt')
     expect(findProceduralAsset('proc:sombrero')?.label).toBe('Sombrero')
     expect(findProceduralAsset('proc:jacket')?.materialId).toBe('leather')
@@ -162,6 +175,12 @@ describe('procedural asset catalog', () => {
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
     }
+    for (const id of ['proc:crop_hair', 'proc:ponytail', 'proc:mohawk']) {
+      expect(garmentDependsOnKey(id, 'head')).toBe(true)
+      expect(garmentDependsOnKey(id, 'torso')).toBe(false)
+    }
+    expect(garmentDependsOnKey('proc:long_hair', 'head')).toBe(true)
+    expect(garmentDependsOnKey('proc:long_hair', 'torso')).toBe(true)
     expect(garmentDependsOnKey('proc:nope', 'torso')).toBe(false)
   })
 })
@@ -822,6 +841,62 @@ describe('archetype outfits', () => {
       expect(boneNames).toContain('Root')
       expect(boneNames).toContain('Spine1')
     }
+  })
+})
+
+describe('hair', () => {
+  it('binds 100% to the Head bone with normalized weights', () => {
+    for (const build of [buildCropHair, buildPonytail, buildMohawk, buildLongHair]) {
+      const { geometry, boneNames } = build()
+      expect(boneNames).toEqual(['Head'])
+      expect(weightSumViolations(geometry)).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
+    }
+  })
+
+  it('leaves the face wedge open on shell styles', () => {
+    // Eyes span |x| 0.02-0.16 at y 1.82-1.95; nose/mouth sit center below.
+    // Brow tips (|x| > 0.13, hair-colored like the shell) are exempt.
+    // Jaw framing below y=1.75 (sideburns) is exempt.
+    for (const build of [buildCropHair, buildPonytail, buildLongHair]) {
+      const geo = build().geometry
+      const pos = geo.attributes.position as THREE.BufferAttribute
+      let intruders = 0
+      for (let i = 0; i < pos.count; i++) {
+        const x = Math.abs(pos.getX(i))
+        const y = pos.getY(i)
+        const z = pos.getZ(i)
+        if (z < 0.15) continue
+        if (x >= 0.02 && x < 0.16 && y > 1.82 && y < 1.95) intruders++
+        if (x < 0.08 && y >= 1.7 && y <= 1.84) intruders++
+      }
+      expect(intruders).toBe(0)
+    }
+  })
+
+  it('crop covers the ears', () => {
+    // Ear tips reach ~0.92*W + 0.042; shell rx is W + 0.05.
+    const ext = xExtent(buildCropHair().geometry)
+    expect(ext.max).toBeGreaterThan(0.92 * DEFAULT_BODY_SHAPE.headWidth + 0.042)
+  })
+
+  it('ponytail tail hangs below the neck', () => {
+    const box = yExtent(buildPonytail().geometry)
+    expect(box.min).toBeLessThan(1.45)
+    expect(box.max).toBeGreaterThan(2.0)
+  })
+
+  it('mohawk fin clears the crown with an embedded root', () => {
+    const top = 1.86 + DEFAULT_BODY_SHAPE.headHeight
+    const box = yExtent(buildMohawk().geometry)
+    expect(box.max).toBeGreaterThan(top + 0.05)
+    expect(box.min).toBeLessThan(top)
+  })
+
+  it('long fall reaches mid-back', () => {
+    const box = yExtent(buildLongHair().geometry)
+    expect(box.min).toBeLessThan(1.15)
   })
 })
 

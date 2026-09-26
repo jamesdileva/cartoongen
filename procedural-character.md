@@ -329,3 +329,44 @@ jacket/vest/polo); layering order respected via slot render layers
 **Acceptance**: Ctrl+N mage template (new, tall/gaunt) + outfit preset reads
 unmistakably as a mage; export includes all garments (skinned meshes,
 existing path).
+
+### Sprint 24 - Procedural Hair
+
+- [ ] Parametric styles bound 100% to Head (rigid follow, zero drift):
+      short crop (skull shell over ears), ponytail (cap + tail sweep rooted
+      under crown + tie), mohawk (embedded-root fin, shaved sides),
+      long flow (skull shell + back mane panel clearing tube/belly/butt)
+- [ ] Face wedge left open around +Z (gap math shared with open fronts);
+      `hair` material so the ColorPicker hair tab works with no UI changes
+- [ ] `hat-hides-hair` rule (helmet tag `hat` -> hide hair slot); wire the
+      tag resolver into useRuleStore (tag triggers are dormant without it)
+
+**Acceptance**: 4 distinct styles in hair slot; face features never covered
+(probe: cranium-in-shell containment + tail/fall rear bands); hat hides hair
+live in app.
+
+### Sprint 25 - Face Accessories + More Hats
+
+- [ ] Sunglasses/goggles in `head` slot placed via `surfaceZ` (dark lens
+      material); face mask variant
+- [ ] 2-3 more hats reusing the Head-bound dome pattern (top hat, hood?)
+- [ ] Rule check for hat-vs-glasses overlap (warn or hide as appropriate)
+
+**Acceptance**: Accessories sit on any head/face shape; no clipping through
+hats or face features.
+
+### Sprint 26 - Extremities + Beard
+
+- [ ] Shoes/boots on `Foot`, work gloves on `Hand` (tube + cap patterns)
+- [ ] Jaw-anchored beards in `hair` material, faceShape-aware placement
+
+**Acceptance**: Full coverage of remaining bare slots; beards survive
+jaw/head morphs.
+
+### Sprint 27 - Win-Unpack Installer (last)
+
+- [ ] electron-builder + win target + icon + `npm run dist`
+- [ ] Smoke-test the unpacked exe (launch, new character, randomize, export)
+
+**Acceptance**: Double-clickable `dist/win-unpack` exe works on a clean
+machine with no dev tools.
