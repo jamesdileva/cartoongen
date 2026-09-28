@@ -13,7 +13,8 @@ const DEFAULT_MATERIALS: Record<string, MaterialConfig> = {
   metal: { color: '#c0c0c0', roughness: 0.3, metalness: 0.9 },
   leather: { color: '#3e2723', roughness: 0.6, metalness: 0.1 },
   eye: { color: '#ffffff', roughness: 0.1, metalness: 0.0 },
-  mouth: { color: '#cc3333', roughness: 0.5, metalness: 0.0 }
+  mouth: { color: '#cc3333', roughness: 0.5, metalness: 0.0 },
+  lens: { color: '#15151c', roughness: 0.15, metalness: 0.6 }
 }
 
 export class MaterialManager {

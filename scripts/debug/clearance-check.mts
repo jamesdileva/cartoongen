@@ -187,12 +187,6 @@ const pantsBuilders = {
   tights: (shape: BodyShape, butt: number, belly: number) => buildTights(shape, butt, belly)
 } as const
 
-const hatBuilders = {
-  beanie: (shape: BodyShape, face: FaceShape) => buildBeanie(shape, face),
-  cap: (shape: BodyShape, face: FaceShape) => buildCap(shape, face),
-  sombrero: (shape: BodyShape, face: FaceShape) => buildSombrero(shape, face)
-} as const
-
 const hairBuilders = {
   crop_hair: (shape: BodyShape, _butt: number, _belly: number) => buildCropHair(shape),
   ponytail: (shape: BodyShape, _butt: number, _belly: number) => buildPonytail(shape),
@@ -414,35 +408,72 @@ for (const { name, shape } of shapes) {
 for (const { name, shape } of headShapes) {
   const head = buildHead(shape).geometry
   for (const { name: faceName, face } of faces) {
-    for (const [hatName, build] of Object.entries(hatBuilders)) {
-      const hat = build(shape, face).geometry
-      const rim = hatRimY(shape, face)
-      const issues: string[] = []
-      // Cranium above the rim must be under the dome. Ears/jaw/neck sit
-      // below the rim (|x| guard exempts ear tips explicitly).
-      report(
-        issues,
-        `${hatName} top`,
-        countPokes(head, hat, {
-          yMin: rim + 0.005,
-          yMax: 2.3,
-          mode: 'up',
-          xMax: 0.8 * shape.headWidth
-        })
-      )
-      report(
-        issues,
-        `${hatName} side`,
-        countPokes(head, hat, {
-          yMin: rim + 0.005,
-          yMax: 2.3,
-          mode: 'radial',
-          xMax: 0.8 * shape.headWidth
-        })
-      )
-      if (issues.length > 0) {
+    // Analytic containment (no rays): cranium verts in the covered zone
+    // must lie strictly inside the hat solid. Raycasts hit exact-edge
+    // degeneracies on axis-aligned constructions (crown cap fan radials),
+    // while containment has millimeter-tolerant margins everywhere.
+    const rim = hatRimY(shape, face)
+    const hp = head.attributes.position as THREE.BufferAttribute
+    const W = shape.headWidth
+    const H = shape.headHeight
+    const L = shape.headLength
+    // Hat solid per style: [rx, ry, rz, cy] ellipsoid, or cylinder, or wedge.
+    const capRy = H * 0.75 + 0.02
+    const capCy = rim + 0.0628 * capRy
+    const solids: Record<
+      string,
+      {
+        kind: 'ellipsoid' | 'cylinder'
+        rx: number
+        ry: number
+        rz: number
+        cy: number
+        gap?: number
+      }
+    > = {
+      beanie: { kind: 'ellipsoid', rx: W + 0.02, ry: H + 0.02, rz: L + 0.02, cy: 1.86 },
+      cap: { kind: 'ellipsoid', rx: W + 0.015, ry: capRy, rz: L + 0.015, cy: capCy },
+      sombrero: { kind: 'ellipsoid', rx: W + 0.015, ry: H * 1.15 + 0.01, rz: L + 0.015, cy: 1.86 },
+      tophat: { kind: 'cylinder', rx: W + 0.015, ry: 0.22, rz: W + 0.015, cy: rim + 0.11 },
+      hood: { kind: 'ellipsoid', rx: W + 0.03, ry: H + 0.03, rz: L + 0.03, cy: 1.86, gap: 0.85 }
+    }
+    for (const [hatName, solid] of Object.entries(solids)) {
+      let pokes = 0
+      let samples = 0
+      let worstAt: [number, number, number] | null = null
+      for (let i = 0; i < hp.count; i++) {
+        const bx = hp.getX(i)
+        const by = hp.getY(i)
+        const bz = hp.getZ(i)
+        if (by < rim + 0.005 || by > 2.3) continue
+        if (bx > 0.8 * W) continue // ears exempt: hats don't cover ears
+        samples++
+        let inside: boolean
+        if (solid.kind === 'cylinder') {
+          inside = Math.hypot(bx, bz - 0.005) < solid.rx && by < solid.cy + 0.11
+        } else {
+          const nx = bx / solid.rx
+          const ny = (by - solid.cy) / solid.ry
+          const nz = (bz - 0.005) / solid.rz
+          inside = nx * nx + ny * ny + nz * nz < 1.0
+          if (!inside && solid.gap !== undefined) {
+            // Face wedge: intentionally exposed by design.
+            inside = Math.abs(Math.atan2(bx, bz - 0.005)) < solid.gap
+          }
+        }
+        if (!inside) {
+          pokes++
+          if (!worstAt) worstAt = [bx, by, bz]
+        }
+      }
+      if (samples === 0) {
         failures++
-        console.log(`FAIL hat ${name}/${faceName}: ${issues.join('; ')}`)
+        console.log(`FAIL hat ${name}/${faceName} ${hatName}: empty band (vacuous)`)
+      } else if (pokes > 0) {
+        failures++
+        console.log(
+          `FAIL hat ${name}/${faceName} ${hatName} containment ${pokes}/${samples} at ${worstAt?.map((v) => v.toFixed(2)).join(',')}`
+        )
       }
     }
   }

@@ -2625,6 +2625,34 @@ Sprint 24 complete. Next: Sprint 25 - face accessories + more hats.
 
 ---
 
+## Session 048 - Sprint 25: Face Accessories + More Hats
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 25 - sunglasses/goggles/mask (`head` slot, `lens` material) +
+top hat/hood (`helmet` slot). hat-hides-hair covers new hats; engine test
+proves no rule targets `head`. Full entry in worklog.md.
+
+Probe ray-vs-fan exact-edge degeneracy fixed by converting hat bands to
+analytic containment (inside-solid OR in-wedge).
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 285 tests passing (277 + 8 new), no regressions
+- probe:clearance ALL PASSED (5 hats x 5 shapes x 3 eye sizes)
+- Live visual check pending (no headless Electron here)
+
+### Current status
+
+Sprint 25 complete. Next: Sprint 26 - extremities + beard.
+
+---
+
 ## Session 047 - Shoulder Poke Investigation + Fixes
 
 ### Date

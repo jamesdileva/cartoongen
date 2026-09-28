@@ -1032,6 +1032,126 @@ export interface ProceduralAssetDef {
 }
 
 // ---------------------------------------------------------------------------
+// Face accessories (head slot) + more hats (helmet slot). Eye geometry
+// follows buildFace: eyeX = W*0.38*spacing at eyeWorldY.
+// ---------------------------------------------------------------------------
+
+function accessoryEye(shape: BodyShape, face: FaceShape): { eyeX: number; eyeY: number } {
+  return {
+    eyeX: shape.headWidth * 0.38 * face.eyeSpacing,
+    eyeY: CRANIUM_CENTER_Y + shape.headHeight * 0.12
+  }
+}
+
+/** Sunglasses: dark lens discs proud of the eyes + bridge + temples. */
+export function buildSunglasses(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const { eyeX, eyeY } = accessoryEye(shape, face)
+  const parts: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1]) {
+    const lens = new THREE.SphereGeometry(1, 18, 12)
+    lens.scale(0.05, 0.038, 0.022)
+    const lz = surfaceZ(shape, side * eyeX, eyeY) + 0.008
+    lens.translate(side * eyeX, eyeY, lz)
+    parts.push(lens)
+    const temple = makeSweep(
+      [
+        { center: [side * (eyeX + 0.04), eyeY, lz - 0.01], width: 0.016, height: 0.016 },
+        { center: [side * shape.headWidth * 0.7, eyeY + 0.03, -0.08], width: 0.016, height: 0.016 },
+        { center: [side * shape.headWidth * 0.85, eyeY + 0.04, -0.12], width: 0.016, height: 0.016 }
+      ],
+      8
+    )
+    parts.push(temple)
+  }
+  const bridge = makeSweep(
+    [
+      {
+        center: [-eyeX + 0.02, eyeY + 0.005, surfaceZ(shape, -eyeX + 0.02, eyeY) + 0.008],
+        width: 0.016,
+        height: 0.016
+      },
+      {
+        center: [0, eyeY + 0.018, surfaceZ(shape, 0, eyeY + 0.018) + 0.008],
+        width: 0.016,
+        height: 0.016
+      },
+      {
+        center: [eyeX - 0.02, eyeY + 0.005, surfaceZ(shape, eyeX - 0.02, eyeY) + 0.008],
+        width: 0.016,
+        height: 0.016
+      }
+    ],
+    8
+  )
+  parts.push(bridge)
+  return bindHat(parts)
+}
+
+/** Ski goggles: wide lens band + strap around the head. */
+export function buildGoggles(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const { eyeX, eyeY } = accessoryEye(shape, face)
+  const band = new THREE.SphereGeometry(1, 24, 12)
+  band.scale(eyeX + 0.06, 0.055, 0.035)
+  band.translate(0, eyeY, surfaceZ(shape, 0, eyeY) + 0.005)
+  const strap = new THREE.TorusGeometry(shape.headWidth + 0.015, 0.018, 10, 28)
+  strap.rotateX(Math.PI / 2)
+  strap.translate(0, eyeY, CRANIUM_CENTER_Z)
+  return bindHat([band, strap])
+}
+
+/** Face mask: shell over mouth/chin, tucked under the nose. */
+export function buildFaceMask(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  // Mirror buildFace anchoring: mouth sits 2cm below the nose bottom edge.
+  const noseWorldY = CRANIUM_CENTER_Y - shape.headHeight * 0.15
+  const noseBottomY = noseWorldY - 0.05 * face.noseSize
+  const centerY = noseBottomY - 0.005 - 0.055
+  const mask = new THREE.SphereGeometry(1, 20, 14)
+  mask.scale(0.1, 0.06, 0.05)
+  mask.translate(0, centerY, surfaceZ(shape, 0, centerY) + 0.01)
+  return bindHat([mask])
+}
+
+/** Top hat: tall straight crown containing the upper skull + flat brim. */
+export function buildTopHat(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const rimY = hatRimY(shape, face)
+  // Crown radius clears the cranium at every overlapping height (widest low).
+  const cr = shape.headWidth + 0.015
+  const crown = new THREE.CylinderGeometry(cr, cr, 0.22, 24)
+  crown.translate(0, rimY + 0.11, CRANIUM_CENTER_Z)
+  const brim = new THREE.CylinderGeometry(cr + 0.12, cr + 0.12, 0.008, 28)
+  brim.translate(0, rimY, CRANIUM_CENTER_Z)
+  return bindHat([crown, brim])
+}
+
+/** Hood: long shell to the nape with a wide face opening. */
+export function buildHood(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  const shell = new THREE.SphereGeometry(
+    1,
+    24,
+    16,
+    Math.PI / 2 + 0.85,
+    Math.PI * 2 - 0.85 * 2,
+    0,
+    Math.PI * 0.85
+  )
+  shell.scale(shape.headWidth + 0.03, shape.headHeight + 0.03, shape.headLength + 0.03)
+  shell.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  return bindHat([shell])
+}
+
+// ---------------------------------------------------------------------------
 // Hair (hair slot). Shells leave a face wedge open around +Z. Sphere phi
 // convention: +Z surface sits at phi=PI/2, so the excluded wedge centers
 // there (same convention as open-front sweeps).
@@ -1370,6 +1490,26 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
     }
   },
   {
+    id: 'proc:tophat',
+    slotId: 'helmet',
+    label: 'Top Hat',
+    tags: ['hat', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildTopHat(shape, face)
+    }
+  },
+  {
+    id: 'proc:hood',
+    slotId: 'helmet',
+    label: 'Hood',
+    tags: ['hat', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => buildHood(sanitizeBodyShape(dna.bodyShape))
+  },
+  {
     id: 'proc:crop_hair',
     slotId: 'hair',
     label: 'Short Crop',
@@ -1404,6 +1544,42 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
       const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
       return buildLongHair(shape, butt, belly)
+    }
+  },
+  {
+    id: 'proc:sunglasses',
+    slotId: 'head',
+    label: 'Sunglasses',
+    tags: ['glasses', 'procedural'],
+    materialId: 'lens',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildSunglasses(shape, face)
+    }
+  },
+  {
+    id: 'proc:goggles',
+    slotId: 'head',
+    label: 'Ski Goggles',
+    tags: ['glasses', 'procedural'],
+    materialId: 'lens',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildGoggles(shape, face)
+    }
+  },
+  {
+    id: 'proc:mask',
+    slotId: 'head',
+    label: 'Face Mask',
+    tags: ['mask', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildFaceMask(shape, face)
     }
   }
 ]
@@ -1445,6 +1621,10 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
   )
     return key === 'torso'
   if (assetId === 'proc:beanie' || assetId === 'proc:cap' || assetId === 'proc:sombrero')
+    return key === 'head' || key === 'face'
+  if (assetId === 'proc:tophat') return key === 'head' || key === 'face'
+  if (assetId === 'proc:hood') return key === 'head'
+  if (assetId === 'proc:sunglasses' || assetId === 'proc:goggles' || assetId === 'proc:mask')
     return key === 'head' || key === 'face'
   if (assetId === 'proc:crop_hair' || assetId === 'proc:ponytail' || assetId === 'proc:mohawk')
     return key === 'head'

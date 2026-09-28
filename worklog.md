@@ -165,6 +165,56 @@ appended to procedural-character.md.
 
 ---
 
+## Session 048 - Sprint 25: Face Accessories + More Hats
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 25 - 3 face accessories (`head` slot) + 2 hats (`helmet` slot).
+
+| Asset | Construction |
+|---|---|
+| `proc:sunglasses` | Lens discs proud of sclera + bridge + temple sweeps to ears; `lens` material |
+| `proc:goggles` | Wide single lens band + strap torus ringing the head |
+| `proc:mask` | Shell over mouth/chin anchored under the nose (nose-relative, like mouth) |
+| `proc:tophat` | Tall straight crown (contains upper skull by radii) + flat brim |
+| `proc:hood` | Long shell to nape + wide face opening |
+
+Plus: shared `lens` material in MaterialManager (dark, palette-independent,
+no ColorPicker changes); `outfit` flag untouched; randomizer picks new
+assets up from the pool automatically.
+
+Rules: no data changes. `hat-hides-hair` fires for new hats (tagged `hat`);
+new engine test proves hat+hair+glasses resolves to hide(hair) with nothing
+targeting `head`.
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Catalog edit ate `proc:beanie`, duplicated cap/sombrero | Repaired by direct inspection; exact-list catalog test guards it |
+| Probe flagged tophat/hood pole verts | Ray-vs-cap-fan exact-edge degeneracy (axis-aligned construction): converted all hat bands to analytic containment (inside-solid OR in-wedge), strictly stronger than rays |
+
+### Verification
+
+- `npm run typecheck` - 0 errors
+- `npm run lint` - 0 errors (4 pre-existing warnings)
+- `npm run test` - 285 tests passing (277 + 8 new), no regressions
+- `npm run build` - full production build succeeds
+- `npm run probe:clearance` - ALL PASSED (containment bands: 5 hats x 5 head
+  shapes x 3 eye sizes, non-vacuous)
+- Live visual check pending: equip glasses + each hat, randomize
+
+### Current status
+
+Sprint 25 complete. Next: Sprint 26 - extremities + beard (shoes, gloves,
+jaw-anchored beards).
+
+---
+
 ## Session 047 - Shoulder Poke Investigation + Fixes
 
 ### Date

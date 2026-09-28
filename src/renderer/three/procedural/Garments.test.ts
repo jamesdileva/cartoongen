@@ -18,9 +18,14 @@ import {
   buildPonytail,
   buildMohawk,
   buildLongHair,
+  buildSunglasses,
+  buildGoggles,
+  buildFaceMask,
   buildBeanie,
   buildCap,
   buildSombrero,
+  buildTopHat,
+  buildHood,
   hatRimY,
   hemYOf,
   garmentDependsOnKey,
@@ -31,6 +36,7 @@ import {
 } from './Garments'
 import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
 import { DEFAULT_FACE_SHAPE } from '../../../shared/types/faceShape'
+import { surfaceZ } from './FaceFeatures'
 import type { CharacterDNA } from '../../../shared/types/dna'
 import { buildTorso } from './BodyParts'
 import { ProportionManager } from '../ProportionManager'
@@ -87,7 +93,7 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 20 procedural entries with correct slots', () => {
+  it('exposes all 25 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
       'proc:baggy',
@@ -96,18 +102,23 @@ describe('procedural asset catalog', () => {
       'proc:crop_hair',
       'proc:dwarf_vest',
       'proc:elven_tunic',
+      'proc:goggles',
+      'proc:hood',
       'proc:jacket',
       'proc:jeans',
       'proc:long_hair',
       'proc:longsleeve',
       'proc:mage_robe',
+      'proc:mask',
       'proc:mohawk',
       'proc:polo',
       'proc:ponytail',
       'proc:shorts',
       'proc:sombrero',
+      'proc:sunglasses',
       'proc:tank',
       'proc:tights',
+      'proc:tophat',
       'proc:tshirt',
       'proc:vest'
     ])
@@ -131,7 +142,13 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:ponytail')?.slotId).toBe('hair')
     expect(entries.find((e) => e.id === 'proc:mohawk')?.slotId).toBe('hair')
     expect(entries.find((e) => e.id === 'proc:long_hair')?.slotId).toBe('hair')
+    expect(entries.find((e) => e.id === 'proc:sunglasses')?.slotId).toBe('head')
+    expect(entries.find((e) => e.id === 'proc:goggles')?.slotId).toBe('head')
+    expect(entries.find((e) => e.id === 'proc:mask')?.slotId).toBe('head')
+    expect(entries.find((e) => e.id === 'proc:tophat')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:hood')?.slotId).toBe('helmet')
     expect(findProceduralAsset('proc:ponytail')?.materialId).toBe('hair')
+    expect(findProceduralAsset('proc:sunglasses')?.materialId).toBe('lens')
     expect(findProceduralAsset('proc:tshirt')?.label).toBe('T-Shirt')
     expect(findProceduralAsset('proc:sombrero')?.label).toBe('Sombrero')
     expect(findProceduralAsset('proc:jacket')?.materialId).toBe('leather')
@@ -172,7 +189,14 @@ describe('procedural asset catalog', () => {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
       expect(garmentDependsOnKey(id, 'head')).toBe(false)
     }
-    for (const id of ['proc:beanie', 'proc:cap', 'proc:sombrero']) {
+    for (const id of ['proc:beanie', 'proc:cap', 'proc:sombrero', 'proc:tophat']) {
+      expect(garmentDependsOnKey(id, 'head')).toBe(true)
+      expect(garmentDependsOnKey(id, 'face')).toBe(true)
+      expect(garmentDependsOnKey(id, 'torso')).toBe(false)
+    }
+    expect(garmentDependsOnKey('proc:hood', 'head')).toBe(true)
+    expect(garmentDependsOnKey('proc:hood', 'face')).toBe(false)
+    for (const id of ['proc:sunglasses', 'proc:goggles', 'proc:mask']) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
@@ -1039,13 +1063,16 @@ describe('hair', () => {
 
 describe('hats', () => {
   it('bind 100% to the Head bone with normalized weights', () => {
-    for (const build of [buildBeanie, buildCap, buildSombrero]) {
+    for (const build of [buildBeanie, buildCap, buildSombrero, buildTopHat]) {
       const { geometry, boneNames } = build()
       expect(boneNames).toEqual(['Head'])
       expect(weightSumViolations(geometry)).toBe(0)
       const ext = xExtent(geometry)
       expect(ext.min).toBeCloseTo(-ext.max, 3)
     }
+    const { geometry, boneNames } = buildHood()
+    expect(boneNames).toEqual(['Head'])
+    expect(weightSumViolations(geometry)).toBe(0)
   })
 
   it('brims sit above the eye tops', () => {
@@ -1080,7 +1107,7 @@ describe('hats', () => {
       { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.16, headLength: 0.18 },
       { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.28, headLength: 0.18 }
     ]
-    const builders = [buildBeanie, buildCap, buildSombrero] as const
+    const builders = [buildBeanie, buildCap, buildSombrero, buildTopHat] as const
     for (const shape of shapes) {
       for (const build of builders) {
         const hat = build(shape, DEFAULT_FACE_SHAPE).geometry
@@ -1119,5 +1146,83 @@ describe('hats', () => {
         expect(checked).toBeGreaterThan(0)
       }
     }
+  })
+
+  it('tophat crown clears the cranium top', () => {
+    const top = 1.86 + DEFAULT_BODY_SHAPE.headHeight
+    const box = yExtent(buildTopHat().geometry)
+    expect(box.max).toBeGreaterThan(top + 0.1)
+    expect(box.min).toBeGreaterThan(top - 0.25)
+  })
+
+  it('hood drapes past the ears to the nape', () => {
+    const box = yExtent(buildHood().geometry)
+    expect(box.min).toBeLessThan(1.7)
+    expect(box.max).toBeGreaterThan(2.0)
+  })
+})
+
+describe('accessories', () => {
+  it('bind 100% to the Head bone with normalized weights', () => {
+    for (const build of [buildSunglasses, buildGoggles, buildFaceMask]) {
+      const { geometry, boneNames } = build()
+      expect(boneNames).toEqual(['Head'])
+      expect(weightSumViolations(geometry)).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
+    }
+  })
+
+  it('sunglass lenses sit proud of the eyeballs', () => {
+    // Sclera front = surfaceZ + 0.55 * half-depth; lenses must clear it.
+    for (const eyeScale of [0.7, 1, 1.3]) {
+      const face = { ...DEFAULT_FACE_SHAPE, eyeScale }
+      const geo = buildSunglasses(DEFAULT_BODY_SHAPE, face).geometry
+      const pos = geo.attributes.position as THREE.BufferAttribute
+      let lensFront = -Infinity
+      for (let i = 0; i < pos.count; i++) {
+        const x = Math.abs(pos.getX(i))
+        const y = pos.getY(i)
+        if (x > 0.03 && x < 0.17 && y > 1.85 && y < 1.95) {
+          lensFront = Math.max(lensFront, pos.getZ(i))
+        }
+      }
+      const eyeX = DEFAULT_BODY_SHAPE.headWidth * 0.38 * face.eyeSpacing
+      const eyeY = 1.86 + DEFAULT_BODY_SHAPE.headHeight * 0.12
+      const halfZ = 0.062 * eyeScale * 0.58
+      const scleraFront = surfaceZ(DEFAULT_BODY_SHAPE, eyeX, eyeY) + 0.55 * halfZ
+      expect(lensFront).toBeGreaterThan(scleraFront)
+    }
+  })
+
+  it('mask covers the mouth zone without reaching the nose', () => {
+    const geo = buildFaceMask().geometry
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let minY = Infinity
+    let maxY = -Infinity
+    let maxZ = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+      if (y > 1.7 && y < 1.82) maxZ = Math.max(maxZ, pos.getZ(i))
+    }
+    // Mouth sits ~1.78; nose bottom ~1.80. Mask spans across the mouth.
+    expect(minY).toBeLessThan(1.74)
+    expect(maxY).toBeGreaterThan(1.76)
+    expect(maxY).toBeLessThan(1.84)
+    expect(maxZ).toBeGreaterThan(0.15)
+  })
+
+  it('goggle strap rings the head at eye height', () => {
+    const geo = buildGoggles().geometry
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let strapVerts = 0
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      const r = Math.hypot(pos.getX(i), pos.getZ(i))
+      if (Math.abs(y - 1.91) < 0.05 && r > 0.2) strapVerts++
+    }
+    expect(strapVerts).toBeGreaterThan(0)
   })
 })

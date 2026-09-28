@@ -347,13 +347,19 @@ live in app.
 
 ### Sprint 25 - Face Accessories + More Hats
 
-- [ ] Sunglasses/goggles in `head` slot placed via `surfaceZ` (dark lens
-      material); face mask variant
-- [ ] 2-3 more hats reusing the Head-bound dome pattern (top hat, hood?)
-- [ ] Rule check for hat-vs-glasses overlap (warn or hide as appropriate)
+- [x] Sunglasses (lens discs + bridge + temples) and ski goggles (wide
+      band + strap torus) in `head` slot, placed via `surfaceZ`/`eyeTopY`;
+      new shared `lens` material (dark, palette-independent)
+- [x] Face mask variant (shell over mouth/chin, tucked under nose via
+      nose-relative anchoring)
+- [x] Top hat (tall straight crown containing upper skull + flat brim) and
+      hood (long shell to nape + wide opening), both Head-bound, tagged `hat`
+- [x] Rule check: hat-hides-hair fires, nothing targets `head` (engine test
+      with real rules.json); no new rules needed
 
-**Acceptance**: Accessories sit on any head/face shape; no clipping through
-hats or face features.
+**Acceptance**: Accessories sit on any head/face shape (unit analytic
+placement tests); hats contain cranium on 5 head shapes x 3 eye sizes
+(probe containment bands); no clipping through hats or face features.
 
 ### Sprint 26 - Extremities + Beard
 

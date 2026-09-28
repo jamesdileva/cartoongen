@@ -121,6 +121,31 @@ describe('evaluateRules', () => {
     expect(results).toHaveLength(0)
   })
 
+  it('hat hides procedural hair but leaves glasses alone (default rules)', async () => {
+    const rulesJson = await import('../data/rules.json')
+    const rules = rulesJson.default as Rule[]
+    const procTags = (id: string): string[] | undefined => {
+      const tags: Record<string, string[]> = {
+        'proc:cap': ['hat', 'procedural'],
+        'proc:long_hair': ['hair', 'procedural'],
+        'proc:sunglasses': ['glasses', 'procedural']
+      }
+      return tags[id]
+    }
+    let dna = createDNA('Test')
+    dna = setSlot(dna, 'helmet', 'proc:cap')
+    dna = setSlot(dna, 'hair', 'proc:long_hair')
+    dna = setSlot(dna, 'head', 'proc:sunglasses')
+    const results = evaluateRules(dna, rules, procTags)
+    const hideHair = results.filter((r) => r.type === 'hide' && r.slotId === 'hair')
+    expect(hideHair.length).toBeGreaterThanOrEqual(1)
+    expect(hideHair[0].ruleId).toBe('hat-hides-hair')
+    // Nothing hides, shows, or disables the glasses or hair slots otherwise.
+    for (const r of results) {
+      if (r.slotId === 'head') expect.unreachable(`rule ${r.ruleId} targets head slot`)
+    }
+  })
+
   it('produces warn results correctly', () => {
     const warnRule: Rule = {
       id: 'test-warn',
