@@ -2653,6 +2653,37 @@ Sprint 25 complete. Next: Sprint 26 - extremities + beard.
 
 ---
 
+## Session 049 - Sprint 26: Extremities + Beard + Preset Research
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 26 - shoes/boots (`Foot`), gloves/gauntlets (`Hand`), goatee/full
+beard/mustache (`beard` slot, nose-anchored). 32 assets total. Full entry
+in worklog.md.
+
+Also at user request: researched preset/outfit gaps (base presets have no
+slots; only knight lacks garments) and scoped Sprints 27-29 in
+procedural-character.md (plate armour set, preset/outfit convergence,
+win-unpack last).
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 294 tests passing (285 + 9 new), no regressions
+- probe:clearance ALL PASSED (toe/heel/fingers bands)
+- Live visual check pending (no headless Electron here)
+
+### Current status
+
+Sprint 26 complete. Next: user picks Sprint 27 (armour) or 29 (packaging);
+Sprint 28 design (removing *-outfit entries) needs confirmation.
+
+---
+
 ## Session 047 - Shoulder Poke Investigation + Fixes
 
 ### Date

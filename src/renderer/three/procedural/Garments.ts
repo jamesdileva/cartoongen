@@ -1,6 +1,12 @@
 import * as THREE from 'three'
 import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
-import { makeLathe, makeSweep, type SweepStation } from './GeometryKernel'
+import {
+  makeEllipsoid,
+  makeLathe,
+  makeSweep,
+  translateGeometry,
+  type SweepStation
+} from './GeometryKernel'
 import { applySkinAttributes, computeSkinBindings, type BoneSegment } from './SkinWeights'
 import { torsoProfile } from './BodyParts'
 import { CRANIUM_CENTER_Y, CRANIUM_CENTER_Z, surfaceZ } from './FaceFeatures'
@@ -1266,6 +1272,204 @@ export function buildLongHair(
   return bindHair([shell, fall])
 }
 
+// ---------------------------------------------------------------------------
+// Extremities + facial hair (Sprint 26). Shoes follow Foot, gloves follow
+// Hand (both rigid: no rebuild needed beyond torso refreshes); beards ride
+// the Head bone and track face/nose/mouth anchors like the face itself.
+// ---------------------------------------------------------------------------
+
+const FOOT_SEGMENTS: BoneSegment[] = [
+  { name: 'LeftUpperLeg', start: [-0.18, 0.86, 0], end: [-0.18, 0.5, 0] },
+  { name: 'LeftCalf', start: [-0.18, 0.5, 0], end: [-0.18, 0.12, 0] },
+  { name: 'LeftFoot', start: [-0.18, 0.1, -0.02], end: [-0.18, 0.05, 0.2] },
+  { name: 'RightUpperLeg', start: [0.18, 0.86, 0], end: [0.18, 0.5, 0] },
+  { name: 'RightCalf', start: [0.18, 0.5, 0], end: [0.18, 0.12, 0] },
+  { name: 'RightFoot', start: [0.18, 0.1, -0.02], end: [0.18, 0.05, 0.2] }
+]
+
+const HAND_SEGMENTS: BoneSegment[] = [
+  { name: 'LeftUpperArm', start: [-0.36, 1.5, 0], end: [-0.66, 1.5, 0] },
+  { name: 'LeftForearm', start: [-0.66, 1.5, 0], end: [-0.91, 1.51, 0] },
+  { name: 'LeftHand', start: [-0.91, 1.51, 0], end: [-1.06, 1.51, 0] },
+  { name: 'RightUpperArm', start: [0.36, 1.5, 0], end: [0.66, 1.5, 0] },
+  { name: 'RightForearm', start: [0.66, 1.5, 0], end: [0.91, 1.51, 0] },
+  { name: 'RightHand', start: [0.91, 1.51, 0], end: [1.06, 1.51, 0] }
+]
+
+function bindFeet(parts: THREE.BufferGeometry[]): GarmentBuildResult {
+  const merged = mergeGeometries(parts)
+  if (!merged) {
+    throw new Error('bindFeet: mergeGeometries returned null')
+  }
+  const binding = computeSkinBindings(
+    merged.attributes.position.array as Float32Array,
+    FOOT_SEGMENTS
+  )
+  applySkinAttributes(merged, binding)
+  return { geometry: merged, boneNames: FOOT_SEGMENTS.map((s) => s.name) }
+}
+
+function bindHands(parts: THREE.BufferGeometry[]): GarmentBuildResult {
+  const merged = mergeGeometries(parts)
+  if (!merged) {
+    throw new Error('bindHands: mergeGeometries returned null')
+  }
+  const binding = computeSkinBindings(
+    merged.attributes.position.array as Float32Array,
+    HAND_SEGMENTS
+  )
+  applySkinAttributes(merged, binding)
+  return { geometry: merged, boneNames: HAND_SEGMENTS.map((s) => s.name) }
+}
+
+/** Foot last profile (matches buildLeg): [y, z, w, d]. */
+const FOOT_PROFILE: Array<[number, number, number, number]> = [
+  [0.055, -0.02, 0.095, 0.1],
+  [0.045, 0.03, 0.088, 0.075],
+  [0.045, 0.09, 0.09, 0.062],
+  [0.04, 0.15, 0.078, 0.045]
+]
+
+function footShell(offset: number): THREE.BufferGeometry[] {
+  const out: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    // Toe and heel extensions past the foot extremities: flat end caps
+    // coplanar with foot tips read as misses, so the shoe overhangs both.
+    const stations: SweepStation[] = [
+      { center: [side * 0.18, 0.07, -0.055], width: 0.12 + offset * 2, height: 0.13 + offset * 2 },
+      ...FOOT_PROFILE.map(([y, z, w, d]) => ({
+        center: [side * 0.18, y, z] as [number, number, number],
+        width: w + offset * 2,
+        height: d + offset * 2
+      })),
+      { center: [side * 0.18, 0.04, 0.195], width: 0.07 + offset * 2, height: 0.05 + offset * 2 }
+    ]
+    out.push(makeSweep(stations, 12, true, true))
+    // Sole slab under the foot.
+    const sole = new THREE.BoxGeometry(0.13 + offset, 0.035, 0.34)
+    sole.translate(side * 0.18, 0.0175, 0.055)
+    out.push(sole)
+  }
+  return out
+}
+
+/** Low shoes: foot-last shell + sole. */
+export function buildShoes(): GarmentBuildResult {
+  return bindFeet(footShell(0.02))
+}
+
+/** Boots: foot shell + sole + calf shaft with cuff. */
+export function buildBoots(): GarmentBuildResult {
+  const parts = footShell(0.02)
+  for (const side of [-1, 1] as const) {
+    // Shaft clears max-muscle calves (0.0925 * 1.3); boots run roomy.
+    const shaft = makeSweep(
+      [
+        { center: [side * 0.18, 0.1, 0], width: 0.25, height: 0.24 },
+        { center: [side * 0.18, 0.24, 0], width: 0.24, height: 0.23 },
+        { center: [side * 0.18, 0.38, 0], width: 0.25, height: 0.24 }
+      ],
+      14,
+      false,
+      true
+    )
+    parts.push(shaft)
+    const cuff = new THREE.TorusGeometry(0.13, 0.022, 10, 20)
+    cuff.rotateX(Math.PI / 2)
+    cuff.translate(side * 0.18, 0.38, 0)
+    parts.push(cuff)
+  }
+  return bindFeet(parts)
+}
+
+/** Palm + thumb shell dimensions (matches buildArm mitten). */
+function gloveShell(offset: number): THREE.BufferGeometry[] {
+  const out: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const s = side
+    const palm = makeEllipsoid(0.07 + offset, 0.055 + offset, 0.028 + offset, 16, 12)
+    translateGeometry(palm, s * 1.005, 1.505, 0)
+    out.push(palm)
+    const thumb = makeEllipsoid(0.034 + offset, 0.024 + offset, 0.024 + offset, 10, 8)
+    translateGeometry(thumb, s * 0.972, 1.487, -0.042)
+    out.push(thumb)
+    const cuff = new THREE.TorusGeometry(0.055 + offset, 0.02, 10, 20)
+    cuff.rotateY(Math.PI / 2)
+    cuff.translate(s * 0.92, 1.508, 0)
+    out.push(cuff)
+  }
+  return out
+}
+
+/** Work gloves: palm shell + wrist cuff. */
+export function buildGloves(): GarmentBuildResult {
+  return bindHands(gloveShell(0.012))
+}
+
+/** Gauntlets: gloves + forearm cuff tube. */
+export function buildGauntlets(): GarmentBuildResult {
+  const parts = gloveShell(0.012)
+  for (const side of [-1, 1] as const) {
+    const s = side
+    parts.push(
+      makeSweep(
+        [
+          { center: [s * 0.9, 1.508, 0], width: 0.15, height: 0.14 },
+          { center: [s * 0.78, 1.505, 0], width: 0.14, height: 0.13 },
+          { center: [s * 0.7, 1.502, 0], width: 0.15, height: 0.14 }
+        ],
+        12,
+        false,
+        true
+      )
+    )
+  }
+  return bindHands(parts)
+}
+
+/** Mouth anchor (mirrors buildFace): always 2cm below the nose bottom edge. */
+function beardMouthY(shape: BodyShape, face: FaceShape): number {
+  const noseWorldY = CRANIUM_CENTER_Y - shape.headHeight * 0.15
+  const noseBottomY = noseWorldY - 0.05 * face.noseSize
+  return noseBottomY - 0.02
+}
+
+/** Goatee: chin tuft below the mouth. */
+export function buildGoatee(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const mouthY = beardMouthY(shape, face)
+  const tuft = makeEllipsoid(0.035, 0.05, 0.03, 12, 10)
+  translateGeometry(tuft, 0, mouthY - 0.055, surfaceZ(shape, 0, mouthY - 0.055) + 0.005)
+  return bindHat([tuft])
+}
+
+/** Full beard: shell over jaw front and chin, mouth tucked inside. */
+export function buildFullBeard(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const mouthY = beardMouthY(shape, face)
+  const beard = makeEllipsoid(shape.headWidth * 0.52, 0.1, 0.1, 18, 14)
+  translateGeometry(beard, 0, mouthY - 0.04, surfaceZ(shape, 0, mouthY - 0.04))
+  return bindHat([beard])
+}
+
+/** Mustache: hair torus arched over the mouth. */
+export function buildMustache(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const mouthY = beardMouthY(shape, face)
+  const radius = 0.055 * face.mouthWidth
+  const arc = new THREE.TorusGeometry(radius, 0.013, 8, 16, Math.PI * 0.8)
+  // Upper-half arch (frown orientation) centered over the mouth.
+  arc.rotateZ(Math.PI * 0.1)
+  arc.translate(0, mouthY + 0.028, surfaceZ(shape, 0, mouthY + 0.028) + 0.008)
+  return bindHat([arc])
+}
+
 export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
   {
     id: 'proc:tshirt',
@@ -1581,6 +1785,74 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const face = sanitizeFaceShape(dna.face)
       return buildFaceMask(shape, face)
     }
+  },
+  {
+    id: 'proc:shoes',
+    slotId: 'shoes',
+    label: 'Shoes',
+    tags: ['shoes', 'procedural'],
+    materialId: 'leather',
+    build: () => buildShoes()
+  },
+  {
+    id: 'proc:boots',
+    slotId: 'shoes',
+    label: 'Boots',
+    tags: ['shoes', 'boots', 'procedural'],
+    materialId: 'leather',
+    build: () => buildBoots()
+  },
+  {
+    id: 'proc:gloves',
+    slotId: 'gloves',
+    label: 'Gloves',
+    tags: ['gloves', 'procedural'],
+    materialId: 'leather',
+    build: () => buildGloves()
+  },
+  {
+    id: 'proc:gauntlets',
+    slotId: 'gloves',
+    label: 'Gauntlets',
+    tags: ['gloves', 'gauntlets', 'procedural'],
+    materialId: 'leather',
+    build: () => buildGauntlets()
+  },
+  {
+    id: 'proc:goatee',
+    slotId: 'beard',
+    label: 'Goatee',
+    tags: ['beard', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildGoatee(shape, face)
+    }
+  },
+  {
+    id: 'proc:full_beard',
+    slotId: 'beard',
+    label: 'Full Beard',
+    tags: ['beard', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildFullBeard(shape, face)
+    }
+  },
+  {
+    id: 'proc:mustache',
+    slotId: 'beard',
+    label: 'Mustache',
+    tags: ['beard', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildMustache(shape, face)
+    }
   }
 ]
 
@@ -1626,6 +1898,15 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
   if (assetId === 'proc:hood') return key === 'head'
   if (assetId === 'proc:sunglasses' || assetId === 'proc:goggles' || assetId === 'proc:mask')
     return key === 'head' || key === 'face'
+  if (assetId === 'proc:goatee' || assetId === 'proc:full_beard' || assetId === 'proc:mustache')
+    return key === 'head' || key === 'face'
+  if (
+    assetId === 'proc:shoes' ||
+    assetId === 'proc:boots' ||
+    assetId === 'proc:gloves' ||
+    assetId === 'proc:gauntlets'
+  )
+    return key === 'torso'
   if (assetId === 'proc:crop_hair' || assetId === 'proc:ponytail' || assetId === 'proc:mohawk')
     return key === 'head'
   if (assetId === 'proc:long_hair') return key === 'head' || key === 'torso'

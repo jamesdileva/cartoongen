@@ -363,13 +363,37 @@ placement tests); hats contain cranium on 5 head shapes x 3 eye sizes
 
 ### Sprint 26 - Extremities + Beard
 
-- [ ] Shoes/boots on `Foot`, work gloves on `Hand` (tube + cap patterns)
-- [ ] Jaw-anchored beards in `hair` material, faceShape-aware placement
+- [x] Shoes (`footShell` over buildLeg last + sole slab) and boots (+ calf
+      shaft clearing max-muscle calves + cuff) on `Foot` segments
+- [x] Gloves (palm/thumb shells + wrist cuff) and gauntlets (+ forearm
+      tube) on `Hand` segments; fixed mis-scoped upperarm segment
+- [x] Goatee, full beard, mustache in `hair` material, anchored to
+      nose/mouth (nose-relative, like the mouth itself); nose stays out
 
-**Acceptance**: Full coverage of remaining bare slots; beards survive
-jaw/head morphs.
+**Acceptance**: Full coverage of remaining bare slots (probe toe/heel/
+fingers bands, 32 assets); beards survive jaw/head morphs (Head-bound
+rigid + face-key rebuilds).
 
-### Sprint 27 - Win-Unpack Installer (last)
+### Sprint 27 - Plate Armour Set
+
+- [ ] Cuirass (chest shell, metal), pauldrons (deltoid caps, metal),
+      greaves (shin tubes, metal), armet (`helmet` slot, `full_face` tag)
+- [ ] Gauntlets + boots already exist; full knight dressable head to toe
+
+**Acceptance**: Knight in full plate reads unmistakably; dormant
+full-face rules fire live (eyebrows/eyes/mouth hide under armet).
+
+### Sprint 28 - Preset/Outfit Convergence
+
+- [ ] Give the 5 base presets slots (knight->armour set, mage->robe,
+      farmer->tee+jeans+cap, rogue->jacket+tights+hood, barbarian->
+      bare chest+shorts); retire the 3 *-outfit duplicates
+- [ ] Randomizer uses slot-bearing presets (outfit flag semantics)
+
+**Acceptance**: One click on Knight dresses a full knight; PresetPanel
+stays tidy; no orphaned preset IDs.
+
+### Sprint 29 - Win-Unpack Installer (last)
 
 - [ ] electron-builder + win target + icon + `npm run dist`
 - [ ] Smoke-test the unpacked exe (launch, new character, randomize, export)

@@ -1,5 +1,10 @@
 import * as THREE from 'three'
-import { buildArm, buildHead, buildTorso } from '../../src/renderer/three/procedural/BodyParts'
+import {
+  buildArm,
+  buildHead,
+  buildLeg,
+  buildTorso
+} from '../../src/renderer/three/procedural/BodyParts'
 import {
   buildTShirt,
   buildLongsleeve,
@@ -14,6 +19,10 @@ import {
   buildPonytail,
   buildMohawk,
   buildLongHair,
+  buildShoes,
+  buildBoots,
+  buildGloves,
+  buildGauntlets,
   buildJeans,
   buildShorts,
   buildBaggy,
@@ -402,6 +411,45 @@ for (const { name, shape } of shapes) {
         } // topLength
       }
     }
+  }
+}
+
+// Extremities are shape/morph-invariant (no foot/hand params or morphs move
+// their shape), so one rest-pose config covers them.
+{
+  const leg = buildLeg(1).geometry
+  const arm = buildArm(1).geometry
+  const issues: string[] = []
+  for (const [shoeName, build] of Object.entries({
+    shoes: () => buildShoes(),
+    boots: () => buildBoots()
+  } as const)) {
+    const shoe = build().geometry
+    report(
+      issues,
+      `${shoeName} toe`,
+      countPokes(leg, shoe, { yMin: 0.0, yMax: 0.12, mode: 'front' })
+    )
+    report(
+      issues,
+      `${shoeName} heel`,
+      countPokes(leg, shoe, { yMin: 0.0, yMax: 0.12, mode: 'rear' })
+    )
+  }
+  for (const [gloveName, build] of Object.entries({
+    gloves: () => buildGloves(),
+    gauntlets: () => buildGauntlets()
+  } as const)) {
+    const glove = build().geometry
+    report(
+      issues,
+      `${gloveName} fingers`,
+      countPokes(arm, glove, { yMin: 1.44, yMax: 1.57, mode: 'sideX', xMin: 0.9 })
+    )
+  }
+  if (issues.length > 0) {
+    failures++
+    console.log(`FAIL extremities: ${issues.join('; ')}`)
   }
 }
 

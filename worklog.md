@@ -215,6 +215,80 @@ jaw-anchored beards).
 
 ---
 
+## Session 049 - Sprint 26: Extremities + Beard
+
+### Date
+
+2026-09-24
+
+### What we built
+
+Sprint 26 - 7 assets filling the last bare slots (32 total): shoes, boots,
+gloves, gauntlets, goatee, full beard, mustache.
+
+| Asset | Construction |
+|---|---|
+| `proc:shoes` | Foot-last shell + sole slab, `Foot` segments |
+| `proc:boots` | Shoes + calf shaft (clears max-muscle calves) + cuff |
+| `proc:gloves` | Palm/thumb shells + wrist cuff, `Hand` segments |
+| `proc:gauntlets` | Gloves + forearm tube |
+| `proc:goatee` | Chin tuft below mouth (nose-anchored) |
+| `proc:full_beard` | Jaw shell, mouth tucked inside, nose stays out |
+| `proc:mustache` | Hair torus arch over mouth |
+
+Beard placement mirrors buildFace anchoring (nose bottom -> mouth).
+`beard-and-helmet-warn` fires automatically; randomizer pools fill free.
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Shoe toe/heel rays missed (30/50) | Toe/heel caps were coplanar with foot extremities; shoe now overhangs both ends (heel/toe extension stations) |
+| Probe bands needed per-garment coverage | Shorts skip leg band (bare legs); bands parameterized |
+| Catalog edit collision (beanie eaten, sombrero duplicated) | Repaired by inspection; exact-list test guards |
+| HAND upperarm segments duplicated forearm span | Restored to buildArm spans |
+
+### Verification
+
+- `npm run typecheck` - 0 errors
+- `npm run lint` - 0 errors (4 pre-existing warnings)
+- `npm run test` - 294 tests passing (285 + 9 new), no regressions
+- `npm run build` - full production build succeeds
+- `npm run probe:clearance` - ALL PASSED (toe/heel/fingers bands added)
+- Live visual check pending: equip all 7, beards with helmets (warn)
+
+### Research: preset outfits + armour (user request)
+
+Audited presets vs garment catalog:
+
+- Base presets (knight/mage/farmer/rogue/barbarian): colors+morphs only,
+  no slots (by Sprint 7 design, predates assets).
+- Outfit presets (mage/elven/dwarven-outfit): slots+colors, randomizer-ready.
+- Mage preset does NOT equip the robe (user noticed) - same for knight
+  (no armour garments exist at all) and others.
+
+Proposed follow-ups (appended to procedural-character.md as Sprints 27-29):
+
+- Sprint 27 - Plate Armour set: cuirass, pauldrons, greaves, armet
+  (full_face tag demos the dormant face-hiding rules), metal material.
+  Gauntlets + boots already exist.
+- Sprint 28 - Preset/outfit convergence: give the 5 base presets slots
+  (knight->armour, mage->robe, farmer->tee+jeans+cap, rogue->jacket+tights
+  +hood, barbarian->bare+shorts); retire the 3 *-outfit duplicates;
+  randomizer uses slot-bearing presets.
+- Sprint 29 - win-unpack installer (last): electron-builder + dist smoke test.
+
+Farmer/rogue/barbarian need NO new garments (all covered). Only knight
+needs armour builders.
+
+### Current status
+
+Sprint 26 complete. Next: user picks Sprint 27 (armour) or 29 (packaging)
+or the Sprint 28 convergence design needs confirmation (removal of
+*-outfit entries).
+
+---
+
 ## Session 047 - Shoulder Poke Investigation + Fixes
 
 ### Date

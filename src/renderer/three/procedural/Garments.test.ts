@@ -21,6 +21,13 @@ import {
   buildSunglasses,
   buildGoggles,
   buildFaceMask,
+  buildShoes,
+  buildBoots,
+  buildGloves,
+  buildGauntlets,
+  buildGoatee,
+  buildFullBeard,
+  buildMustache,
   buildBeanie,
   buildCap,
   buildSombrero,
@@ -93,15 +100,20 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 25 procedural entries with correct slots', () => {
+  it('exposes all 32 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
       'proc:baggy',
       'proc:beanie',
+      'proc:boots',
       'proc:cap',
       'proc:crop_hair',
       'proc:dwarf_vest',
       'proc:elven_tunic',
+      'proc:full_beard',
+      'proc:gauntlets',
+      'proc:gloves',
+      'proc:goatee',
       'proc:goggles',
       'proc:hood',
       'proc:jacket',
@@ -111,8 +123,10 @@ describe('procedural asset catalog', () => {
       'proc:mage_robe',
       'proc:mask',
       'proc:mohawk',
+      'proc:mustache',
       'proc:polo',
       'proc:ponytail',
+      'proc:shoes',
       'proc:shorts',
       'proc:sombrero',
       'proc:sunglasses',
@@ -147,6 +161,13 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:mask')?.slotId).toBe('head')
     expect(entries.find((e) => e.id === 'proc:tophat')?.slotId).toBe('helmet')
     expect(entries.find((e) => e.id === 'proc:hood')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:shoes')?.slotId).toBe('shoes')
+    expect(entries.find((e) => e.id === 'proc:boots')?.slotId).toBe('shoes')
+    expect(entries.find((e) => e.id === 'proc:gloves')?.slotId).toBe('gloves')
+    expect(entries.find((e) => e.id === 'proc:gauntlets')?.slotId).toBe('gloves')
+    expect(entries.find((e) => e.id === 'proc:goatee')?.slotId).toBe('beard')
+    expect(entries.find((e) => e.id === 'proc:full_beard')?.slotId).toBe('beard')
+    expect(entries.find((e) => e.id === 'proc:mustache')?.slotId).toBe('beard')
     expect(findProceduralAsset('proc:ponytail')?.materialId).toBe('hair')
     expect(findProceduralAsset('proc:sunglasses')?.materialId).toBe('lens')
     expect(findProceduralAsset('proc:tshirt')?.label).toBe('T-Shirt')
@@ -200,6 +221,15 @@ describe('procedural asset catalog', () => {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
+    }
+    for (const id of ['proc:goatee', 'proc:full_beard', 'proc:mustache']) {
+      expect(garmentDependsOnKey(id, 'head')).toBe(true)
+      expect(garmentDependsOnKey(id, 'face')).toBe(true)
+      expect(garmentDependsOnKey(id, 'torso')).toBe(false)
+    }
+    for (const id of ['proc:shoes', 'proc:boots', 'proc:gloves', 'proc:gauntlets']) {
+      expect(garmentDependsOnKey(id, 'torso')).toBe(true)
+      expect(garmentDependsOnKey(id, 'head')).toBe(false)
     }
     for (const id of ['proc:crop_hair', 'proc:ponytail', 'proc:mohawk']) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
@@ -1224,5 +1254,128 @@ describe('accessories', () => {
       if (Math.abs(y - 1.91) < 0.05 && r > 0.2) strapVerts++
     }
     expect(strapVerts).toBeGreaterThan(0)
+  })
+})
+
+describe('extremities', () => {
+  it('binds shoes to leg chains and gloves to arm chains', () => {
+    for (const build of [buildShoes, buildBoots]) {
+      const { boneNames } = build()
+      expect(boneNames).toEqual([
+        'LeftUpperLeg',
+        'LeftCalf',
+        'LeftFoot',
+        'RightUpperLeg',
+        'RightCalf',
+        'RightFoot'
+      ])
+    }
+    for (const build of [buildGloves, buildGauntlets]) {
+      const { boneNames } = build()
+      expect(boneNames).toEqual([
+        'LeftUpperArm',
+        'LeftForearm',
+        'LeftHand',
+        'RightUpperArm',
+        'RightForearm',
+        'RightHand'
+      ])
+    }
+  })
+
+  it('produces normalized weights with x symmetry', () => {
+    for (const build of [buildShoes, buildBoots, buildGloves, buildGauntlets]) {
+      const { geometry } = build()
+      expect(weightSumViolations(geometry)).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
+    }
+  })
+
+  it('boots rise up the calf past shoes', () => {
+    const shoesTop = yExtent(buildShoes().geometry).max
+    const bootsTop = yExtent(buildBoots().geometry).max
+    expect(bootsTop).toBeGreaterThan(0.35)
+    expect(bootsTop).toBeGreaterThan(shoesTop + 0.2)
+  })
+
+  it('gauntlets extend further up the forearm than gloves', () => {
+    // Gauntlet tube occupies 0.6 < |x| < 0.85; gloves have nothing there.
+    const countInZone = (geo: THREE.BufferGeometry): number => {
+      const pos = geo.attributes.position as THREE.BufferAttribute
+      let n = 0
+      for (let i = 0; i < pos.count; i++) {
+        const ax = Math.abs(pos.getX(i))
+        if (ax > 0.6 && ax < 0.85) n++
+      }
+      return n
+    }
+    expect(countInZone(buildGauntlets().geometry)).toBeGreaterThan(0)
+    expect(countInZone(buildGloves().geometry)).toBe(0)
+  })
+
+  it('shoes enclose the foot on all sides', () => {
+    // Foot spans y 0..0.1, z -0.07..0.19, outer x ~0.23; shoe must exceed it.
+    const box = new THREE.Box3().setFromBufferAttribute(
+      buildShoes().geometry.attributes.position as THREE.BufferAttribute
+    )
+    expect(box.min.y).toBeLessThanOrEqual(0.001)
+    expect(box.max.y).toBeGreaterThan(0.12)
+    expect(box.max.z).toBeGreaterThan(0.19)
+    expect(box.min.z).toBeLessThan(-0.07)
+    expect(box.max.x).toBeGreaterThan(0.24)
+  })
+})
+
+describe('beards', () => {
+  it('bind 100% to the Head bone with normalized weights', () => {
+    for (const build of [buildGoatee, buildFullBeard, buildMustache]) {
+      const { geometry, boneNames } = build()
+      expect(boneNames).toEqual(['Head'])
+      expect(weightSumViolations(geometry)).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
+    }
+  })
+
+  it('goatee hangs below the mouth', () => {
+    const box = yExtent(buildGoatee().geometry)
+    expect(box.max).toBeLessThan(1.78)
+    expect(box.min).toBeLessThan(1.7)
+  })
+
+  it('full beard covers the chin and leaves the nose out', () => {
+    const geo = buildFullBeard().geometry
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let minY = Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (y < minY) minY = y
+    }
+    expect(minY).toBeLessThan(1.7)
+    // Nose tip must stay outside the beard ellipsoid.
+    const noseY = 1.86 - DEFAULT_BODY_SHAPE.headHeight * 0.15
+    const noseZ = surfaceZ(DEFAULT_BODY_SHAPE, 0, noseY) + 0.03
+    const cx = 0
+    const cy = noseY - 0.02 - 0.005 - 0.055
+    const cz = surfaceZ(DEFAULT_BODY_SHAPE, 0, cy) + 0.01
+    const inside =
+      ((0 - cx) / 0.1) ** 2 + ((noseY - cy) / 0.06) ** 2 + ((noseZ - cz) / 0.05) ** 2 < 1
+    expect(inside).toBe(false)
+  })
+
+  it('mustache arches over the mouth', () => {
+    const geo = buildMustache().geometry
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let minY = Infinity
+    let maxY = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (y < minY) minY = y
+      if (y > maxY) maxY = y
+    }
+    // Thin arch band just above the mouth (~1.78).
+    expect(maxY - minY).toBeLessThan(0.08)
+    expect(minY).toBeGreaterThan(1.72)
   })
 })
