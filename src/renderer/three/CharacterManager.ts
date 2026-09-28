@@ -163,7 +163,8 @@ function torsoKeyOf(
   bust: number,
   butt: number,
   belly: number,
-  topLength: number
+  topLength: number,
+  muscle: number
 ): string {
   return JSON.stringify([
     shape.shoulderWidth,
@@ -173,7 +174,8 @@ function torsoKeyOf(
     bust,
     butt,
     belly,
-    topLength
+    topLength,
+    muscle
   ])
 }
 
@@ -310,7 +312,8 @@ export class CharacterManager {
       clamp01(useCharacterStore.getState().present?.morphs?.bust ?? BUST_DEFAULT),
       clamp01(useCharacterStore.getState().present?.morphs?.butt ?? BUTT_DEFAULT),
       clamp01(useCharacterStore.getState().present?.morphs?.bellySize ?? 0.5),
-      clamp01(useCharacterStore.getState().present?.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      clamp01(useCharacterStore.getState().present?.morphs?.topLength ?? TOP_LENGTH_DEFAULT),
+      clamp01(useCharacterStore.getState().present?.morphs?.muscleMass ?? 0.5)
     )
     this.rebuildHeadMesh(
       sanitizeBodyShape(useCharacterStore.getState().present?.bodyShape),
@@ -376,13 +379,14 @@ export class CharacterManager {
     bust: number,
     butt: number,
     belly: number,
-    topLength = TOP_LENGTH_DEFAULT
+    topLength = TOP_LENGTH_DEFAULT,
+    muscle = 0.5
   ): void {
     this.removeTorsoMesh()
     const skinMat = this.skinMaterial ?? this.materialManager.getMaterial('skin')
-    this.lastTorsoShapeKey = torsoKeyOf(shape, bust, butt, belly, topLength)
+    this.lastTorsoShapeKey = torsoKeyOf(shape, bust, butt, belly, topLength, muscle)
 
-    const geo = buildTorso(shape, bust, butt, belly).geometry
+    const geo = buildTorso(shape, bust, butt, belly, muscle).geometry
     const mesh =
       this.bindToBones(
         geo,
@@ -971,10 +975,11 @@ export class CharacterManager {
     const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
     const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
     const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+    const muscle = clamp01(dna.morphs?.muscleMass ?? 0.5)
     const neckWidth = clamp01(dna.morphs?.neckWidth ?? 0.5)
     const face = sanitizeFaceShape(dna.face)
     const nextHeadKey = headKeyOf(shape, neckWidth)
-    const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly, topLength)
+    const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly, topLength, muscle)
     const nextFaceKey = faceKeyOf(shape, face)
     const torsoChanged = nextTorsoKey !== this.lastTorsoShapeKey
     // Snapshot before the rebuild block below updates the stored keys.
@@ -992,7 +997,7 @@ export class CharacterManager {
       }
       if (torsoChanged) {
         actions.push('torso')
-        this.rebuildTorsoMesh(shape, bust, butt, belly, topLength)
+        this.rebuildTorsoMesh(shape, bust, butt, belly, topLength, muscle)
       }
       if (actions.length > 0) {
         console.log(

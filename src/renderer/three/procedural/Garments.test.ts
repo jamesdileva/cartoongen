@@ -32,6 +32,8 @@ import {
 import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
 import { DEFAULT_FACE_SHAPE } from '../../../shared/types/faceShape'
 import type { CharacterDNA } from '../../../shared/types/dna'
+import { buildTorso } from './BodyParts'
+import { ProportionManager } from '../ProportionManager'
 
 function weightSumViolations(geometry: THREE.BufferGeometry): number {
   const sw = geometry.attributes.skinWeight.array as ArrayLike<number>
@@ -583,6 +585,141 @@ describe('garment skinned deformation', () => {
     const fatR = skinMaxRadius(geometry, orderedBones, orderedInv, band)
 
     expect(fatR).toBeGreaterThan(restR * 1.1)
+  })
+})
+
+describe('garment skinned under morphs', () => {
+  // Shoulder pokes only appear with bone scales applied: replicate the real
+  // skeleton (rotated arm chains), run the real ProportionManager, CPU-skin
+  // both meshes, then raycast cloth from body verts (DoubleSide).
+  function morphedScene(
+    shape: BodyShape,
+    morphs: Record<string, number>
+  ): {
+    torso: THREE.BufferGeometry
+    shirt: THREE.BufferGeometry
+  } {
+    const defs: Array<{
+      name: string
+      pos: [number, number, number]
+      rotZ?: number
+      parent?: string
+    }> = [
+      { name: 'Root', pos: [0, 0.9, 0] },
+      { name: 'Spine', pos: [0, 0.25, 0], parent: 'Root' },
+      { name: 'Spine1', pos: [0, 0.15, 0], parent: 'Spine' },
+      { name: 'Spine2', pos: [0, 0.15, 0], parent: 'Spine1' },
+      { name: 'LeftClavicle', pos: [-0.1, 0.02, 0], parent: 'Spine2' },
+      { name: 'RightClavicle', pos: [0.1, 0.02, 0], parent: 'Spine2' },
+      { name: 'LeftUpperArm', pos: [-0.38, 0.05, 0], rotZ: Math.PI / 2, parent: 'Spine2' },
+      { name: 'LeftForearm', pos: [0, 0.3, 0], parent: 'LeftUpperArm' },
+      { name: 'LeftHand', pos: [0, 0.25, 0], parent: 'LeftForearm' },
+      { name: 'RightUpperArm', pos: [0.38, 0.05, 0], rotZ: -Math.PI / 2, parent: 'Spine2' },
+      { name: 'RightForearm', pos: [0, 0.3, 0], parent: 'RightUpperArm' },
+      { name: 'RightHand', pos: [0, 0.25, 0], parent: 'RightForearm' }
+    ]
+    const map = new Map<string, THREE.Bone>()
+    for (const d of defs) {
+      const b = new THREE.Bone()
+      b.name = d.name
+      b.position.set(...d.pos)
+      if (d.rotZ) b.rotation.z = d.rotZ
+      map.set(d.name, b)
+    }
+    for (const d of defs) {
+      if (d.parent) map.get(d.parent)!.add(map.get(d.name)!)
+    }
+    map.get('Root')!.updateMatrixWorld(true)
+    const inverses = new Map<string, THREE.Matrix4>()
+    map.forEach((b, n) => inverses.set(n, new THREE.Matrix4().copy(b.matrixWorld).invert()))
+    const pm = new ProportionManager()
+    pm.setBoneMap(map)
+    pm.applyProportions(morphs)
+    map.get('Root')!.updateMatrixWorld(true)
+
+    const skin = (geometry: THREE.BufferGeometry, order: string[]): THREE.BufferGeometry => {
+      const pos = geometry.attributes.position as THREE.BufferAttribute
+      const si = geometry.attributes.skinIndex.array as ArrayLike<number>
+      const sw = geometry.attributes.skinWeight.array as ArrayLike<number>
+      const bones = order.map((n) => map.get(n)!)
+      const invs = order.map((n) => inverses.get(n)!)
+      const g = geometry.clone()
+      const p = g.attributes.position as THREE.BufferAttribute
+      const v = new THREE.Vector3()
+      const sk = new THREE.Vector3()
+      const m = new THREE.Matrix4()
+      for (let i = 0; i < pos.count; i++) {
+        v.set(pos.getX(i), pos.getY(i), pos.getZ(i))
+        sk.set(0, 0, 0)
+        for (let k = 0; k < 4; k++) {
+          const w = sw[i * 4 + k]
+          if (w <= 0) continue
+          m.multiplyMatrices(bones[si[i * 4 + k]].matrixWorld, invs[si[i * 4 + k]])
+          sk.addScaledVector(v.clone().applyMatrix4(m), w)
+        }
+        p.setXYZ(i, sk.x, sk.y, sk.z)
+      }
+      return g
+    }
+    const torso = buildTorso(shape, 0.15, 0.2, 0.5)
+    const shirt = buildTShirt(shape, 0.15, 0.5, 0.2, 0)
+    return {
+      torso: skin(
+        torso.geometry,
+        torso.segments.map((s) => s.name)
+      ),
+      shirt: skin(shirt.geometry, shirt.boneNames)
+    }
+  }
+
+  function rayPokes(
+    body: THREE.BufferGeometry,
+    cloth: THREE.BufferGeometry,
+    opts: { yMin: number; yMax: number; mode: 'front' | 'sideX'; xMin?: number; minAbsZ?: number }
+  ): number {
+    const ray = new THREE.Raycaster()
+    ray.far = 1.0
+    const clothMesh = new THREE.Mesh(cloth, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+    clothMesh.updateMatrixWorld(true)
+    const bp = body.attributes.position as THREE.BufferAttribute
+    let pokes = 0
+    for (let i = 0; i < bp.count; i++) {
+      const bx = bp.getX(i)
+      const by = bp.getY(i)
+      const bz = bp.getZ(i)
+      if (by < opts.yMin || by > opts.yMax) continue
+      if (opts.xMin !== undefined && bx < opts.xMin) continue
+      if (opts.minAbsZ !== undefined && Math.abs(bz) < opts.minAbsZ) continue
+      let dir: THREE.Vector3
+      if (opts.mode === 'front') dir = new THREE.Vector3(0, 0, 1)
+      else {
+        if (bx <= 0) continue
+        dir = new THREE.Vector3(1, 0, 0)
+      }
+      const origin = new THREE.Vector3(bx, by, bz)
+      origin.addScaledVector(dir, 1e-4)
+      ray.set(origin, dir)
+      if (ray.intersectObject(clothMesh, false).length === 0) pokes++
+    }
+    return pokes
+  }
+
+  it('deltoid stays inside t-shirt under max muscle+shoulder morphs', () => {
+    for (const shape of [
+      DEFAULT_BODY_SHAPE,
+      { ...DEFAULT_BODY_SHAPE, shoulderWidth: 1.3 },
+      { ...DEFAULT_BODY_SHAPE, shoulderWidth: 0.75 }
+    ]) {
+      const { torso, shirt } = morphedScene(shape, { muscleMass: 1, shoulderWidth: 1 })
+      const clavEnd = 0.36 * shape.shoulderWidth
+      expect(rayPokes(torso, shirt, { yMin: 1.2, yMax: 1.42, mode: 'front', minAbsZ: 0.05 })).toBe(
+        0
+      )
+      expect(rayPokes(torso, shirt, { yMin: 0.95, yMax: 1.4, mode: 'sideX' })).toBe(0)
+      expect(
+        rayPokes(torso, shirt, { yMin: 1.36, yMax: 1.56, mode: 'sideX', xMin: clavEnd - 0.1 })
+      ).toBe(0)
+    }
   })
 })
 

@@ -165,6 +165,57 @@ appended to procedural-character.md.
 
 ---
 
+## Session 047 - Shoulder Poke Investigation + Fixes
+
+### Date
+
+2026-09-24
+
+### What we found (user report: minimal skin near shoulders on some randomizes)
+
+Built a headless repro (`scripts/debug/shoulder-repro.mts`, since removed):
+real skeleton subset + real ProportionManager + CPU skinning + raycast
+probe bands, over 3 shapes x 6 morph combos x 4 tops. Root cause is
+differential tracking, not a single bad number:
+
+- The deltoid is ~91% clavicle-bound, so shoulderWidth morph slides it far
+  outboard; sleeve tubes are upperarm-leaning and stay behind (44-sample
+  pokes at wide shape + max morphs).
+- `MUSCLE_HEADROOM` was 1.12 against a real 1.3 max: max-muscle arms
+  outgrew sleeves; min-muscle shrank sleeves off the muscle-inert deltoid.
+- The sleeve end cap lagged its ring (cap center 100% upperarm-bound),
+  opening the cuff mouth forward under morph shear.
+
+### What we changed (all in Garments.ts + BodyParts.ts + CharacterManager.ts)
+
+- `MUSCLE_HEADROOM` 1.12 -> 1.3 (true max; sleeves, legs, cuffs).
+- `topSegments` gained `clavReachX`: clavicle capsules extend toward the
+  sleeve so cap regions bind clavicle-dominant and track deltoid slide.
+- Garment upperarm proxy ends past the deltoid cap (long sleeves keep
+  legacy reach for the elbow-to-forearm handoff).
+- Sleeve cuff lengthened/flared shape-relative (`outerX`), cuff mouth
+  widened, mid-cap ring added to short + long sleeves, cap radii bumped,
+  inboard tuck deepened.
+- `buildTorso` takes `muscle` (deltoids scale 0.9 + 0.2 * muscle, neutral at
+  default); `torsoKeyOf`/`rebuildTorsoMesh` carry it so deltoids stay
+  coherent with muscle-responsive sleeves in both directions.
+
+### Verification
+
+- Repro grid went from pokes in 5 configs (up to 44 samples) to clean
+  everywhere except single-digit grazes (<=6 samples, ~5mm) at
+  double-extreme morph corners (documented residual, armpit tuck zone).
+- New skinned-morph regression test (real skeleton + PM + raycast) fails on
+  old code, passes on new.
+- `npm run test` - 278 passing; `probe:clearance` ALL PASSED (rest geometry
+  untouched in behavior); typecheck/lint/build clean.
+
+### Current status
+
+Shoulder investigation closed. Proceeding to Sprint 25.
+
+---
+
 ## Session 043 - Sprint 21: Lower Body + Headwear Variants
 
 ### Date

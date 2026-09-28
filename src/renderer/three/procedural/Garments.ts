@@ -32,8 +32,12 @@ export interface GarmentBuildResult {
 
 const BUST_DEFAULT = 0.15
 const BUTT_DEFAULT = 0.2
-/** Max muscleMass remap (ProportionManager range [0.8, 1.3]) — sleeves need rest room. */
-const MUSCLE_HEADROOM = 1.12
+/**
+ * Max muscleMass remap (ProportionManager range [0.8, 1.3]) - sleeves and
+ * legs are authored with room for the full range so max-muscle bodies never
+ * poke through. Slightly roomier at rest; correctness over tightness.
+ */
+const MUSCLE_HEADROOM = 1.3
 
 function bellyScaleOf(belly: number): number {
   return 0.75 + belly * 0.6
@@ -186,19 +190,43 @@ export function waistDims(
   }
 }
 
-/** Torso + clavicle + arm segments for top skinning. */
-function topSegments(clavEnd: number, armStart: number, longSleeves: boolean): BoneSegment[] {
+/**
+ * Torso + clavicle + arm segments for top skinning. clavReachX extends the
+ * clavicle capsules toward the sleeve so the deltoid cap region binds
+ * clavicle-dominant and tracks shoulderWidth-driven deltoid slide instead
+ * of staying behind on the upper arm. Defaults to legacy reach (no sleeves).
+ * Pass the sleeve outer x to cover the cuff region.
+ */
+function topSegments(
+  clavEnd: number,
+  armStart: number,
+  longSleeves: boolean,
+  clavReachX: number | null = null
+): BoneSegment[] {
+  const reach = clavReachX ?? clavEnd + 0.02
+  // Short sleeves end at the deltoid: cap the upperarm proxy past the cap so
+  // the whole cap region binds clavicle-dominant and tracks deltoid slide as
+  // one unit. Long sleeves keep the legacy reach (elbow handoff to forearm).
+  const upperEnd = longSleeves ? 0.66 : clavEnd + 0.15
+  // Upperarm proxy starts at the deltoid cap (not the tuck): inboard cloth
+  // then binds clavicle-dominant and no longer shrinks away from the
+  // muscle-inert deltoid when muscleMass drops. The arm mesh keeps its own
+  // full-length segments, so arm muscle tracking is unaffected.
+  const upperStart = clavEnd + 0.005
   const segs: BoneSegment[] = [
     { name: 'Root', start: [0, 0.86, 0], end: [0, 1.15, 0] },
     { name: 'Spine', start: [0, 1.15, 0], end: [0, 1.3, 0] },
     { name: 'Spine1', start: [0, 1.3, 0], end: [0, 1.45, 0] },
     { name: 'Spine2', start: [0, 1.45, 0], end: [0, 1.6, 0] },
-    { name: 'LeftClavicle', start: [-0.1, 1.47, 0], end: [-(clavEnd + 0.02), 1.46, 0] },
-    { name: 'RightClavicle', start: [0.1, 1.47, 0], end: [clavEnd + 0.02, 1.46, 0] },
-    // Start upperarm inboard of the deltoid so sleeve verts bind primarily to
-    // the arm (tracks muscleMass) while still blending to clavicle at the cap.
-    { name: 'LeftUpperArm', start: [-armStart, 1.5, 0], end: [-0.66, 1.5, 0] },
-    { name: 'RightUpperArm', start: [armStart, 1.5, 0], end: [0.66, 1.5, 0] }
+    { name: 'LeftClavicle', start: [-0.1, 1.47, 0], end: [-reach, 1.46, 0] },
+    { name: 'RightClavicle', start: [0.1, 1.47, 0], end: [reach, 1.46, 0] },
+    // Upperarm proxy ends past the deltoid cap: sleeve verts beyond it bind
+    // clavicle-dominant and track shoulderWidth-driven deltoid slide as one
+    // unit with the deltoid meat (which is ~91% clavicle). The arm mesh
+    // itself keeps its own full-length segments, so muscle tracking is
+    // unaffected - static headroom covers thickness instead.
+    { name: 'LeftUpperArm', start: [-upperStart, 1.5, 0], end: [-upperEnd, 1.5, 0] },
+    { name: 'RightUpperArm', start: [upperStart, 1.5, 0], end: [upperEnd, 1.5, 0] }
   ]
   if (longSleeves) {
     segs.push(
@@ -242,8 +270,8 @@ export function buildTShirt(
 
   const clavEnd = 0.36 * shape.shoulderWidth
   const armStart = sleeveArmStart(shape)
-  const sleeves = shortSleeves(shape, armStart)
-  return bindTop([body, ...sleeves], topSegments(clavEnd, armStart, false))
+  const { sleeves, outerX } = shortSleeves(shape, armStart)
+  return bindTop([body, ...sleeves], topSegments(clavEnd, armStart, false, outerX + 0.03))
 }
 
 /** Inboard sleeve start so the open ring tucks under the body shell. */
@@ -251,8 +279,11 @@ function sleeveArmStart(shape: BodyShape): number {
   const deltoidCx = 0.36 * shape.shoulderWidth + 0.005
   // Open ring must sit inside the body shell half-width at shoulder height
   // (~0.283 * shoulderWidth) so the tube tucks under cloth, not float outside.
+  // Tucked DEEP (10cm margin): under shoulderWidth morph the clavicle-bound
+  // ring slides outboard, and a shallow tuck exits the shell edge leaving an
+  // armpit sliver. The extra hidden tube stays inside the torso volume.
   const bodyHalfShoulder = 0.283 * shape.shoulderWidth + CLOTH_OFFSET
-  return Math.max(0.2, Math.min(deltoidCx - 0.095 - CLOTH_OFFSET, bodyHalfShoulder - 0.005))
+  return Math.max(0.2, Math.min(deltoidCx - 0.095 - CLOTH_OFFSET, bodyHalfShoulder - 0.1))
 }
 
 /**
@@ -261,14 +292,35 @@ function sleeveArmStart(shape: BodyShape): number {
  * height → Y. Muscle headroom covers upperarm xz bone scale out-growing
  * a clavicle-weighted sleeve ring.
  */
-function shortSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[] {
+function shortSleeves(
+  shape: BodyShape,
+  armStart: number
+): { sleeves: THREE.BufferGeometry[]; outerX: number } {
   const clavEnd = 0.36 * shape.shoulderWidth
   const deltoidCx = clavEnd + 0.005
   const deltoidCy = 1.465
-  const shoulderHalfY = 0.115 + CLOTH_OFFSET * 1.5
-  const shoulderHalfZ = 0.1 + CLOTH_OFFSET * 1.5
-  const sleeveLen = 0.58
+  const shoulderHalfY = 0.125 + CLOTH_OFFSET
+  const shoulderHalfZ = 0.115 + CLOTH_OFFSET
+  const sleeveLen = 0.62
   const upperArmR = 0.075 * MUSCLE_HEADROOM + CLOTH_OFFSET
+  // Cuff flares slightly past the morphed deltoid cap (shoulderWidth slide
+  // outruns the half-clavicle-bound outer ring at extreme combos).
+  const cuffR = upperArmR + 0.015
+  // Outer edge clears the morphed deltoid pole: the pole outruns the
+  // half-tracked cuff by ~0.4x slide, so rest margin must exceed that.
+  // Shape-relative (no fixed floor beyond the 0.62 style length).
+  const outerX = Math.max(sleeveLen, deltoidCx + 0.19)
+  // Cuff mouth clears the morphed deltoid cap radially: the ball sits
+  // high/forward in the opening at extreme combos.
+  const mouthR = cuffR + 0.02
+  // Mid-cap ring: the displaced deltoid ball (lower-outer quadrant) hangs
+  // below the slim arm tube, so the cap stays fat past deltoid center.
+  const midX = deltoidCx + 0.12
+  // Inboard ring runs slightly large: it lives hidden under the shell, and
+  // the extra margin covers the armpit corner where shell edge meets sleeve
+  // under opposing morph shear (skinny + wide slide).
+  const inHalfY = shoulderHalfY + 0.02
+  const inHalfZ = shoulderHalfZ + 0.02
   const sleeves: THREE.BufferGeometry[] = []
   for (const side of [-1, 1] as const) {
     sleeves.push(
@@ -277,19 +329,25 @@ function shortSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[
           {
             // Inboard of the deltoid so the open ring tucks under the body shell.
             center: [side * armStart, deltoidCy, 0],
-            width: shoulderHalfZ * 2,
-            height: shoulderHalfY * 2
+            width: inHalfZ * 2,
+            height: inHalfY * 2
           },
           {
-            // Over the deltoid center — full Y/Z to contain the cap.
+            // Over the deltoid center - full Y/Z to contain the cap.
             center: [side * deltoidCx, deltoidCy, 0],
             width: shoulderHalfZ * 2,
             height: shoulderHalfY * 2
           },
           {
-            center: [side * Math.max(sleeveLen, deltoidCx + 0.1), 1.495, 0],
-            width: (upperArmR + 0.01) * 2,
-            height: (upperArmR + 0.01) * 2
+            // Past the deltoid cap - keeps the slid ball inside the fat zone.
+            center: [side * midX, deltoidCy, 0],
+            width: shoulderHalfZ * 2,
+            height: shoulderHalfY * 2
+          },
+          {
+            center: [side * outerX, 1.495, 0],
+            width: (mouthR + 0.01) * 2,
+            height: (mouthR + 0.01) * 2
           }
         ],
         14,
@@ -298,7 +356,7 @@ function shortSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[
       )
     )
   }
-  return sleeves
+  return { sleeves, outerX }
 }
 
 /** Full-length arm tubes from deltoid to wrist, tracking arm radii. */
@@ -306,9 +364,13 @@ function longSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[]
   const clavEnd = 0.36 * shape.shoulderWidth
   const deltoidCx = clavEnd + 0.005
   const deltoidCy = 1.465
-  const shoulderHalfY = 0.115 + CLOTH_OFFSET * 1.5
-  const shoulderHalfZ = 0.1 + CLOTH_OFFSET * 1.5
+  const shoulderHalfY = 0.125 + CLOTH_OFFSET
+  const shoulderHalfZ = 0.115 + CLOTH_OFFSET
   const r = (armR: number): number => armR * MUSCLE_HEADROOM + CLOTH_OFFSET
+  // Inboard ring runs large (hidden under shell): covers the armpit corner
+  // where shell edge meets sleeve under opposing morph shear.
+  const inHalfY = shoulderHalfY + 0.02
+  const inHalfZ = shoulderHalfZ + 0.02
   const sleeves: THREE.BufferGeometry[] = []
   for (const side of [-1, 1] as const) {
     const s = side
@@ -317,11 +379,18 @@ function longSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[]
         [
           {
             center: [s * armStart, deltoidCy, 0],
-            width: shoulderHalfZ * 2,
-            height: shoulderHalfY * 2
+            width: inHalfZ * 2,
+            height: inHalfY * 2
           },
           {
             center: [s * deltoidCx, deltoidCy, 0],
+            width: shoulderHalfZ * 2,
+            height: shoulderHalfY * 2
+          },
+          // Past the deltoid cap: the slid ball's lower-outer quadrant hangs
+          // below the slim arm tube (mid-cap ring, same as short sleeves).
+          {
+            center: [s * (deltoidCx + 0.12), deltoidCy, 0],
             width: shoulderHalfZ * 2,
             height: shoulderHalfY * 2
           },
@@ -371,7 +440,7 @@ export function buildLongsleeve(
   const clavEnd = 0.36 * shape.shoulderWidth
   const armStart = sleeveArmStart(shape)
   const sleeves = longSleeves(shape, armStart)
-  return bindTop([body, ...sleeves], topSegments(clavEnd, armStart, true))
+  return bindTop([body, ...sleeves], topSegments(clavEnd, armStart, true, clavEnd + 0.105))
 }
 
 /** Tank top: torso shell + shoulder straps, no sleeves. */
@@ -436,7 +505,10 @@ export function buildJacket(
   const clavEnd = 0.36 * shape.shoulderWidth
   const armStart = sleeveArmStart(shape)
   const sleeves = longSleeves(shape, armStart)
-  return bindTop([body, collarRing(), ...sleeves], topSegments(clavEnd, armStart, true))
+  return bindTop(
+    [body, collarRing(), ...sleeves],
+    topSegments(clavEnd, armStart, true, clavEnd + 0.105)
+  )
 }
 
 /** Open-front vest: partial torso shell, sleeveless, no collar. */
@@ -479,8 +551,11 @@ export function buildPolo(
   const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
   const clavEnd = 0.36 * shape.shoulderWidth
   const armStart = sleeveArmStart(shape)
-  const sleeves = shortSleeves(shape, armStart)
-  return bindTop([body, collarRing(), ...sleeves], topSegments(clavEnd, armStart, false))
+  const { sleeves, outerX } = shortSleeves(shape, armStart)
+  return bindTop(
+    [body, collarRing(), ...sleeves],
+    topSegments(clavEnd, armStart, false, outerX + 0.03)
+  )
 }
 
 // ---------------------------------------------------------------------------
@@ -492,9 +567,13 @@ function bellSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[]
   const clavEnd = 0.36 * shape.shoulderWidth
   const deltoidCx = clavEnd + 0.005
   const deltoidCy = 1.465
-  const shoulderHalfY = 0.115 + CLOTH_OFFSET * 1.5
-  const shoulderHalfZ = 0.1 + CLOTH_OFFSET * 1.5
+  const shoulderHalfY = 0.125 + CLOTH_OFFSET
+  const shoulderHalfZ = 0.115 + CLOTH_OFFSET
   const r = (armR: number): number => armR * MUSCLE_HEADROOM + CLOTH_OFFSET
+  // Inboard ring runs large (hidden under shell): covers the armpit corner
+  // where shell edge meets sleeve under opposing morph shear.
+  const inHalfY = shoulderHalfY + 0.02
+  const inHalfZ = shoulderHalfZ + 0.02
   const sleeves: THREE.BufferGeometry[] = []
   for (const side of [-1, 1] as const) {
     const s = side
@@ -503,8 +582,8 @@ function bellSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[]
         [
           {
             center: [s * armStart, deltoidCy, 0],
-            width: shoulderHalfZ * 2,
-            height: shoulderHalfY * 2
+            width: inHalfZ * 2,
+            height: inHalfY * 2
           },
           {
             center: [s * deltoidCx, deltoidCy, 0],
@@ -567,7 +646,10 @@ export function buildMageRobe(
   const clavEnd = 0.36 * shape.shoulderWidth
   const armStart = sleeveArmStart(shape)
   const sleeves = bellSleeves(shape, armStart)
-  return bindTop([body, collarRing(), ...sleeves], topSegments(clavEnd, armStart, true))
+  return bindTop(
+    [body, collarRing(), ...sleeves],
+    topSegments(clavEnd, armStart, true, clavEnd + 0.105)
+  )
 }
 
 /** Lerp the torso profile width/depth at an arbitrary height. */
@@ -612,8 +694,8 @@ export function buildElvenTunic(
   )
   const clavEnd = 0.36 * shape.shoulderWidth
   const armStart = sleeveArmStart(shape)
-  const sleeves = shortSleeves(shape, armStart)
-  return bindTop([body, accent, ...sleeves], topSegments(clavEnd, armStart, false))
+  const { sleeves, outerX } = shortSleeves(shape, armStart)
+  return bindTop([body, accent, ...sleeves], topSegments(clavEnd, armStart, false, outerX + 0.03))
 }
 
 /**

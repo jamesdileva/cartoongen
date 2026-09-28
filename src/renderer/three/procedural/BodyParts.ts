@@ -28,7 +28,12 @@ export function buildHead(
   )
 
   const earGeo = makeEllipsoid(0.042, 0.07, 0.05, 10, 8)
-  const leftEar = translateGeometry(earGeo.clone(), -shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
+  const leftEar = translateGeometry(
+    earGeo.clone(),
+    -shape.headWidth * 0.92,
+    CRANIUM_CENTER_Y + 0.01,
+    -0.01
+  )
   const rightEar = translateGeometry(earGeo, shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
 
   const chinR = 0.07 * (1 - shape.jawChin) + 0.02
@@ -74,7 +79,10 @@ export function buildHead(
     { name: 'Neck', start: [0, 1.5, 0], end: [0, 1.73, 0] },
     { name: 'Head', start: [0, 1.73, 0], end: [0, 2.08, 0] }
   ]
-  const neckBinding = computeSkinBindings(neck.attributes.position.array as Float32Array, neckSegments)
+  const neckBinding = computeSkinBindings(
+    neck.attributes.position.array as Float32Array,
+    neckSegments
+  )
   applySkinAttributes(neck, neckBinding)
 
   const merged = mergeGeometries([skull, neck])
@@ -111,7 +119,8 @@ export function buildTorso(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
   bust = 0.15,
   butt = 0.2,
-  belly = 0.5
+  belly = 0.5,
+  muscle = 0.5
 ): {
   geometry: THREE.BufferGeometry
   segments: BoneSegment[]
@@ -127,9 +136,19 @@ export function buildTorso(
   })
   const tube = makeSweep(stations, 20)
 
+  // Deltoids grow/shrink with muscleMass (like bust/butt geometry dials) so
+  // the cap stays coherent with muscle-responsive sleeves in both directions:
+  // buff deltoids fill roomy sleeves, skinny deltoids stay inside shrunken
+  // ones. Neutral (1.0) at the default morph value.
+  const deltScale = 0.9 + 0.2 * muscle
   const clavEnd = 0.36 * shape.shoulderWidth
-  const deltoidGeo = makeEllipsoid(0.095, 0.115, 0.1, 16, 12)
-  const leftDeltoid = translateGeometry(deltoidGeo.clone(), -(clavEnd + 0.005), CLAVICLE_Y - 0.005, 0)
+  const deltoidGeo = makeEllipsoid(0.095 * deltScale, 0.115 * deltScale, 0.1 * deltScale, 16, 12)
+  const leftDeltoid = translateGeometry(
+    deltoidGeo.clone(),
+    -(clavEnd + 0.005),
+    CLAVICLE_Y - 0.005,
+    0
+  )
   const rightDeltoid = translateGeometry(deltoidGeo, clavEnd + 0.005, CLAVICLE_Y - 0.005, 0)
 
   const pelvisGeo = makeEllipsoid(0.32 * shape.hipWidth, 0.14, 0.23, 20, 14)
@@ -153,10 +172,29 @@ export function buildTorso(
   const buttBase = 0.055 * shape.hipWidth
   const buttR = buttBase + 0.065 * butt
   const buttGeo = makeEllipsoid(buttR * 1.15, buttR, buttR, 14, 10)
-  const leftButt = translateGeometry(buttGeo.clone(), -0.095 * shape.hipWidth, 0.925, -(0.13 + 0.055 * butt))
-  const rightButt = translateGeometry(buttGeo, 0.095 * shape.hipWidth, 0.925, -(0.13 + 0.055 * butt))
+  const leftButt = translateGeometry(
+    buttGeo.clone(),
+    -0.095 * shape.hipWidth,
+    0.925,
+    -(0.13 + 0.055 * butt)
+  )
+  const rightButt = translateGeometry(
+    buttGeo,
+    0.095 * shape.hipWidth,
+    0.925,
+    -(0.13 + 0.055 * butt)
+  )
 
-  const merged = mergeGeometries([tube, leftDeltoid, rightDeltoid, pelvis, leftBust, rightBust, leftButt, rightButt])
+  const merged = mergeGeometries([
+    tube,
+    leftDeltoid,
+    rightDeltoid,
+    pelvis,
+    leftBust,
+    rightBust,
+    leftButt,
+    rightButt
+  ])
   if (!merged) {
     throw new Error('buildTorso: mergeGeometries returned null')
   }

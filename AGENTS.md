@@ -2623,3 +2623,20 @@ extremities-beard/win-unpack-last per user lineup).
 
 Sprint 24 complete. Next: Sprint 25 - face accessories + more hats.
 
+---
+
+## Session 047 - Shoulder Poke Investigation + Fixes
+
+### Date
+
+2026-09-24
+
+### What we did
+
+User-reported minimal shoulder skin on some randomizes. Built a headless
+CPU-skinning repro (real skeleton + ProportionManager + raycast) and fixed
+the differential-tracking root causes: muscle headroom 1.3, clavicle
+capsule reach, cuff/mid-cap/tuck geometry, muscle-responsive deltoids.
+Full entry in worklog.md. 278 tests pass, probe green. Residual: single-
+digit grazes at double-extreme morph corners (documented).
+
