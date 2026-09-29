@@ -2699,3 +2699,37 @@ capsule reach, cuff/mid-cap/tuck geometry, muscle-responsive deltoids.
 Full entry in worklog.md. 278 tests pass, probe green. Residual: single-
 digit grazes at double-extreme morph corners (documented).
 
+---
+
+## Session 050 - Sprint 27: Plate Armour Set
+
+### Date
+
+2026-09-29
+
+### What we built
+
+Sprint 27 - cuirass (Plate Harness, `proc:plate`, shirt slot), plated legs
+(`proc:plate_legs`, pants slot), pivoted-visor armet (`proc:armet`, helmet
+slot, `full_face` + `hat` tags). 35 procedural assets total. Full entry in
+worklog.md.
+
+Plate reuses the torso-shell core (clearance free) + offset/ridge/
+pauldrons/gorget/faulds dressing; legs reuse `hipShellStations` +
+`FULL_LEG_STATIONS` muscle-tracking radii + knee cops + sabatons; armet
+grows off the cranium ellipsoid via `armetExtents`/`noseFrontZ`, Head-bound
+rigid, `face`-dependent. Face-hide mapping needed no code change
+(SlotManager + baseBodyFeatures + shell containment already cover it).
+Collar ring widened for max neckWidth.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 300 tests passing (294 + 5 Garments + 1 engine), probe ALL PASSED
+- Pushed as `cbdc8af` (probe PNGs stripped per code-only rule)
+
+### Current status
+
+Sprint 27 complete. Next: Sprint 28 - preset/outfit convergence (needs
+user confirmation on retiring `*-outfit` duplicates).
+

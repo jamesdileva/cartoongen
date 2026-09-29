@@ -5,6 +5,73 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 050 - Sprint 27: Plate Armour Set
+
+### Date
+
+2026-09-29
+
+### What we built
+
+Sprint 27 - the knight's armour: cuirass (Plate Harness, `shirt` slot),
+plated legs (Plate Legs, `pants` slot), and a pivoted-visor armet (`helmet`
+slot, `full_face` + `hat` tags). 35 assets total. No new slots, no rule
+changes, no pipeline touch.
+
+`buildPlate(shape, bust, belly, butt, topLength)` reuses the torso-shell
+core (`halfDForProfile`) so bust/belly/butt/topLength clearance comes free;
+dresses it into armour with: parallel offset +0.035 at hi-res 22-ring
+sweep, sternum ridge (profileAt-sampled plate over the chest front,
+grown past max bust), pauldron caps (overlapping ellipsoid pair per
+shoulder sized past max deltoid), a standing gorget collar (plate-height
+0.015-0.16 wedge, `face`-dependent), and faulds (3 descending hoops from
+the hip shell). Binds the torso chain; hem follows slits/gaps naturally.
+
+`buildPlateLegs(shape, butt, belly)` reuses `hipShellStations` for the
+tassets/hips and `FULL_LEG_STATIONS` radii as the muscle-tracking core,
+so cuisses follow thigh morphs automatically; adds knee cops (poleyns)
+and pointed sabaton toe caps sharing the boots profile.
+
+`buildArmet(shape, face)` + `armetExtents(shape, face)` grow a visor shell
+off the cranium ellipsoid (rx = W\*1.5+grow for nose-ahead of chin,
+ry = H\*1.15+grow to swallow forehead scars and the chin, rz = L\*1.6+grow
+anchored deeper than the nose tip) with a slit-guard floor past the eye
+line and a pivoted visor point. Head-bound rigid like all hats; carries
+`full_face` + `hat` so both full-helmet-hides-face and hat-hides-hair
+fire (engine test proves). `face`-dependent like the hood (follows
+nose/chin), tuck-end 1.63 caps the residual tuck chin/neck band gap.
+
+Face-hide mapping (the open question): `SlotManager.setSlotVisibility`
+already hides *attached* slots (glasses/mask), `baseBodyFeatures` covers
+procedural eyebrows/eyes, and the armet shell contains the cranium/face
+by construction - so no code change was needed. The `mouth` slot has no
+hide target in the engine and stays as-is (rules.json untouched).
+
+Sizing method: `noseFrontZ(shape)` (surface + nose projection, chin
+clamped) published the nose-vs-chin race that previously required pixel
+hunting - z-anchor `max(nose+0.035, chinDepth+0.02)` lands the shell
+between burial (nose+0.03) and gap (>nose+0.05), uniform 22-ring slice
+terminology throughout (equator/`phiEnd` caps / belt / brow / slit-guard).
+
+Also: shared `collarRing` widened (R 0.145 -> 0.155) so collars clear
+max neckWidth; plate legs tubes share `FULL_LEG_STATIONS` (muscle-track);
+sabaton profile shared via `waistDims`-style helper.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 300 tests passing (294 + 5 new Garments + 1 new engine), no regressions
+- probe:clearance ALL PASSED (plate shirt/deltoid bands, plate_legs
+  hip/leg bands, armet analytic containment on 5 shapes x 3 eye sizes)
+- Pushed as `cbdc8af` (probe PNG artifacts stripped per code-only rule)
+
+### Current status
+
+Sprint 27 complete. Next: Sprint 28 - preset/outfit convergence (needs
+user confirmation on retiring `*-outfit` duplicates).
+
+---
+
 ## Session 044 - Sprint 22: Tops Variety
 
 ### Date
