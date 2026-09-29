@@ -5,6 +5,48 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 051 - Sprint 28: Preset/Outfit Convergence
+
+### Date
+
+2026-09-29
+
+### What we built
+
+Sprint 28 - one click dresses a full character. The 5 base presets gained
+slots + `outfit: true` and the 3 `*-outfit` duplicates were retired:
+
+| Preset | Slots |
+|---|---|
+| Knight | shirt `proc:plate`, pants `proc:plate_legs`, helmet `proc:armet`, gloves `proc:gauntlets`, shoes `proc:boots` (full head-to-toe plate) |
+| Mage | shirt `proc:mage_robe`, pants/helmet `null` (explicit clear) |
+| Farmer | shirt `proc:tshirt`, pants `proc:jeans`, helmet `proc:cap` |
+| Rogue | shirt `proc:jacket`, pants `proc:tights`, helmet `proc:hood` |
+| Barbarian | shirt `null` (bare chest), pants `proc:shorts` |
+
+New `applyOutfit(dna, preset)` mutation (slots + colors only) + matching
+`useCharacterStore.applyOutfit` action. The randomizer's 25% outfit roll
+now uses it: base presets carry morphs, so a full `applyPreset` would
+have stomped the generated body - `applyOutfit` keeps morphs/bodyShape/
+face and only dresses the look. Panel clicks still use full `applyPreset`
+(proportions + palette + garments). PresetPanel drops from 8 cards to 5
+with no code change; plugin outfit presets flow through the same path.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 305 tests passing (300 + 3 applyOutfit + 1 store + 1 data-files), no regressions
+- probe N/A (no geometry changed); Garments outfit-resolve test now pins
+  the exact 5 outfit IDs; data-files pins convergence (5 presets, all
+  outfit, all with non-empty slots)
+- Pushed as `891290d`
+
+### Current status
+
+Sprint 28 complete. Next: Sprint 29 - win-unpack installer (last).
+
+---
+
 ## Session 050 - Sprint 27: Plate Armour Set
 
 ### Date

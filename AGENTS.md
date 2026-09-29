@@ -2733,3 +2733,30 @@ Collar ring widened for max neckWidth.
 Sprint 27 complete. Next: Sprint 28 - preset/outfit convergence (needs
 user confirmation on retiring `*-outfit` duplicates).
 
+---
+
+## Session 051 - Sprint 28: Preset/Outfit Convergence
+
+### Date
+
+2026-09-29
+
+### What we built
+
+Sprint 28 - 5 base presets gained slots + `outfit: true` (knight->full
+plate set, mage->robe, farmer->tee+jeans+cap, rogue->jacket+tights+hood,
+barbarian->bare+shorts); 3 `*-outfit` duplicates retired. New
+`applyOutfit` mutation + store action (slots+colors only) keeps the
+randomizer's outfit roll from stomping generated bodies. Full entry in
+worklog.md.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 305 tests passing (300 + 5 new), probe N/A (no geometry change)
+- Pushed as `891290d`
+
+### Current status
+
+Sprint 28 complete. Next: Sprint 29 - win-unpack installer (last).
+
