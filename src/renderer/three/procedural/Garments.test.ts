@@ -14,6 +14,10 @@ import {
   buildMageRobe,
   buildElvenTunic,
   buildDwarfVest,
+  buildPlate,
+  buildPlateLegs,
+  buildArmet,
+  armetExtents,
   buildCropHair,
   buildPonytail,
   buildMohawk,
@@ -100,9 +104,10 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 32 procedural entries with correct slots', () => {
+  it('exposes all 35 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
+      'proc:armet',
       'proc:baggy',
       'proc:beanie',
       'proc:boots',
@@ -124,6 +129,8 @@ describe('procedural asset catalog', () => {
       'proc:mask',
       'proc:mohawk',
       'proc:mustache',
+      'proc:plate',
+      'proc:plate_legs',
       'proc:polo',
       'proc:ponytail',
       'proc:shoes',
@@ -168,6 +175,10 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:goatee')?.slotId).toBe('beard')
     expect(entries.find((e) => e.id === 'proc:full_beard')?.slotId).toBe('beard')
     expect(entries.find((e) => e.id === 'proc:mustache')?.slotId).toBe('beard')
+    expect(entries.find((e) => e.id === 'proc:plate')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:plate_legs')?.slotId).toBe('pants')
+    expect(entries.find((e) => e.id === 'proc:armet')?.slotId).toBe('helmet')
+    expect(findProceduralAsset('proc:armet')?.materialId).toBe('metal')
     expect(findProceduralAsset('proc:ponytail')?.materialId).toBe('hair')
     expect(findProceduralAsset('proc:sunglasses')?.materialId).toBe('lens')
     expect(findProceduralAsset('proc:tshirt')?.label).toBe('T-Shirt')
@@ -202,15 +213,17 @@ describe('procedural asset catalog', () => {
       'proc:mage_robe',
       'proc:elven_tunic',
       'proc:dwarf_vest',
+      'proc:plate',
       'proc:jeans',
       'proc:shorts',
       'proc:baggy',
-      'proc:tights'
+      'proc:tights',
+      'proc:plate_legs'
     ]) {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
       expect(garmentDependsOnKey(id, 'head')).toBe(false)
     }
-    for (const id of ['proc:beanie', 'proc:cap', 'proc:sombrero', 'proc:tophat']) {
+    for (const id of ['proc:beanie', 'proc:cap', 'proc:sombrero', 'proc:tophat', 'proc:armet']) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
@@ -1088,6 +1101,70 @@ describe('hair', () => {
   it('long fall reaches mid-back', () => {
     const box = yExtent(buildLongHair().geometry)
     expect(box.min).toBeLessThan(1.15)
+  })
+})
+
+describe('plate armour', () => {
+  it('binds cuirass to torso chains and legs to leg chains', () => {
+    const { boneNames: topNames } = buildPlate()
+    expect(topNames).toContain('Root')
+    expect(topNames).toContain('Spine1')
+    expect(topNames).toContain('LeftClavicle')
+    const { boneNames: legNames } = buildPlateLegs()
+    expect(legNames).toEqual([
+      'Root',
+      'Spine',
+      'LeftUpperLeg',
+      'LeftCalf',
+      'RightUpperLeg',
+      'RightCalf'
+    ])
+    const { boneNames: helmNames } = buildArmet()
+    expect(helmNames).toEqual(['Head'])
+  })
+
+  it('produces normalized weights with x symmetry', () => {
+    for (const build of [buildPlate, buildPlateLegs, buildArmet]) {
+      const { geometry } = build()
+      expect(weightSumViolations(geometry)).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
+    }
+  })
+
+  it('pauldrons clear the deltoid meat', () => {
+    const ext = xExtent(buildPlate().geometry)
+    // Deltoid outer reaches ~0.46 at rest; pauldron must exceed it.
+    expect(ext.max).toBeGreaterThan(0.46)
+  })
+
+  it('armet contains cranium top, nose tip, and chin', () => {
+    for (const shape of [
+      DEFAULT_BODY_SHAPE,
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.28, headLength: 0.32 }
+    ]) {
+      for (const noseSize of [0.6, 1, 1.6]) {
+        const face = { ...DEFAULT_FACE_SHAPE, noseSize }
+        const e = armetExtents(shape, face)
+        const inside = (x: number, y: number, z: number): boolean => {
+          const nx = (x - e.cx) / e.rx
+          const ny = (y - e.cy) / e.ry
+          const nz = (z - e.cz) / e.rz
+          return nx * nx + ny * ny + nz * nz < 1
+        }
+        const top = 1.86 + shape.headHeight
+        expect(inside(0, top, 0.005), 'cranium top').toBe(true)
+        const noseY = 1.86 - shape.headHeight * 0.15
+        expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + 0.03 * noseSize), 'nose tip').toBe(true)
+        expect(inside(0, 1.66, 0.1), 'chin').toBe(true)
+      }
+    }
+  })
+
+  it('armet carries full_face and hat tags', () => {
+    const def = findProceduralAsset('proc:armet')
+    expect(def?.tags).toContain('full_face')
+    expect(def?.tags).toContain('hat')
   })
 })
 

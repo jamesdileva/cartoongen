@@ -146,6 +146,31 @@ describe('evaluateRules', () => {
     }
   })
 
+  it('armet hides face slots via full_face tag (default rules)', async () => {
+    const rulesJson = await import('../data/rules.json')
+    const rules = rulesJson.default as Rule[]
+    const procTags = (id: string): string[] | undefined => {
+      const tags: Record<string, string[]> = {
+        'proc:armet': ['helmet', 'full_face', 'hat', 'procedural'],
+        'proc:long_hair': ['hair', 'procedural']
+      }
+      return tags[id]
+    }
+    let dna = createDNA('Test')
+    dna = setSlot(dna, 'helmet', 'proc:armet')
+    dna = setSlot(dna, 'hair', 'proc:long_hair')
+    const results = evaluateRules(dna, rules, procTags)
+    // full-helmet-hides-face: eyebrows, eyes, mouth
+    for (const slot of ['eyebrows', 'eyes', 'mouth']) {
+      expect(
+        results.some((r) => r.type === 'hide' && r.slotId === slot),
+        `armet hides ${slot}`
+      ).toBe(true)
+    }
+    // hat tag on the armet also hides the hair
+    expect(results.some((r) => r.type === 'hide' && r.slotId === 'hair')).toBe(true)
+  })
+
   it('produces warn results correctly', () => {
     const warnRule: Rule = {
       id: 'test-warn',

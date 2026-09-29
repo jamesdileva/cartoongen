@@ -15,6 +15,10 @@ import {
   buildMageRobe,
   buildElvenTunic,
   buildDwarfVest,
+  buildPlate,
+  buildPlateLegs,
+  buildArmet,
+  armetExtents,
   buildCropHair,
   buildPonytail,
   buildMohawk,
@@ -193,7 +197,8 @@ const pantsBuilders = {
   jeans: (shape: BodyShape, butt: number, belly: number) => buildJeans(shape, butt, belly),
   shorts: (shape: BodyShape, butt: number, belly: number) => buildShorts(shape, butt, belly),
   baggy: (shape: BodyShape, butt: number, belly: number) => buildBaggy(shape, butt, belly),
-  tights: (shape: BodyShape, butt: number, belly: number) => buildTights(shape, butt, belly)
+  tights: (shape: BodyShape, butt: number, belly: number) => buildTights(shape, butt, belly),
+  plate_legs: (shape: BodyShape, butt: number, belly: number) => buildPlateLegs(shape, butt, belly)
 } as const
 
 const hairBuilders = {
@@ -216,6 +221,8 @@ const shirtBuilders = {
     buildVest(shape, bust, belly, butt, topLength),
   polo: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
     buildPolo(shape, bust, belly, butt, topLength),
+  plate: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildPlate(shape, bust, belly, butt, topLength),
   mage_robe: (shape: BodyShape, bust: number, belly: number, butt: number, _topLength: number) =>
     buildMageRobe(shape, bust, belly, butt),
   elven_tunic: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
@@ -337,7 +344,7 @@ for (const { name, shape } of shapes) {
             }
           }
 
-          for (const shirtName of ['tshirt', 'longsleeve', 'jacket', 'polo'] as const) {
+          for (const shirtName of ['tshirt', 'longsleeve', 'jacket', 'polo', 'plate'] as const) {
             const shirt = shirtBuilders[shirtName](shape, bust, belly, butt, topLength).geometry
             const clavEnd = 0.36 * shape.shoulderWidth
             report(
@@ -483,7 +490,10 @@ for (const { name, shape } of headShapes) {
       cap: { kind: 'ellipsoid', rx: W + 0.015, ry: capRy, rz: L + 0.015, cy: capCy },
       sombrero: { kind: 'ellipsoid', rx: W + 0.015, ry: H * 1.15 + 0.01, rz: L + 0.015, cy: 1.86 },
       tophat: { kind: 'cylinder', rx: W + 0.015, ry: 0.22, rz: W + 0.015, cy: rim + 0.11 },
-      hood: { kind: 'ellipsoid', rx: W + 0.03, ry: H + 0.03, rz: L + 0.03, cy: 1.86, gap: 0.85 }
+      hood: { kind: 'ellipsoid', rx: W + 0.03, ry: H + 0.03, rz: L + 0.03, cy: 1.86, gap: 0.85 },
+      // Armet matches the builder dims: rx from armetExtents, grown to clear
+      // the nose ahead of the chin by design (grow only Z here).
+      armet: { kind: 'ellipsoid', rx: W * 1.5 + 0.035, ry: H * 1.15 + 0.04, rz: L * 1.6 + 0.05, cy: 1.86 }
     }
     for (const [hatName, solid] of Object.entries(solids)) {
       let pokes = 0

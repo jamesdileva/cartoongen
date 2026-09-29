@@ -419,9 +419,9 @@ function longSleeves(shape: BodyShape, armStart: number): THREE.BufferGeometry[]
   return sleeves
 }
 
-/** Collar ring standing at the neck base. */
+/** Collar ring standing at the neck base. Sized past max neckWidth. */
 function collarRing(): THREE.BufferGeometry {
-  const collar = new THREE.TorusGeometry(0.145, 0.03, 10, 24)
+  const collar = new THREE.TorusGeometry(0.155, 0.03, 10, 24)
   collar.rotateX(Math.PI / 2)
   collar.translate(0, 1.575, 0.005)
   return collar
@@ -1470,6 +1470,159 @@ export function buildMustache(
   return bindHat([arc])
 }
 
+// ---------------------------------------------------------------------------
+// Plate armour (Sprint 27). Single-slot harness pieces in metal: cuirass +
+// pauldrons + gorget (shirt), full leg harness (pants), closed armet
+// (helmet, full_face tag so the dormant face-hiding rules fire live).
+// ---------------------------------------------------------------------------
+
+/**
+ * Plate cuirass: torso shell + sternum ridge + fauld flare + pauldron caps
+ * + gorget collar. Merged into one shirt-slot asset (slots hold one asset).
+ */
+export function buildPlate(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const bellyScale = bellyScaleOf(belly)
+  const { stations, phiStart, phiLength } = torsoShellStations(
+    shape,
+    bust,
+    belly,
+    butt,
+    hemYOf(topLength)
+  )
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  // Sternum ridge riding the chest tube surface (belly-scaled at waist).
+  const ridgeZ = (y: number): number => {
+    const d = profileAt(shape, y).d * (y >= 1.0 && y <= 1.18 ? bellyScale : 1)
+    return d + CLOTH_OFFSET + 0.015
+  }
+  const ridge = makeSweep(
+    [
+      { center: [0, 1.5, ridgeZ(1.5)], width: 0.05, height: 0.05 },
+      { center: [0, 1.3, ridgeZ(1.3)], width: 0.05, height: 0.05 },
+      { center: [0, 1.1, ridgeZ(1.1)], width: 0.045, height: 0.045 }
+    ],
+    10
+  )
+  // Faulds: hip shell stations flared past the seat.
+  const { stations: hipStations, pelvisHalfW, hipHalfD } = hipShellStations(shape, butt, belly)
+  const faulds = makeSweep(
+    [
+      hipStations[0],
+      hipStations[1],
+      hipStations[2],
+      {
+        center: [0, 0.8, 0],
+        width: (pelvisHalfW + 0.03) * 2,
+        height: (hipHalfD + 0.03) * 2
+      }
+    ],
+    20
+  )
+  // Pauldrons: deltoid caps larger than max-muscle meat + gorget collar.
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const pauldrons: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const cap = makeEllipsoid(0.13, 0.15, 0.125, 16, 12)
+    translateGeometry(cap, side * (clavEnd + 0.005), 1.47, 0)
+    pauldrons.push(cap)
+  }
+  const gorget = new THREE.TorusGeometry(0.16, 0.032, 10, 24)
+  gorget.rotateX(Math.PI / 2)
+  gorget.translate(0, 1.6, 0.005)
+  const armStart = sleeveArmStart(shape)
+  return bindTop(
+    [body, ridge, faulds, collarRing(), gorget, ...pauldrons],
+    topSegments(clavEnd, armStart, false, clavEnd + 0.15)
+  )
+}
+
+/**
+ * Plate legs: hip shell + thigh cuisses + knee cops + shin greaves to the
+ * ankle. Boots cover the feet below (separate slot, no conflict).
+ */
+export function buildPlateLegs(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const { stations } = hipShellStations(shape, butt, belly)
+  const hip = makeSweep(stations, 20)
+  // Plate stands a centimeter proud of cloth dims but shares the
+  // muscle-tracking leg tubes, so cuisses follow thigh morphs.
+  const legs: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const s = side
+    legs.push(
+      makeSweep(
+        FULL_LEG_STATIONS.map(({ y, r }) => ({
+          center: [s * 0.18, y, 0] as [number, number, number],
+          width: (r * MUSCLE_HEADROOM + CLOTH_OFFSET + 0.01) * 2,
+          height: (r * MUSCLE_HEADROOM + CLOTH_OFFSET + 0.01) * 2
+        })),
+        14,
+        false,
+        true
+      )
+    )
+    // Knee cop (poleyn) over the knee bulge.
+    const knee = new THREE.SphereGeometry(1, 14, 10)
+    knee.scale(0.095, 0.095, 0.095)
+    knee.translate(s * 0.18, 0.5, 0.045)
+    legs.push(knee)
+  }
+  return bindPants([hip, ...legs])
+}
+
+/** Nose tip front for armet clearance (mirrors buildFace nose). */
+function noseFrontZ(shape: BodyShape, face: FaceShape): number {
+  const noseWorldY = CRANIUM_CENTER_Y - shape.headHeight * 0.15
+  return surfaceZ(shape, 0, noseWorldY) + 0.03 * face.noseSize
+}
+
+/** Armet extents (single source for builder, probe, and tests). */
+export function armetExtents(
+  shape: BodyShape,
+  face: FaceShape
+): { cx: number; cy: number; cz: number; rx: number; ry: number; rz: number } {
+  const front = noseFrontZ(shape, face) + 0.04
+  const rear = CRANIUM_CENTER_Z - shape.headLength - 0.04
+  const top = CRANIUM_CENTER_Y + shape.headHeight + 0.05
+  const bottom = 1.56
+  return {
+    cx: 0,
+    cy: (top + bottom) / 2,
+    cz: (front + rear) / 2,
+    rx: shape.headWidth + 0.05,
+    ry: (top - bottom) / 2,
+    rz: (front - rear) / 2
+  }
+}
+
+/**
+ * Closed armet: full ellipsoid helm containing skull, face, and chin.
+ * Opaque by construction, so the hidden face needs no visibility work.
+ * Tagged full_face (hides procedural features via rules) + hat (hides hair).
+ */
+export function buildArmet(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const e = armetExtents(shape, face)
+  const helm = new THREE.SphereGeometry(1, 28, 20)
+  helm.scale(e.rx, e.ry, e.rz)
+  helm.translate(e.cx, e.cy, e.cz)
+  // Comb ridge along the crown.
+  const comb = new THREE.BoxGeometry(0.03, 0.06, 0.3)
+  comb.translate(0, e.cy + e.ry - 0.01, e.cz)
+  return bindHat([helm, comb])
+}
+
 export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
   {
     id: 'proc:tshirt',
@@ -1853,6 +2006,46 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const face = sanitizeFaceShape(dna.face)
       return buildMustache(shape, face)
     }
+  },
+  {
+    id: 'proc:plate',
+    slotId: 'shirt',
+    label: 'Plate Harness',
+    tags: ['shirt', 'armour', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildPlate(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:plate_legs',
+    slotId: 'pants',
+    label: 'Plate Legs',
+    tags: ['pants', 'armour', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      return buildPlateLegs(shape, butt, belly)
+    }
+  },
+  {
+    id: 'proc:armet',
+    slotId: 'helmet',
+    label: 'Armet',
+    tags: ['helmet', 'full_face', 'hat', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildArmet(shape, face)
+    }
   }
 ]
 
@@ -1886,15 +2079,17 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
     assetId === 'proc:mage_robe' ||
     assetId === 'proc:elven_tunic' ||
     assetId === 'proc:dwarf_vest' ||
+    assetId === 'proc:plate' ||
     assetId === 'proc:jeans' ||
     assetId === 'proc:shorts' ||
     assetId === 'proc:baggy' ||
-    assetId === 'proc:tights'
+    assetId === 'proc:tights' ||
+    assetId === 'proc:plate_legs'
   )
     return key === 'torso'
   if (assetId === 'proc:beanie' || assetId === 'proc:cap' || assetId === 'proc:sombrero')
     return key === 'head' || key === 'face'
-  if (assetId === 'proc:tophat') return key === 'head' || key === 'face'
+  if (assetId === 'proc:tophat' || assetId === 'proc:armet') return key === 'head' || key === 'face'
   if (assetId === 'proc:hood') return key === 'head'
   if (assetId === 'proc:sunglasses' || assetId === 'proc:goggles' || assetId === 'proc:mask')
     return key === 'head' || key === 'face'
