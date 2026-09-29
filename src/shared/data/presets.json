@@ -3,7 +3,15 @@
     "id": "knight",
     "name": "Knight",
     "description": "Steel armor, deep red cloth, and heroic proportions",
-    "icon": "\u2694\uFE0F",
+    "icon": "⚔️",
+    "outfit": true,
+    "slots": {
+      "shirt": "proc:plate",
+      "pants": "proc:plate_legs",
+      "helmet": "proc:armet",
+      "gloves": "proc:gauntlets",
+      "shoes": "proc:boots"
+    },
     "morphs": {
       "shoulderWidth": 0.8,
       "neckWidth": 0.7,
@@ -24,7 +32,9 @@
     "id": "mage",
     "name": "Mage",
     "description": "Mystical blues and purples with slender proportions",
-    "icon": "\uD83E\uDDD9",
+    "icon": "🧙",
+    "outfit": true,
+    "slots": { "shirt": "proc:mage_robe", "pants": null, "helmet": null },
     "morphs": { "shoulderWidth": 0.3, "neckWidth": 0.4, "height": 0.55, "headSize": 0.45 },
     "colors": {
       "cloth": "#6b3fa0",
@@ -39,7 +49,9 @@
     "id": "farmer",
     "name": "Farmer",
     "description": "Rustic earth tones and sturdy proportions",
-    "icon": "\uD83C\uDF3E",
+    "icon": "🌾",
+    "outfit": true,
+    "slots": { "shirt": "proc:tshirt", "pants": "proc:jeans", "helmet": "proc:cap" },
     "morphs": { "shoulderWidth": 0.6, "neckWidth": 0.5, "height": 0.4, "bellySize": 0.6 },
     "colors": {
       "cloth": "#8b4513",
@@ -54,7 +66,9 @@
     "id": "rogue",
     "name": "Rogue",
     "description": "Dark stealthy tones with lean proportions",
-    "icon": "\uD83D\uDDE1\uFE0F",
+    "icon": "🗡️",
+    "outfit": true,
+    "slots": { "shirt": "proc:jacket", "pants": "proc:tights", "helmet": "proc:hood" },
     "morphs": { "shoulderWidth": 0.4, "neckWidth": 0.3, "height": 0.45, "muscleMass": 0.35 },
     "colors": {
       "cloth": "#404040",
@@ -69,7 +83,9 @@
     "id": "barbarian",
     "name": "Barbarian",
     "description": "Fierce warm tones and powerful proportions",
-    "icon": "\uD83D\uDC7E",
+    "icon": "👺",
+    "outfit": true,
+    "slots": { "shirt": null, "pants": "proc:shorts" },
     "morphs": {
       "shoulderWidth": 1.0,
       "neckWidth": 0.9,
@@ -84,54 +100,6 @@
       "skin": "#c18f60",
       "hair": "#ff6600",
       "eye": "#4a7a4a"
-    }
-  },
-  {
-    "id": "mage-outfit",
-    "name": "Mage Outfit",
-    "description": "Floor-length robe with bell sleeves and arcane violet cloth",
-    "icon": "🔮",
-    "outfit": true,
-    "slots": { "shirt": "proc:mage_robe", "pants": null, "helmet": null },
-    "colors": {
-      "cloth": "#5b2d91",
-      "metal": "#c0c0c0",
-      "leather": "#3e2723",
-      "skin": "#fce4c8",
-      "hair": "#2a2038",
-      "eye": "#7a5ac8"
-    }
-  },
-  {
-    "id": "elven-outfit",
-    "name": "Elven Outfit",
-    "description": "Fitted woodland tunic with forest greens",
-    "icon": "🏹",
-    "outfit": true,
-    "slots": { "shirt": "proc:elven_tunic", "pants": "proc:tights", "helmet": null },
-    "colors": {
-      "cloth": "#2e6b34",
-      "metal": "#8a8a8a",
-      "leather": "#5d4037",
-      "skin": "#ffe0b0",
-      "hair": "#a08060",
-      "eye": "#6a9abc"
-    }
-  },
-  {
-    "id": "dwarven-outfit",
-    "name": "Dwarven Outfit",
-    "description": "Rugged leather vest and baggy work pants",
-    "icon": "⛏",
-    "outfit": true,
-    "slots": { "shirt": "proc:dwarf_vest", "pants": "proc:baggy", "helmet": null },
-    "colors": {
-      "cloth": "#6d4c41",
-      "metal": "#808080",
-      "leather": "#4e2a1a",
-      "skin": "#dbb080",
-      "hair": "#6e3a1a",
-      "eye": "#5a8a5a"
     }
   }
 ]

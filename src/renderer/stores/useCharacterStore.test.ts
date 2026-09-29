@@ -89,6 +89,29 @@ describe('useCharacterStore', () => {
     expect(state.present!.morphs.height).toBe(0.8)
   })
 
+  it('applyOutfit merges slots+colors, preserves morphs, stays undoable', () => {
+    useCharacterStore.getState().newCharacter('Test')
+    useCharacterStore.getState().setMorph('height', 0.7)
+    const preset: Preset = {
+      id: 'knight',
+      name: 'Knight',
+      description: '',
+      icon: 'test',
+      outfit: true,
+      slots: { shirt: 'proc:plate' },
+      morphs: { shoulderWidth: 0.8 },
+      colors: { cloth: '#cc0000' }
+    }
+    useCharacterStore.getState().applyOutfit(preset)
+    const state = useCharacterStore.getState()
+    expect(state.present!.slots.shirt).toBe('proc:plate')
+    expect(state.present!.colors.cloth).toBe('#cc0000')
+    expect(state.present!.morphs.height).toBe(0.7)
+    expect(state.present!.morphs).not.toHaveProperty('shoulderWidth')
+    useCharacterStore.getState().undo()
+    expect(useCharacterStore.getState().present!.slots.shirt).toBeUndefined()
+  })
+
   it('overwriteDNA replaces current DNA', () => {
     useCharacterStore.getState().newCharacter('Test')
     const newDna = {

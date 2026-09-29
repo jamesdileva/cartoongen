@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { createDNA, setSlot, setMorph, setColor, applyPreset } from './mutations'
+import { createDNA, setSlot, setMorph, setColor, applyPreset, applyOutfit } from './mutations'
 import { CURRENT_DNA_VERSION } from '../types/dna'
 import type { CharacterDNA } from '../types/dna'
 import type { Preset } from '../types/preset'
@@ -251,5 +251,51 @@ describe('applyPreset bodyShape', () => {
     })
     expect(result.bodyShape?.hipWidth).toBe(1.3)
     expect(result.bodyShape?.shoulderWidth).toBe(0.9)
+  })
+})
+
+describe('applyOutfit', () => {
+  const outfit: Preset = {
+    id: 'knight',
+    name: 'Knight',
+    description: '',
+    icon: '',
+    outfit: true,
+    slots: { shirt: 'proc:plate', pants: 'proc:plate_legs' },
+    morphs: { shoulderWidth: 0.8 },
+    colors: { cloth: '#cc0000' },
+    bodyShape: { shoulderWidth: 1.2 },
+    face: { noseSize: 1.5 }
+  }
+
+  it('merges slots and colors, preserves morphs/shape/face', () => {
+    let dna = setSlot(createDNA('Hero'), 'helmet', 'proc:cap')
+    dna = setMorph(dna, 'height', 0.7)
+    dna = { ...dna, bodyShape: { hipWidth: 1.3 }, face: { noseSize: 0.8 } }
+    const result = applyOutfit(dna, outfit)
+    expect(result.slots.shirt).toBe('proc:plate')
+    expect(result.slots.pants).toBe('proc:plate_legs')
+    expect(result.slots.helmet).toBe('proc:cap')
+    expect(result.colors.cloth).toBe('#cc0000')
+    expect(result.morphs.height).toBe(0.7)
+    expect(result.morphs).not.toHaveProperty('shoulderWidth')
+    expect(result.bodyShape).toEqual({ hipWidth: 1.3 })
+    expect(result.face).toEqual({ noseSize: 0.8 })
+    expect(result).not.toBe(dna)
+  })
+
+  it('null slot entries undress that slot', () => {
+    const dna = setSlot(createDNA('Hero'), 'shirt', 'proc:tshirt')
+    const result = applyOutfit(dna, {
+      id: 'b', name: 'B', description: '', icon: '', slots: { shirt: null }
+    })
+    expect(result.slots.shirt).toBeNull()
+  })
+
+  it('handles outfit with no slots or colors gracefully', () => {
+    const dna = setSlot(createDNA('Hero'), 'hair', 'ponytail')
+    const result = applyOutfit(dna, { id: 'e', name: 'E', description: '', icon: '' })
+    expect(result.slots.hair).toBe('ponytail')
+    expect(result).not.toBe(dna)
   })
 })

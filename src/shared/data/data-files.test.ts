@@ -84,6 +84,20 @@ describe('presets.json', () => {
       expect(hasColors || hasMorphs).toBe(true)
     }
   })
+
+  it('Sprint 28 convergence: 5 slot-bearing outfits, no *-outfit duplicates', () => {
+    const ids = (presets as Array<{ id: string }>).map((p) => p.id).sort()
+    expect(ids).toEqual(['barbarian', 'farmer', 'knight', 'mage', 'rogue'])
+    for (const preset of presets as Array<{
+      id: string
+      outfit?: boolean
+      slots?: Record<string, string | null>
+    }>) {
+      expect(preset.outfit, preset.id).toBe(true)
+      expect(preset.slots, preset.id).toBeDefined()
+      expect(Object.keys(preset.slots ?? {}).length, preset.id).toBeGreaterThan(0)
+    }
+  })
 })
 
 describe('templates.json', () => {

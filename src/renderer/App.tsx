@@ -122,12 +122,13 @@ export default function App() {
     dna.slots.body = currentBody
     overwriteDNA(dna)
     // Occasionally dress the result in a complete outfit (slots + palette).
-    // Outfit presets define no morphs/shape, so the random body is preserved.
+    // applyOutfit preserves the random morphs/bodyShape/face; base presets
+    // carry morphs too, but those stay out of the random body.
     if (Math.random() < 0.25) {
       const outfits = useDataStore.getState().presets.filter((p) => p.outfit)
       if (outfits.length > 0) {
         const pick = outfits[Math.floor(Math.random() * outfits.length)]
-        useCharacterStore.getState().applyPreset(pick)
+        useCharacterStore.getState().applyOutfit(pick)
       }
     }
   }, [overwriteDNA])

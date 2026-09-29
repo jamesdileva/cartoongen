@@ -3,7 +3,7 @@ import { devtools } from 'zustand/middleware'
 import type { CharacterDNA } from '../../shared/types/dna'
 import type { Preset } from '../../shared/types/preset'
 import type { FaceShape } from '../../shared/types/faceShape'
-import { createDNA, setSlot, setMorph, setColor, setFace, applyPreset } from '../../shared/dna/mutations'
+import { createDNA, setSlot, setMorph, setColor, setFace, applyPreset, applyOutfit } from '../../shared/dna/mutations'
 
 interface CharacterState {
   past: CharacterDNA[]
@@ -26,6 +26,7 @@ interface CharacterState {
   setFace: (partial: Partial<FaceShape>) => void
 
   applyPreset: (preset: Preset) => void
+  applyOutfit: (preset: Preset) => void
   overwriteDNA: (dna: CharacterDNA) => void
 
   undo: () => void
@@ -150,6 +151,16 @@ export const useCharacterStore = create<CharacterState>()(
         const { present } = get()
         if (!present) return
         const newDna = applyPreset(present, preset)
+        set({
+          ...pushUndo(get()),
+          present: newDna
+        })
+      },
+
+      applyOutfit: (preset) => {
+        const { present } = get()
+        if (!present) return
+        const newDna = applyOutfit(present, preset)
         set({
           ...pushUndo(get()),
           present: newDna

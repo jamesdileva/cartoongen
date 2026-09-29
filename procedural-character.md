@@ -385,10 +385,10 @@ full-face rules fire live (eyebrows/eyes/mouth hide under armet).
 
 ### Sprint 28 - Preset/Outfit Convergence
 
-- [ ] Give the 5 base presets slots (knight->armour set, mage->robe,
+- [x] Give the 5 base presets slots (knight->armour set, mage->robe,
       farmer->tee+jeans+cap, rogue->jacket+tights+hood, barbarian->
       bare chest+shorts); retire the 3 *-outfit duplicates
-- [ ] Randomizer uses slot-bearing presets (outfit flag semantics)
+- [x] Randomizer uses slot-bearing presets (outfit flag semantics)
 
 **Acceptance**: One click on Knight dresses a full knight; PresetPanel
 stays tidy; no orphaned preset IDs.

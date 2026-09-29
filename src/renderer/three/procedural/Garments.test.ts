@@ -192,7 +192,14 @@ describe('procedural asset catalog', () => {
     const outfits = (
       presets as Array<{ id: string; outfit?: boolean; slots?: Record<string, string | null> }>
     ).filter((p) => p.outfit === true)
-    expect(outfits.length).toBeGreaterThanOrEqual(3)
+    // Sprint 28: the 5 base presets are the outfits; *-outfit duplicates retired.
+    expect(outfits.map((p) => p.id).sort()).toEqual([
+      'barbarian',
+      'farmer',
+      'knight',
+      'mage',
+      'rogue'
+    ])
     for (const preset of outfits) {
       expect(preset.slots, preset.id).toBeDefined()
       for (const assetId of Object.values(preset.slots ?? {})) {

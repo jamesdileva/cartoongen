@@ -73,3 +73,19 @@ export function applyPreset(dna: CharacterDNA, preset: Preset): CharacterDNA {
     metadata: { ...dna.metadata, modified: new Date().toISOString() }
   }
 }
+
+/**
+ * Applies only the wearable look (slots + palette) of a preset, preserving
+ * the body's morphs, shape, and face. Used by the randomizer's outfit roll
+ * so a dressed result keeps its generated body.
+ */
+export function applyOutfit(dna: CharacterDNA, preset: Preset): CharacterDNA {
+  const slots = preset.slots ? { ...dna.slots, ...preset.slots } : dna.slots
+  const colors = preset.colors ? { ...dna.colors, ...preset.colors } : dna.colors
+  return {
+    ...dna,
+    slots,
+    colors,
+    metadata: { ...dna.metadata, modified: new Date().toISOString() }
+  }
+}
