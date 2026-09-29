@@ -1480,6 +1480,12 @@ export function buildMustache(
  * Plate cuirass: torso shell + sternum ridge + fauld flare + pauldron caps
  * + gorget collar. Merged into one shirt-slot asset (slots hold one asset).
  */
+/**
+ * Plate cuirass v2 (Sprint 29): torso shell + sternum ridge + lame
+ * articulation + trim + fauld flare + 2-layer pauldrons + gorget +
+ * full arm harness (rerebraces + couters + vambraces meeting the
+ * gauntlet cuff). Merged into one shirt-slot asset (slots hold one asset).
+ */
 export function buildPlate(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
   bust = BUST_DEFAULT,
@@ -1488,12 +1494,13 @@ export function buildPlate(
   topLength = TOP_LENGTH_DEFAULT
 ): GarmentBuildResult {
   const bellyScale = bellyScaleOf(belly)
+  const hemY = hemYOf(topLength)
   const { stations, phiStart, phiLength } = torsoShellStations(
     shape,
     bust,
     belly,
     butt,
-    hemYOf(topLength)
+    hemY
   )
   const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
   // Sternum ridge riding the chest tube surface (belly-scaled at waist).
@@ -1508,6 +1515,30 @@ export function buildPlate(
       { center: [0, 1.1, ridgeZ(1.1)], width: 0.045, height: 0.045 }
     ],
     10
+  )
+  // Lame articulation: flared bands overlapping the waist + fauld tops.
+  // Each band is a short closed sweep standing proud of the shell below it.
+  const lameBand = (y: number, flare: number): THREE.BufferGeometry => {
+    const p = profileAt(shape, y)
+    const bellyK = y >= 1.0 && y <= 1.18 ? bellyScale : 1
+    const halfW = (p.w + CLOTH_OFFSET) * bellyK + flare
+    const halfD = (p.d + CLOTH_OFFSET) * bellyK + flare
+    return makeSweep(
+      [
+        { center: [0, y, 0], width: halfW * 2, height: halfD * 2 },
+        { center: [0, y + 0.055, 0], width: (halfW + 0.012) * 2, height: (halfD + 0.012) * 2 }
+      ],
+      20
+    )
+  }
+  // Hem + collar trim bands (same sweep-band pattern, tighter to the shell).
+  const hemStation = stations[0]
+  const hemTrim = makeSweep(
+    [
+      { center: [0, hemY + 0.005, 0], width: hemStation.width + 0.016, height: hemStation.height + 0.016 },
+      { center: [0, hemY + 0.05, 0], width: hemStation.width + 0.02, height: hemStation.height + 0.02 }
+    ],
+    20
   )
   // Faulds: hip shell stations flared past the seat.
   const { stations: hipStations, pelvisHalfW, hipHalfD } = hipShellStations(shape, butt, belly)
@@ -1524,21 +1555,63 @@ export function buildPlate(
     ],
     20
   )
-  // Pauldrons: deltoid caps larger than max-muscle meat + gorget collar.
+  // Pauldrons: two layered caps per shoulder, sized past max-muscle meat.
   const clavEnd = 0.36 * shape.shoulderWidth
   const pauldrons: THREE.BufferGeometry[] = []
   for (const side of [-1, 1] as const) {
-    const cap = makeEllipsoid(0.13, 0.15, 0.125, 16, 12)
-    translateGeometry(cap, side * (clavEnd + 0.005), 1.47, 0)
-    pauldrons.push(cap)
+    const inner = makeEllipsoid(0.13, 0.15, 0.125, 16, 12)
+    translateGeometry(inner, side * (clavEnd + 0.005), 1.47, 0)
+    pauldrons.push(inner)
+    const outer = makeEllipsoid(0.15, 0.14, 0.14, 16, 12)
+    translateGeometry(outer, side * (clavEnd + 0.075), 1.5, 0)
+    pauldrons.push(outer)
   }
   const gorget = new THREE.TorusGeometry(0.16, 0.032, 10, 24)
   gorget.rotateX(Math.PI / 2)
   gorget.translate(0, 1.6, 0.005)
+  // Arm harness: rerebrace tubes (deltoid -> elbow) + elbow couters +
+  // vambrace tubes (elbow -> wrist, tucking under the gauntlet cuff at 0.7).
+  // Proud of cloth dims (+0.012) with muscle headroom like sleeve tubes.
+  const armR = (r: number): number => r * MUSCLE_HEADROOM + CLOTH_OFFSET + 0.012
+  const arms: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const s = side
+    arms.push(
+      makeSweep(
+        [
+          { center: [s * (clavEnd - 0.05), 1.47, 0], width: 0.23, height: 0.24 },
+          { center: [s * (clavEnd + 0.12), 1.485, 0], width: armR(0.0625) * 2, height: armR(0.0625) * 2 },
+          { center: [s * 0.52, 1.495, 0], width: armR(0.058) * 2, height: armR(0.058) * 2 },
+          { center: [s * 0.64, 1.5, 0], width: armR(0.052) * 2, height: armR(0.052) * 2 }
+        ],
+        14,
+        false,
+        true
+      )
+    )
+    const couter = new THREE.SphereGeometry(1, 14, 10)
+    couter.scale(0.08, 0.08, 0.075)
+    couter.translate(s * 0.66, 1.5, 0.005)
+    arms.push(couter)
+    arms.push(
+      makeSweep(
+        [
+          { center: [s * 0.62, 1.5, 0], width: armR(0.052) * 2, height: armR(0.052) * 2 },
+          { center: [s * 0.72, 1.503, 0], width: armR(0.046) * 2, height: armR(0.046) * 2 },
+          { center: [s * 0.82, 1.506, 0], width: armR(0.04) * 2, height: armR(0.04) * 2 },
+          // Wrist end tucks inside the gauntlet cuff tube (half ~0.07).
+          { center: [s * 0.9, 1.508, 0], width: 0.11, height: 0.11 }
+        ],
+        14,
+        false,
+        true
+      )
+    )
+  }
   const armStart = sleeveArmStart(shape)
   return bindTop(
-    [body, ridge, faulds, collarRing(), gorget, ...pauldrons],
-    topSegments(clavEnd, armStart, false, clavEnd + 0.15)
+    [body, ridge, lameBand(1.02, 0.02), lameBand(1.1, 0.022), hemTrim, faulds, collarRing(), gorget, ...pauldrons, ...arms],
+    topSegments(clavEnd, armStart, true, clavEnd + 0.23)
   )
 }
 
@@ -1605,22 +1678,89 @@ export function armetExtents(
 }
 
 /**
- * Closed armet: full ellipsoid helm containing skull, face, and chin.
- * Opaque by construction, so the hidden face needs no visibility work.
- * Tagged full_face (hides procedural features via rules) + hat (hides hair).
+ * Closed armet v2 (Sprint 29): three ellipsoid shells with REAL gaps — a
+ * sight slit at eye level and a breath vent at mouth level. The hidden
+ * face behind the gaps reads dark, so the slits need no second material.
+ * Bevor ridge down the visor front, larger crest comb. Tagged full_face
+ * (hides procedural features via rules) + hat (hides hair).
  */
 export function buildArmet(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
-  face: FaceShape = DEFAULT_FACE_SHAPE
+  face: FaceShape = DEFAULT_FACE_SHAPE,
+  plume = false
 ): GarmentBuildResult {
   const e = armetExtents(shape, face)
-  const helm = new THREE.SphereGeometry(1, 28, 20)
-  helm.scale(e.rx, e.ry, e.rz)
-  helm.translate(e.cx, e.cy, e.cz)
-  // Comb ridge along the crown.
-  const comb = new THREE.BoxGeometry(0.03, 0.06, 0.3)
-  comb.translate(0, e.cy + e.ry - 0.01, e.cz)
-  return bindHat([helm, comb])
+  // Theta on the unit sphere for a world height (helm is a scaled sphere).
+  const thetaOf = (y: number): number =>
+    Math.acos(Math.max(-1, Math.min(1, (y - e.cy) / e.ry)))
+  const eyeY = CRANIUM_CENTER_Y + shape.headHeight * 0.12
+  const shell = (yTop: number, yBot: number): THREE.BufferGeometry => {
+    const t0 = thetaOf(yTop)
+    const g = new THREE.SphereGeometry(1, 28, 12, 0, Math.PI * 2, t0, thetaOf(yBot) - t0)
+    g.scale(e.rx, e.ry, e.rz)
+    g.translate(e.cx, e.cy, e.cz)
+    return g
+  }
+  const top = CRANIUM_CENTER_Y + shape.headHeight + 0.05
+  const mouthY = beardMouthY(shape, face)
+  const parts: THREE.BufferGeometry[] = [
+    // Crown: pole down past the brow, ending above the sight slit.
+    shell(top + 0.01, eyeY + 0.014),
+    // Visor: below the slit, ending above the breath vent.
+    shell(eyeY - 0.014, mouthY + 0.03),
+    // Bevor: below the vent, closing under the chin.
+    shell(mouthY + 0.012, 1.55)
+  ]
+  // Rear fillers: the sight/vent gaps are front-only (a real slit does not
+  // wrap the skull). Sphere phi puts +Z front at phi=PI/2; the filler is the
+  // complementary arc, extended slightly past the gap edges to overlap.
+  const filler = (yTop: number, yBot: number, halfAngle: number): THREE.BufferGeometry => {
+    const t0 = thetaOf(yTop)
+    const g = new THREE.SphereGeometry(
+      1, 20, 4, Math.PI / 2 + halfAngle, Math.PI * 2 - halfAngle * 2, t0, thetaOf(yBot) - t0
+    )
+    g.scale(e.rx, e.ry, e.rz)
+    g.translate(e.cx, e.cy, e.cz)
+    return g
+  }
+  parts.push(filler(eyeY + 0.02, eyeY - 0.02, 0.65))
+  parts.push(filler(mouthY + 0.036, mouthY + 0.006, 0.6))
+  // Bevor ridge: raised band down the visor front center.
+  const frontZ = (y: number): number => {
+    const k = Math.max(1 - ((y - e.cy) / e.ry) ** 2, 0.02)
+    return e.cz + e.rz * Math.sqrt(k)
+  }
+  const bevor = makeSweep(
+    [
+      { center: [0, eyeY - 0.03, frontZ(eyeY - 0.03) + 0.008], width: 0.045, height: 0.045 },
+      { center: [0, mouthY + 0.1, frontZ(mouthY + 0.1) + 0.008], width: 0.045, height: 0.045 },
+      { center: [0, mouthY + 0.045, frontZ(mouthY + 0.045) + 0.008], width: 0.04, height: 0.04 }
+    ],
+    10
+  )
+  parts.push(bevor)
+  // Crest comb along the crown, taller than the Sprint 27 nub.
+  const comb = new THREE.BoxGeometry(0.035, 0.09, 0.34)
+  comb.translate(0, e.cy + e.ry - 0.02, e.cz)
+  parts.push(comb)
+  if (plume) {
+    // Parade plume: swept feather-crest arcing back from the comb.
+    const plumeGeos: THREE.BufferGeometry[] = []
+    const steps = 6
+    for (let i = 0; i < steps; i++) {
+      const t = i / (steps - 1)
+      const seg = makeEllipsoid(0.028 - t * 0.008, 0.075 - t * 0.02, 0.05 - t * 0.012, 10, 8)
+      translateGeometry(
+        seg,
+        0,
+        e.cy + e.ry + 0.03 + Math.sin(t * Math.PI * 0.55) * 0.1,
+        e.cz + 0.1 - t * 0.3
+      )
+      plumeGeos.push(seg)
+    }
+    parts.push(...plumeGeos)
+  }
+  return bindHat(parts)
 }
 
 export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
@@ -2046,6 +2186,18 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const face = sanitizeFaceShape(dna.face)
       return buildArmet(shape, face)
     }
+  },
+  {
+    id: 'proc:plumed_armet',
+    slotId: 'helmet',
+    label: 'Plumed Armet',
+    tags: ['helmet', 'full_face', 'hat', 'plume', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildArmet(shape, face, true)
+    }
   }
 ]
 
@@ -2089,7 +2241,8 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
     return key === 'torso'
   if (assetId === 'proc:beanie' || assetId === 'proc:cap' || assetId === 'proc:sombrero')
     return key === 'head' || key === 'face'
-  if (assetId === 'proc:tophat' || assetId === 'proc:armet') return key === 'head' || key === 'face'
+  if (assetId === 'proc:tophat' || assetId === 'proc:armet' || assetId === 'proc:plumed_armet')
+    return key === 'head' || key === 'face'
   if (assetId === 'proc:hood') return key === 'head'
   if (assetId === 'proc:sunglasses' || assetId === 'proc:goggles' || assetId === 'proc:mask')
     return key === 'head' || key === 'face'

@@ -301,7 +301,7 @@ for (const { name, shape } of shapes) {
                 ...(openSide ? { zMax: 0.12 } : {})
               })
             )
-            if (shirtName === 'longsleeve' || shirtName === 'jacket' || shirtName === 'mage_robe') {
+            if (shirtName === 'longsleeve' || shirtName === 'jacket' || shirtName === 'mage_robe' || shirtName === 'plate') {
               report(
                 issues,
                 `${shirtName} arm`,

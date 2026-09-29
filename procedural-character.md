@@ -393,7 +393,68 @@ full-face rules fire live (eyebrows/eyes/mouth hide under armet).
 **Acceptance**: One click on Knight dresses a full knight; PresetPanel
 stays tidy; no orphaned preset IDs.
 
-### Sprint 29 - Win-Unpack Installer (last)
+### Sprint 29 - Knight Polish: Full Harness + Armet Pass
+
+- [ ] Plate v2 (`buildPlate`): rerebraces (upper-arm metal tubes) +
+      vambraces (forearm tubes meeting the gauntlet cuff), lame
+      articulation bands across cuirass waist + faulds, trim accents
+      (collar + hem bands), larger 2-layer pauldrons past max-muscle
+      deltoids
+- [ ] Armet pass: visor slit (dark inset), breath holes, bevor ridge,
+      larger crest comb; stays opaque + `full_face`/`hat`
+- [ ] Plumed armet as a separate helmet-slot style (`proc:plumed_armet`)
+
+**Acceptance**: Knight reads as armour at thumbnail distance; arms fully
+covered plate->gauntlet with no skin gaps on the morph grid (probe
+deltoid/arm bands); armet containment still green.
+
+### Sprint 30 - New Helmets: Sallet + Great Bascinet
+
+- [ ] `buildSallet` (sleek single-piece helm, `full_face`, elongated tail)
+      and `buildGreatBascinet` (rounded skull + pointed snout visor,
+      `full_face`); Head-bound rigid, `face`-dependent, `hat` tag
+- [ ] Knight preset keeps the armet default; randomizer pool grows by slot
+
+**Acceptance**: 3 distinct full-face helmets; containment green on 5 head
+shapes x 3 eye sizes (probe hat bands + analytic tests).
+
+### Sprint 31 - Clothing Breadth
+
+- [ ] Tops: sweater (high collar), belted tunic (+ belt torus), dress/skirt
+      (flared shell over hips), long coat, overalls
+- [ ] Lower body: kilt (open-front pleated shell), leggings
+- [ ] Hats: crown (band + spike cones), straw hat (wide brim + dome), circlet
+- [ ] Hair: bun, bob, pigtails, fade; beard: stubble; shoes: sandals;
+      gloves: bracers (forearm cuff)
+- [ ] All new assets flow into randomizer pools by slot automatically
+
+**Acceptance**: Every wearable slot has 3+ options; probe ALL PASSED with
+new bands per garment.
+
+### Sprint 32 - Empty Slots + Cape Rule Removal
+
+- [ ] `buildCape` (draped back shell, `cape` slot, Spine2-attached) +
+      `buildWings` (paired wing shells, `wings` slot)
+- [ ] Delete `heavy-armor-disables-cape` from `rules.json` so cape + heavy
+      armour combine freely; knight preset gains the cape by default
+- [ ] Engine test: plate + cape coexist with no disable result
+
+**Acceptance**: Cape + full plate equips cleanly with no warnings; wings
+attach to Spine2; rules suite still green (4 rules remain).
+
+### Sprint 33 - Face Style System (DNA v4)
+
+- [ ] `FaceShape` gains style IDs: `noseStyle` (button/pointed/broad),
+      `eyeStyle` (round/narrow/deep), `browStyle` (arc/straight/bushy),
+      `earStyle` (round/pointy)
+- [ ] `migration.ts` v3->v4 (styles default, existing faces unchanged);
+      `faceKeyOf` extended; `buildFace` branches per style; randomizer
+      picks coherent combos; PropertiesPanel gains a style row
+
+**Acceptance**: Style options per feature; old saves migrate silently;
+surface-projection placement holds per style; 310+ tests green.
+
+### Sprint 34 - Win-Unpack Installer (last)
 
 - [ ] electron-builder + win target + icon + `npm run dist`
 - [ ] Smoke-test the unpacked exe (launch, new character, randomize, export)

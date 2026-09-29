@@ -47,7 +47,7 @@ import {
 } from './Garments'
 import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
 import { DEFAULT_FACE_SHAPE } from '../../../shared/types/faceShape'
-import { surfaceZ } from './FaceFeatures'
+import { surfaceZ, CRANIUM_CENTER_Y } from './FaceFeatures'
 import type { CharacterDNA } from '../../../shared/types/dna'
 import { buildTorso } from './BodyParts'
 import { ProportionManager } from '../ProportionManager'
@@ -131,6 +131,7 @@ describe('procedural asset catalog', () => {
       'proc:mustache',
       'proc:plate',
       'proc:plate_legs',
+      'proc:plumed_armet',
       'proc:polo',
       'proc:ponytail',
       'proc:shoes',
@@ -230,7 +231,7 @@ describe('procedural asset catalog', () => {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
       expect(garmentDependsOnKey(id, 'head')).toBe(false)
     }
-    for (const id of ['proc:beanie', 'proc:cap', 'proc:sombrero', 'proc:tophat', 'proc:armet']) {
+    for (const id of ['proc:beanie', 'proc:cap', 'proc:sombrero', 'proc:tophat', 'proc:armet', 'proc:plumed_armet']) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
@@ -1172,6 +1173,65 @@ describe('plate armour', () => {
     const def = findProceduralAsset('proc:armet')
     expect(def?.tags).toContain('full_face')
     expect(def?.tags).toContain('hat')
+    const plumed = findProceduralAsset('proc:plumed_armet')
+    expect(plumed?.slotId).toBe('helmet')
+    expect(plumed?.materialId).toBe('metal')
+    expect(plumed?.tags).toContain('full_face')
+    expect(plumed?.tags).toContain('hat')
+  })
+
+  it('plate v2 binds the full arm chain and reaches the wrist', () => {
+    const { boneNames, geometry } = buildPlate()
+    expect(boneNames).toContain('LeftForearm')
+    expect(boneNames).toContain('RightForearm')
+    expect(weightSumViolations(geometry)).toBe(0)
+    const ext = xExtent(geometry)
+    // Vambrace runs to the wrist, tucking under the gauntlet cuff at 0.7+.
+    expect(ext.max).toBeGreaterThan(0.85)
+    expect(ext.min).toBeCloseTo(-ext.max, 3)
+  })
+
+  it('armet v2 has a real sight slit and breath vent (gaps, not paint)', () => {
+    const shape = DEFAULT_BODY_SHAPE
+    const face = DEFAULT_FACE_SHAPE
+    const { geometry } = buildArmet(shape, face)
+    const e = armetExtents(shape, face)
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+    const frontHit = (y: number): number | null => {
+      const ray = new THREE.Raycaster(new THREE.Vector3(0, y, 3), new THREE.Vector3(0, 0, -1))
+      const hits = ray.intersectObject(mesh)
+      return hits.length > 0 ? hits[0].point.z : null
+    }
+    const eyeY = CRANIUM_CENTER_Y + shape.headHeight * 0.12
+    // Through the slit: first hit is the rear interior, behind shell center.
+    const slitHit = frontHit(eyeY)
+    expect(slitHit, 'sight slit passes through').not.toBeNull()
+    expect(slitHit!).toBeLessThan(e.cz)
+    // Shell above and below the slit stops the ray at the front.
+    expect(frontHit(eyeY + 0.06)!).toBeGreaterThan(e.cz)
+    expect(frontHit(eyeY - 0.06)!).toBeGreaterThan(e.cz)
+    // Breath vent gap passes through; visor above it stops the ray.
+    // Vent spans (mouthY+0.012, mouthY+0.03); mouth anchors 2cm below the
+    // nose bottom edge (mirrors buildFace/beardMouthY anchoring).
+    const noseWorldY = CRANIUM_CENTER_Y - shape.headHeight * 0.15
+    const mouthY = noseWorldY - 0.05 * face.noseSize - 0.02
+    const ventHit = frontHit(mouthY + 0.021)
+    expect(ventHit, 'breath vent passes through').not.toBeNull()
+    expect(ventHit!).toBeLessThan(e.cz)
+    expect(frontHit(mouthY + 0.06)!).toBeGreaterThan(e.cz)
+  })
+
+  it('plumed armet shares extents and crests above the crown', () => {
+    const plain = buildArmet(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE).geometry
+    const plumed = buildArmet(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, true).geometry
+    const maxY = (g: THREE.BufferGeometry): number => {
+      const pos = g.attributes.position as THREE.BufferAttribute
+      let m = -Infinity
+      for (let i = 0; i < pos.count; i++) m = Math.max(m, pos.getY(i))
+      return m
+    }
+    expect(maxY(plumed)).toBeGreaterThan(maxY(plain) + 0.05)
+    expect(weightSumViolations(plumed)).toBe(0)
   })
 })
 
