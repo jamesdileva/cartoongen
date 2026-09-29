@@ -410,10 +410,12 @@ deltoid/arm bands); armet containment still green.
 
 ### Sprint 30 - New Helmets: Sallet + Great Bascinet
 
-- [ ] `buildSallet` (sleek single-piece helm, `full_face`, elongated tail)
+- [x] `buildSallet` (sleek single-piece helm, `full_face`, elongated tail)
       and `buildGreatBascinet` (rounded skull + pointed snout visor,
       `full_face`); Head-bound rigid, `face`-dependent, `hat` tag
-- [ ] Knight preset keeps the armet default; randomizer pool grows by slot
+- [x] Knight preset keeps the armet default; randomizer pool grows by slot
+- [x] Bonus: crusader `buildGreatHelm` (tapered bucket, front cross, real
+      slit + vent) + open-face `buildKettleHat` (brim + dome)
 
 **Acceptance**: 3 distinct full-face helmets; containment green on 5 head
 shapes x 3 eye sizes (probe hat bands + analytic tests).

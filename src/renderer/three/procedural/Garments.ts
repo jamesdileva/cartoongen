@@ -1658,11 +1658,63 @@ function noseFrontZ(shape: BodyShape, face: FaceShape): number {
   return surfaceZ(shape, 0, noseWorldY) + 0.03 * face.noseSize
 }
 
+/** Shared helm extents shape (single source for builder, probe, tests). */
+export interface HelmExtents {
+  cx: number
+  cy: number
+  cz: number
+  rx: number
+  ry: number
+  rz: number
+}
+
+/** Eye-line height shared by all closed helms (mirrors buildFace). */
+function helmEyeY(shape: BodyShape): number {
+  return CRANIUM_CENTER_Y + shape.headHeight * 0.12
+}
+
+/** Theta on the unit sphere for a world height (helm shells are scaled spheres). */
+function helmThetaOf(e: HelmExtents, y: number): number {
+  return Math.acos(Math.max(-1, Math.min(1, (y - e.cy) / e.ry)))
+}
+
+/** Ellipsoid shell band between two world heights. */
+function helmShell(e: HelmExtents, yTop: number, yBot: number): THREE.BufferGeometry {
+  const t0 = helmThetaOf(e, yTop)
+  const g = new THREE.SphereGeometry(1, 28, 12, 0, Math.PI * 2, t0, helmThetaOf(e, yBot) - t0)
+  g.scale(e.rx, e.ry, e.rz)
+  g.translate(e.cx, e.cy, e.cz)
+  return g
+}
+
+/**
+ * Rear filler closing a front-only gap. Sphere phi puts +Z front at
+ * phi=PI/2; the filler is the complementary arc, extended slightly past
+ * the gap edges to overlap (a real slit does not wrap the skull).
+ */
+function helmFiller(
+  e: HelmExtents,
+  yTop: number,
+  yBot: number,
+  halfAngle: number
+): THREE.BufferGeometry {
+  const t0 = helmThetaOf(e, yTop)
+  const g = new THREE.SphereGeometry(
+    1, 20, 4, Math.PI / 2 + halfAngle, Math.PI * 2 - halfAngle * 2, t0, helmThetaOf(e, yBot) - t0
+  )
+  g.scale(e.rx, e.ry, e.rz)
+  g.translate(e.cx, e.cy, e.cz)
+  return g
+}
+
+/** Front surface Z of a helm ellipsoid at height y (x=0 centerline). */
+function helmFrontZ(e: HelmExtents, y: number): number {
+  const k = Math.max(1 - ((y - e.cy) / e.ry) ** 2, 0.02)
+  return e.cz + e.rz * Math.sqrt(k)
+}
+
 /** Armet extents (single source for builder, probe, and tests). */
-export function armetExtents(
-  shape: BodyShape,
-  face: FaceShape
-): { cx: number; cy: number; cz: number; rx: number; ry: number; rz: number } {
+export function armetExtents(shape: BodyShape, face: FaceShape): HelmExtents {
   const front = noseFrontZ(shape, face) + 0.04
   const rear = CRANIUM_CENTER_Z - shape.headLength - 0.04
   const top = CRANIUM_CENTER_Y + shape.headHeight + 0.05
@@ -1690,51 +1742,25 @@ export function buildArmet(
   plume = false
 ): GarmentBuildResult {
   const e = armetExtents(shape, face)
-  // Theta on the unit sphere for a world height (helm is a scaled sphere).
-  const thetaOf = (y: number): number =>
-    Math.acos(Math.max(-1, Math.min(1, (y - e.cy) / e.ry)))
-  const eyeY = CRANIUM_CENTER_Y + shape.headHeight * 0.12
-  const shell = (yTop: number, yBot: number): THREE.BufferGeometry => {
-    const t0 = thetaOf(yTop)
-    const g = new THREE.SphereGeometry(1, 28, 12, 0, Math.PI * 2, t0, thetaOf(yBot) - t0)
-    g.scale(e.rx, e.ry, e.rz)
-    g.translate(e.cx, e.cy, e.cz)
-    return g
-  }
+  const eyeY = helmEyeY(shape)
   const top = CRANIUM_CENTER_Y + shape.headHeight + 0.05
   const mouthY = beardMouthY(shape, face)
   const parts: THREE.BufferGeometry[] = [
     // Crown: pole down past the brow, ending above the sight slit.
-    shell(top + 0.01, eyeY + 0.014),
+    helmShell(e, top + 0.01, eyeY + 0.014),
     // Visor: below the slit, ending above the breath vent.
-    shell(eyeY - 0.014, mouthY + 0.03),
+    helmShell(e, eyeY - 0.014, mouthY + 0.03),
     // Bevor: below the vent, closing under the chin.
-    shell(mouthY + 0.012, 1.55)
+    helmShell(e, mouthY + 0.012, 1.55)
   ]
-  // Rear fillers: the sight/vent gaps are front-only (a real slit does not
-  // wrap the skull). Sphere phi puts +Z front at phi=PI/2; the filler is the
-  // complementary arc, extended slightly past the gap edges to overlap.
-  const filler = (yTop: number, yBot: number, halfAngle: number): THREE.BufferGeometry => {
-    const t0 = thetaOf(yTop)
-    const g = new THREE.SphereGeometry(
-      1, 20, 4, Math.PI / 2 + halfAngle, Math.PI * 2 - halfAngle * 2, t0, thetaOf(yBot) - t0
-    )
-    g.scale(e.rx, e.ry, e.rz)
-    g.translate(e.cx, e.cy, e.cz)
-    return g
-  }
-  parts.push(filler(eyeY + 0.02, eyeY - 0.02, 0.65))
-  parts.push(filler(mouthY + 0.036, mouthY + 0.006, 0.6))
+  parts.push(helmFiller(e, eyeY + 0.02, eyeY - 0.02, 0.65))
+  parts.push(helmFiller(e, mouthY + 0.036, mouthY + 0.006, 0.6))
   // Bevor ridge: raised band down the visor front center.
-  const frontZ = (y: number): number => {
-    const k = Math.max(1 - ((y - e.cy) / e.ry) ** 2, 0.02)
-    return e.cz + e.rz * Math.sqrt(k)
-  }
   const bevor = makeSweep(
     [
-      { center: [0, eyeY - 0.03, frontZ(eyeY - 0.03) + 0.008], width: 0.045, height: 0.045 },
-      { center: [0, mouthY + 0.1, frontZ(mouthY + 0.1) + 0.008], width: 0.045, height: 0.045 },
-      { center: [0, mouthY + 0.045, frontZ(mouthY + 0.045) + 0.008], width: 0.04, height: 0.04 }
+      { center: [0, eyeY - 0.03, helmFrontZ(e, eyeY - 0.03) + 0.008], width: 0.045, height: 0.045 },
+      { center: [0, mouthY + 0.1, helmFrontZ(e, mouthY + 0.1) + 0.008], width: 0.045, height: 0.045 },
+      { center: [0, mouthY + 0.045, helmFrontZ(e, mouthY + 0.045) + 0.008], width: 0.04, height: 0.04 }
     ],
     10
   )
@@ -1761,6 +1787,226 @@ export function buildArmet(
     parts.push(...plumeGeos)
   }
   return bindHat(parts)
+}
+
+// ---------------------------------------------------------------------------
+// Sprint 30 helms: sallet, great bascinet, great helm, kettle hat. All share
+// the helmShell/helmFiller helpers (real front-only gaps) and bind rigid to
+// Head. Closed war helms carry full_face + hat; the kettle hat is open-face.
+// ---------------------------------------------------------------------------
+
+/** Sallet extents: armet-like envelope with an extended rear (tail). */
+export function salletExtents(shape: BodyShape, face: FaceShape): HelmExtents {
+  const front = noseFrontZ(shape, face) + 0.035
+  const rear = CRANIUM_CENTER_Z - shape.headLength - 0.1
+  const top = CRANIUM_CENTER_Y + shape.headHeight + 0.05
+  const bottom = 1.56
+  return {
+    cx: 0,
+    cy: (top + bottom) / 2,
+    cz: (front + rear) / 2,
+    rx: shape.headWidth + 0.045,
+    ry: (top - bottom) / 2,
+    rz: (front - rear) / 2
+  }
+}
+
+/**
+ * Sleek single-piece helm with an elongated tail guarding the neck and a
+ * low central ridge over the crown. Sight slit + breath vent like the armet.
+ */
+export function buildSallet(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const e = salletExtents(shape, face)
+  const eyeY = helmEyeY(shape)
+  const top = CRANIUM_CENTER_Y + shape.headHeight + 0.05
+  const mouthY = beardMouthY(shape, face)
+  const parts: THREE.BufferGeometry[] = [
+    helmShell(e, top + 0.01, eyeY + 0.014),
+    helmShell(e, eyeY - 0.014, mouthY + 0.03),
+    helmShell(e, mouthY + 0.012, 1.55)
+  ]
+  parts.push(helmFiller(e, eyeY + 0.02, eyeY - 0.02, 0.65))
+  parts.push(helmFiller(e, mouthY + 0.036, mouthY + 0.006, 0.6))
+  // Tail: flattened shell sweeping down-back over the neck.
+  const tail = makeEllipsoid(e.rx * 0.8, 0.13, 0.17, 18, 12)
+  translateGeometry(tail, 0, 1.68, e.cz - e.rz * 0.55)
+  parts.push(tail)
+  // Crown ridge running nose-to-tail over the top.
+  const topY = (z: number): number => {
+    const k = Math.max(1 - ((z - e.cz) / e.rz) ** 2, 0.02)
+    return e.cy + e.ry * Math.sqrt(k)
+  }
+  const ridge = makeSweep(
+    [0.1, -0.05, -0.2].map((z) => ({
+      center: [0, topY(e.cz + z) + 0.004, e.cz + z] as [number, number, number],
+      width: 0.028,
+      height: 0.05
+    })),
+    8
+  )
+  parts.push(ridge)
+  return bindHat(parts)
+}
+
+/** Great bascinet envelope: tight skull + projecting snout. */
+export function bascinetExtents(shape: BodyShape, face: FaceShape): HelmExtents {
+  const base = armetExtents(shape, face)
+  const front = noseFrontZ(shape, face) + 0.13
+  return {
+    ...base,
+    cz: (front + (base.cz - base.rz)) / 2,
+    rz: (front - (base.cz - base.rz)) / 2
+  }
+}
+
+/**
+ * Rounded skull with a pointed snout visor. The snout cone projects past
+ * the nose from an armet-tight shell set; side breath slits flank the cone
+ * (vent gap covered in the middle by the cone base).
+ */
+export function buildGreatBascinet(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const t = armetExtents(shape, face)
+  const eyeY = helmEyeY(shape)
+  const top = CRANIUM_CENTER_Y + shape.headHeight + 0.05
+  const mouthY = beardMouthY(shape, face)
+  const parts: THREE.BufferGeometry[] = [
+    helmShell(t, top + 0.01, eyeY + 0.014),
+    helmShell(t, eyeY - 0.014, mouthY + 0.05),
+    helmShell(t, mouthY + 0.032, 1.55)
+  ]
+  parts.push(helmFiller(t, eyeY + 0.02, eyeY - 0.02, 0.65))
+  parts.push(helmFiller(t, mouthY + 0.056, mouthY + 0.026, 0.6))
+  // Snout: cone apex past the nose, base embedded in the visor front.
+  // Slim base + low axis keep the cone out of the sight-slit channel.
+  const noseFront = noseFrontZ(shape, face)
+  const snoutY = mouthY + 0.05
+  const snout = new THREE.ConeGeometry(0.06, 0.15, 18)
+  snout.rotateX(Math.PI / 2)
+  snout.translate(0, snoutY, noseFront + 0.04)
+  parts.push(snout)
+  // Low comb over the rounded skull.
+  const comb = new THREE.BoxGeometry(0.03, 0.05, 0.3)
+  comb.translate(0, t.cy + t.ry - 0.01, t.cz)
+  parts.push(comb)
+  return bindHat(parts)
+}
+
+/** Great helm envelope (tapered crusader bucket). */
+export function greatHelmExtents(shape: BodyShape, face: FaceShape): HelmExtents {
+  void face
+  const top = CRANIUM_CENTER_Y + shape.headHeight + 0.055
+  const bottom = 1.58
+  const r = shape.headWidth + 0.115
+  return {
+    cx: 0,
+    cy: (top + bottom) / 2,
+    cz: CRANIUM_CENTER_Z,
+    rx: r,
+    ry: (top - bottom) / 2,
+    rz: r
+  }
+}
+
+/**
+ * Crusader great helm: tapered flat-topped bucket with a real sight slit
+ * and breath vent (front-only cylinder gaps), reinforcing front cross and
+ * rim bands. Chunky radius clears the biggest noses by construction.
+ */
+export function buildGreatHelm(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const top = CRANIUM_CENTER_Y + shape.headHeight + 0.055
+  const bottom = 1.58
+  const rTop = shape.headWidth + 0.09
+  const rBot = shape.headWidth + 0.115
+  const cz = CRANIUM_CENTER_Z
+  const radiusAt = (y: number): number => {
+    const t = Math.max(0, Math.min(1, (top - y) / (top - bottom)))
+    return rTop + (rBot - rTop) * t
+  }
+  const eyeY = helmEyeY(shape)
+  const mouthY = beardMouthY(shape, face)
+  const ventTop = mouthY + 0.032
+  const ventBot = mouthY + 0.014
+  const barrel = (yTop: number, yBot: number): THREE.BufferGeometry => {
+    const g = new THREE.CylinderGeometry(radiusAt(yTop), radiusAt(yBot), yTop - yBot, 24, 1, true)
+    g.translate(0, (yTop + yBot) / 2, cz)
+    return g
+  }
+  // Cylinder theta puts +Z front at theta=0; the filler is the complement.
+  const cylFiller = (yTop: number, yBot: number, halfAngle: number): THREE.BufferGeometry => {
+    const g = new THREE.CylinderGeometry(
+      radiusAt(yTop) + 0.002, radiusAt(yBot) + 0.002, yTop - yBot + 0.012, 20, 1, true,
+      halfAngle, Math.PI * 2 - halfAngle * 2
+    )
+    g.translate(0, (yTop + yBot) / 2, cz)
+    return g
+  }
+  const parts: THREE.BufferGeometry[] = [
+    barrel(top, eyeY + 0.02),
+    barrel(eyeY - 0.02, ventTop),
+    barrel(ventBot, bottom)
+  ]
+  parts.push(cylFiller(eyeY + 0.026, eyeY - 0.026, 0.6))
+  parts.push(cylFiller(ventTop + 0.006, ventBot - 0.006, 0.55))
+  // Flat lid + rim bands.
+  const lid = new THREE.CircleGeometry(rTop, 24)
+  lid.rotateX(-Math.PI / 2)
+  lid.translate(0, top, cz)
+  parts.push(lid)
+  for (const [ry, rr] of [[top - 0.01, rTop + 0.004], [bottom + 0.01, rBot + 0.004]] as const) {
+    const band = new THREE.TorusGeometry(rr, 0.016, 8, 28)
+    band.rotateX(Math.PI / 2)
+    band.translate(0, ry, cz)
+    parts.push(band)
+  }
+  // Reinforcing front cross, proud of the barrel surface.
+  const crossV = new THREE.BoxGeometry(0.045, top - bottom - 0.06, 0.02)
+  crossV.translate(0, (top + bottom) / 2, cz + rBot + 0.002)
+  parts.push(crossV)
+  const crossH = new THREE.BoxGeometry(0.3, 0.045, 0.02)
+  crossH.translate(0, eyeY - 0.06, cz + radiusAt(eyeY - 0.06) + 0.004)
+  parts.push(crossH)
+  return bindHat(parts)
+}
+
+/** Kettle hat extents (brim radius + dome top). */
+export function kettleExtents(shape: BodyShape, face: FaceShape): HelmExtents {
+  const top = CRANIUM_CENTER_Y + (shape.headHeight * 0.9 + 0.02)
+  void face
+  return {
+    cx: 0,
+    cy: top,
+    cz: CRANIUM_CENTER_Z,
+    rx: shape.headWidth + 0.185,
+    ry: 0.02,
+    rz: shape.headWidth + 0.185
+  }
+}
+
+/** Open-face infantry kettle hat: wide flared brim + dome. Hat tag only. */
+export function buildKettleHat(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const brimY = eyeTopY(shape, face) + 0.008
+  const brim = new THREE.CylinderGeometry(
+    shape.headWidth + 0.17, shape.headWidth + 0.185, 0.02, 28
+  )
+  brim.translate(0, brimY, CRANIUM_CENTER_Z)
+  const domeR = { rx: shape.headWidth + 0.02, ry: shape.headHeight * 0.9 + 0.02, rz: shape.headLength + 0.02 }
+  const t0 = Math.acos(Math.max(-1, Math.min(1, (brimY - CRANIUM_CENTER_Y) / domeR.ry)))
+  const dome = new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, t0)
+  dome.scale(domeR.rx, domeR.ry, domeR.rz)
+  dome.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  return bindHat([brim, dome])
 }
 
 export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
@@ -2198,6 +2444,54 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const face = sanitizeFaceShape(dna.face)
       return buildArmet(shape, face, true)
     }
+  },
+  {
+    id: 'proc:sallet',
+    slotId: 'helmet',
+    label: 'Sallet',
+    tags: ['helmet', 'full_face', 'hat', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildSallet(shape, face)
+    }
+  },
+  {
+    id: 'proc:great_bascinet',
+    slotId: 'helmet',
+    label: 'Great Bascinet',
+    tags: ['helmet', 'full_face', 'hat', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildGreatBascinet(shape, face)
+    }
+  },
+  {
+    id: 'proc:great_helm',
+    slotId: 'helmet',
+    label: 'Great Helm',
+    tags: ['helmet', 'full_face', 'hat', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildGreatHelm(shape, face)
+    }
+  },
+  {
+    id: 'proc:kettle_hat',
+    slotId: 'helmet',
+    label: 'Kettle Hat',
+    tags: ['helmet', 'hat', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildKettleHat(shape, face)
+    }
   }
 ]
 
@@ -2241,7 +2535,15 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
     return key === 'torso'
   if (assetId === 'proc:beanie' || assetId === 'proc:cap' || assetId === 'proc:sombrero')
     return key === 'head' || key === 'face'
-  if (assetId === 'proc:tophat' || assetId === 'proc:armet' || assetId === 'proc:plumed_armet')
+  if (
+    assetId === 'proc:tophat' ||
+    assetId === 'proc:armet' ||
+    assetId === 'proc:plumed_armet' ||
+    assetId === 'proc:sallet' ||
+    assetId === 'proc:great_bascinet' ||
+    assetId === 'proc:great_helm' ||
+    assetId === 'proc:kettle_hat'
+  )
     return key === 'head' || key === 'face'
   if (assetId === 'proc:hood') return key === 'head'
   if (assetId === 'proc:sunglasses' || assetId === 'proc:goggles' || assetId === 'proc:mask')

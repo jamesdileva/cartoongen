@@ -18,6 +18,14 @@ import {
   buildPlateLegs,
   buildArmet,
   armetExtents,
+  buildSallet,
+  salletExtents,
+  buildGreatBascinet,
+  bascinetExtents,
+  buildGreatHelm,
+  greatHelmExtents,
+  buildKettleHat,
+  kettleExtents,
   buildCropHair,
   buildPonytail,
   buildMohawk,
@@ -104,7 +112,7 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 35 procedural entries with correct slots', () => {
+  it('exposes all 40 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
       'proc:armet',
@@ -120,9 +128,12 @@ describe('procedural asset catalog', () => {
       'proc:gloves',
       'proc:goatee',
       'proc:goggles',
+      'proc:great_bascinet',
+      'proc:great_helm',
       'proc:hood',
       'proc:jacket',
       'proc:jeans',
+      'proc:kettle_hat',
       'proc:long_hair',
       'proc:longsleeve',
       'proc:mage_robe',
@@ -134,6 +145,7 @@ describe('procedural asset catalog', () => {
       'proc:plumed_armet',
       'proc:polo',
       'proc:ponytail',
+      'proc:sallet',
       'proc:shoes',
       'proc:shorts',
       'proc:sombrero',
@@ -179,6 +191,10 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:plate')?.slotId).toBe('shirt')
     expect(entries.find((e) => e.id === 'proc:plate_legs')?.slotId).toBe('pants')
     expect(entries.find((e) => e.id === 'proc:armet')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:sallet')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:great_bascinet')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:great_helm')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:kettle_hat')?.slotId).toBe('helmet')
     expect(findProceduralAsset('proc:armet')?.materialId).toBe('metal')
     expect(findProceduralAsset('proc:ponytail')?.materialId).toBe('hair')
     expect(findProceduralAsset('proc:sunglasses')?.materialId).toBe('lens')
@@ -231,7 +247,18 @@ describe('procedural asset catalog', () => {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
       expect(garmentDependsOnKey(id, 'head')).toBe(false)
     }
-    for (const id of ['proc:beanie', 'proc:cap', 'proc:sombrero', 'proc:tophat', 'proc:armet', 'proc:plumed_armet']) {
+    for (const id of [
+      'proc:beanie',
+      'proc:cap',
+      'proc:sombrero',
+      'proc:tophat',
+      'proc:armet',
+      'proc:plumed_armet',
+      'proc:sallet',
+      'proc:great_bascinet',
+      'proc:great_helm',
+      'proc:kettle_hat'
+    ]) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
@@ -1221,8 +1248,7 @@ describe('plate armour', () => {
     expect(frontHit(mouthY + 0.06)!).toBeGreaterThan(e.cz)
   })
 
-  it('plumed armet shares extents and crests above the crown', () => {
-    const plain = buildArmet(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE).geometry
+  it('plumed armet shares extents and crests above the crown', () => {    const plain = buildArmet(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE).geometry
     const plumed = buildArmet(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, true).geometry
     const maxY = (g: THREE.BufferGeometry): number => {
       const pos = g.attributes.position as THREE.BufferAttribute
@@ -1232,6 +1258,116 @@ describe('plate armour', () => {
     }
     expect(maxY(plumed)).toBeGreaterThan(maxY(plain) + 0.05)
     expect(weightSumViolations(plumed)).toBe(0)
+  })
+})
+
+describe('sprint 30 helms', () => {
+  const closedHelms = [
+    { id: 'proc:sallet', build: buildSallet, extents: salletExtents },
+    { id: 'proc:great_bascinet', build: buildGreatBascinet, extents: bascinetExtents },
+    { id: 'proc:great_helm', build: buildGreatHelm, extents: greatHelmExtents }
+  ] as const
+
+  function frontHitZ(geometry: THREE.BufferGeometry, y: number, x = 0): number | null {
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+    const ray = new THREE.Raycaster(new THREE.Vector3(x, y, 3), new THREE.Vector3(0, 0, -1))
+    const hits = ray.intersectObject(mesh)
+    return hits.length > 0 ? hits[0].point.z : null
+  }
+
+  it('binds 100% to Head with normalized weights and x symmetry', () => {
+    for (const helm of [...closedHelms, { id: 'proc:kettle_hat', build: buildKettleHat, extents: kettleExtents }]) {
+      const { geometry, boneNames } = helm.build()
+      expect(boneNames, helm.id).toEqual(['Head'])
+      expect(weightSumViolations(geometry), helm.id).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min, helm.id).toBeCloseTo(-ext.max, 3)
+    }
+  })
+
+  it('contains cranium top, nose tip, and chin across shapes', () => {
+    for (const helm of closedHelms) {
+      for (const shape of [
+        DEFAULT_BODY_SHAPE,
+        { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.28, headLength: 0.32 },
+        { ...DEFAULT_BODY_SHAPE, headWidth: 0.2, headHeight: 0.18, headLength: 0.22 }
+      ]) {
+        for (const noseSize of [0.6, 1.6]) {
+          const face = { ...DEFAULT_FACE_SHAPE, noseSize }
+          const e = helm.extents(shape, face)
+          const inside = (x: number, y: number, z: number): boolean => {
+            const nx = (x - e.cx) / e.rx
+            const ny = (y - e.cy) / e.ry
+            const nz = (z - e.cz) / e.rz
+            return nx * nx + ny * ny + nz * nz < 1
+          }
+          const top = 1.86 + shape.headHeight
+          expect(inside(0, top, 0.005), `${helm.id} cranium top`).toBe(true)
+          const noseY = 1.86 - shape.headHeight * 0.15
+          expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + 0.03 * noseSize), `${helm.id} nose tip`).toBe(true)
+          expect(inside(0, 1.66, 0.1), `${helm.id} chin`).toBe(true)
+        }
+      }
+    }
+  })
+
+  it('closed war helms have a real front sight slit', () => {
+    for (const helm of closedHelms) {
+      const { geometry } = helm.build()
+      const e = helm.extents(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE)
+      const eyeY = CRANIUM_CENTER_Y + DEFAULT_BODY_SHAPE.headHeight * 0.12
+      // Great helm's reinforcing cross splits the slit: look through one side.
+      const x = helm.id === 'proc:great_helm' ? 0.08 : 0
+      const slitHit = frontHitZ(geometry, eyeY, x)
+      expect(slitHit, `${helm.id} sight slit passes through`).not.toBeNull()
+      expect(slitHit!, helm.id).toBeLessThan(e.cz)
+      expect(frontHitZ(geometry, eyeY + 0.07, x)!, helm.id).toBeGreaterThan(e.cz)
+    }
+  })
+
+  it('bascinet snout projects past the nose with its base embedded', () => {
+    const shape = DEFAULT_BODY_SHAPE
+    const face = DEFAULT_FACE_SHAPE
+    const { geometry } = buildGreatBascinet(shape, face)
+    const noseY = CRANIUM_CENTER_Y - shape.headHeight * 0.15
+    const noseFront = surfaceZ(shape, 0, noseY) + 0.03 * face.noseSize
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    let maxZ = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (Math.abs(y - (noseY + 0.04)) < 0.09) maxZ = Math.max(maxZ, pos.getZ(i))
+    }
+    expect(maxZ).toBeGreaterThan(noseFront + 0.05)
+  })
+
+  it('kettle hat brim clears the eyes and crowns the skull', () => {
+    for (const eyeScale of [0.6, 1.6]) {
+      const face = { ...DEFAULT_FACE_SHAPE, eyeScale }
+      const { geometry } = buildKettleHat(DEFAULT_BODY_SHAPE, face)
+      const eyeTop = CRANIUM_CENTER_Y + DEFAULT_BODY_SHAPE.headHeight * 0.12 + 0.062 * eyeScale
+      const pos = geometry.attributes.position as THREE.BufferAttribute
+      let minY = Infinity
+      let maxX = 0
+      for (let i = 0; i < pos.count; i++) {
+        minY = Math.min(minY, pos.getY(i))
+        maxX = Math.max(maxX, Math.abs(pos.getX(i)))
+      }
+      // Brim underside stays above the tallest eyes; brim spans past ears.
+      expect(minY).toBeGreaterThan(eyeTop)
+      expect(maxX).toBeGreaterThan(DEFAULT_BODY_SHAPE.headWidth + 0.15)
+    }
+  })
+
+  it('war helms carry full_face tags, kettle hat does not', () => {
+    for (const id of ['proc:sallet', 'proc:great_bascinet', 'proc:great_helm']) {
+      const def = findProceduralAsset(id)
+      expect(def?.tags).toContain('full_face')
+      expect(def?.tags).toContain('hat')
+      expect(def?.materialId).toBe('metal')
+    }
+    const kettle = findProceduralAsset('proc:kettle_hat')
+    expect(kettle?.tags).toContain('hat')
+    expect(kettle?.tags).not.toContain('full_face')
   })
 })
 

@@ -491,6 +491,12 @@ for (const { name, shape } of headShapes) {
       sombrero: { kind: 'ellipsoid', rx: W + 0.015, ry: H * 1.15 + 0.01, rz: L + 0.015, cy: 1.86 },
       tophat: { kind: 'cylinder', rx: W + 0.015, ry: 0.22, rz: W + 0.015, cy: rim + 0.11 },
       hood: { kind: 'ellipsoid', rx: W + 0.03, ry: H + 0.03, rz: L + 0.03, cy: 1.86, gap: 0.85 },
+      // Sprint 30 war helms share the armet envelope (tight shells + snout
+      // all fit inside it); the great helm is a chunky cylinder instead.
+      sallet: { kind: 'ellipsoid', rx: W * 1.5 + 0.035, ry: H * 1.15 + 0.04, rz: L * 1.6 + 0.05, cy: 1.86 },
+      great_bascinet: { kind: 'ellipsoid', rx: W * 1.5 + 0.035, ry: H * 1.15 + 0.04, rz: L * 1.6 + 0.05, cy: 1.86 },
+      great_helm: { kind: 'cylinder', rx: W + 0.115, ry: 0.3, rz: W + 0.115, cy: rim + 0.18 },
+      kettle_hat: { kind: 'cylinder', rx: W + 0.185, ry: 0.2, rz: W + 0.185, cy: rim + 0.15 },
       // Armet matches the builder dims: rx from armetExtents, grown to clear
       // the nose ahead of the chin by design (grow only Z here).
       armet: { kind: 'ellipsoid', rx: W * 1.5 + 0.035, ry: H * 1.15 + 0.04, rz: L * 1.6 + 0.05, cy: 1.86 }
