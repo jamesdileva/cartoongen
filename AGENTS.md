@@ -2787,3 +2787,28 @@ Sprint 32). Full entry in worklog.md.
 
 Sprint 29 complete. Next: Sprint 30 - sallet + great bascinet.
 
+---
+
+## Session 053 - Sprint 30: Sallet + Bascinet + Great Helm + Kettle Hat
+
+### Date
+
+2026-09-29
+
+### What we built
+
+Sprint 30 - sallet (tail + crown ridge), great bascinet (snout + side
+breath slits), bonus crusader great helm (front cross, slit + vent) and
+open-face kettle hat. Shared helm helpers hoisted; armet refactored onto
+them. 40 procedural assets total. Full entry in worklog.md.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 314 tests passing (308 + 6 new), probe ALL PASSED
+- Pushed as `a12d940`
+
+### Current status
+
+Sprint 30 complete. Next: Sprint 31 - clothing breadth.
+

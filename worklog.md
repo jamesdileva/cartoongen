@@ -5,8 +5,51 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
-## Session 052 - Sprint 29: Knight Polish (Plate v2 + Armet Pass)
+## Session 053 - Sprint 30: Sallet + Bascinet + Great Helm + Kettle Hat
 
+### Date
+
+2026-09-29
+
+### What we built
+
+Sprint 30 - 4 new helmets (40 assets total), plus 2 bonus styles beyond
+the scoped sallet/bascinet: a crusader great helm and an open-face kettle
+hat. Shared `helmShell`/`helmFiller`/`helmFrontZ`/`helmEyeY` helpers
+hoisted to module scope; `buildArmet` refactored onto them (identical
+behavior, slit test still green).
+
+- Sallet: sleek shells + neck-guarding tail + nose-to-tail crown ridge
+- Great bascinet: rounded skull + projecting snout cone, side breath
+  slits flanking the cone (vent gap covered midline by the cone base)
+- Great helm: tapered flat-topped bucket, reinforcing front cross (splits
+  the slit left/right, like the real thing), rim bands, real slit + vent
+- Kettle hat: wide flared brim + dome, open face (`hat` tag only)
+
+Knight preset keeps the armet; randomizer helmet pool grows by slot.
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Bascinet snout grazed the slit channel from inside | Slimmer cone (r 0.06, h 0.15), seated forward with a lower axis - clears the slit across nose sizes |
+| Great helm slit test hit the front cross (z=0.382) | Cross splits the slit by design; test looks through x=0.08 |
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 314 tests passing (308 + 6 new: binding/symmetry, containment grid,
+  slit pass-through, snout projection, kettle brim, tags), no regressions
+- probe:clearance ALL PASSED (4 new hat solids)
+- Pushed as `a12d940`
+
+### Current status
+
+Sprint 30 complete. Next: Sprint 31 - clothing breadth.
+
+---
+
+## Session 052 - Sprint 29: Knight Polish (Plate v2 + Armet Pass)
 ### Date
 
 2026-09-29
