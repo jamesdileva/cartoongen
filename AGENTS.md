@@ -2760,3 +2760,30 @@ worklog.md.
 
 Sprint 28 complete. Next: Sprint 29 - win-unpack installer (last).
 
+---
+
+## Session 052 - Sprint 29: Knight Polish (Plate v2 + Armet Pass)
+
+### Date
+
+2026-09-29
+
+### What we built
+
+Sprint 29 - full arm harness (rerebraces/couters/vambraces), lame bands,
+hem trim, 2-layer pauldrons; armet rebuilt with real sight slit + breath
+vent (front-only via rear fillers), bevor ridge, taller comb; new
+`proc:plumed_armet` style. Sprints 29-34 planned in
+procedural-character.md (win-unpack -> Sprint 34 last, cape on knight in
+Sprint 32). Full entry in worklog.md.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 308 tests passing (305 + 3 new), probe ALL PASSED
+- Pushed as `61d4af9`
+
+### Current status
+
+Sprint 29 complete. Next: Sprint 30 - sallet + great bascinet.
+

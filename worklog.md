@@ -5,6 +5,50 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 052 - Sprint 29: Knight Polish (Plate v2 + Armet Pass)
+
+### Date
+
+2026-09-29
+
+### What we built
+
+Sprint 29 - the knight stops looking like painted clothes. `buildPlate`
+gained a full arm harness: rerebrace tubes (deltoid->elbow) + elbow
+couters + vambrace tubes (elbow->wrist, tucking inside the gauntlet cuff
+at 0.7), all with muscle headroom and long-sleeve segment binding so
+they track `muscleMass` like cloth sleeves do. Articulation: lame bands
+at the waist + hem trim band + 2-layer pauldrons (inner cap + outer lame
+offset outboard). Cuirass body, ridge, faulds, gorget unchanged.
+
+`buildArmet` was rebuilt as 3 shells with REAL gaps: a sight slit at eye
+level and a breath vent at mouth level, both front-only (rear filler
+bands close the back - caught by the new slit test, which first exposed
+the full-ring opening). Bevor ridge down the visor front, taller crest
+comb. Single-material constraint held: gaps read dark via the hidden
+face interior. New `proc:plumed_armet` style (parade plume crest, same
+metal) alongside the default armet; knight preset keeps the plain armet.
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Hem trim used `stations[last]` (the neck) | Hem is `stations[0]` (unshifted); one-line fix |
+| Slit test ray passed clean through (0 hits) | Gap cut a full 2π ring incl. the rear; added rear filler bands (front-only slits, like real slits) |
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 308 tests passing (305 + plate-v2 binding/reach + slit/vent gaps + plume), no regressions
+- probe:clearance ALL PASSED (plate joins the arm band; armet analytic solid unchanged)
+- Pushed as `61d4af9`; Sprints 29-34 written to procedural-character.md (win-unpack -> Sprint 34 last)
+
+### Current status
+
+Sprint 29 complete. Next: Sprint 30 - sallet + great bascinet.
+
+---
+
 ## Session 051 - Sprint 28: Preset/Outfit Convergence
 
 ### Date
