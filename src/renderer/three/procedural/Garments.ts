@@ -741,6 +741,191 @@ export function buildDwarfVest(
   return bindTop([body, belt], topSegments(clavEnd, armStart, false))
 }
 
+// ---------------------------------------------------------------------------
+// Sprint 31 tops: sweater, belted tunic, dress, long coat, tabard. All reuse
+// torsoShellStations + bindTop; long-sleeved ones reuse longSleeves().
+// ---------------------------------------------------------------------------
+
+/** Chunky sweater: torso shell + long sleeves + high ribbed collar + hem band. */
+export function buildSweater(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const hemY = hemYOf(topLength)
+  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, hemY)
+  // Sweaters knit chunky: grow every station a centimeter past cloth dims.
+  const chunky = stations.map((st) => ({
+    center: st.center,
+    width: st.width + 0.02,
+    height: st.height + 0.02
+  }))
+  const body = makeSweep(chunky, 20, false, false, phiStart, phiLength)
+  // Ribbed hem band hugging the hem station.
+  const hem = chunky[0]
+  const hemBand = makeSweep(
+    [
+      { center: [0, hemY + 0.005, 0], width: hem.width + 0.012, height: hem.height + 0.012 },
+      { center: [0, hemY + 0.06, 0], width: hem.width + 0.016, height: hem.height + 0.016 }
+    ],
+    20
+  )
+  // High collar standing past the neck base.
+  const collar = new THREE.TorusGeometry(0.145, 0.035, 10, 24)
+  collar.rotateX(Math.PI / 2)
+  collar.translate(0, 1.6, 0.005)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const sleeves = longSleeves(shape, armStart)
+  return bindTop([body, hemBand, collar, ...sleeves], topSegments(clavEnd, armStart, true, clavEnd + 0.105))
+}
+
+/** Belted tunic: short-sleeved shell with a waist belt. Respects topLength. */
+export function buildBeltedTunic(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT,
+  topLength = TOP_LENGTH_DEFAULT
+): GarmentBuildResult {
+  const hemY = Math.min(hemYOf(topLength), 1.15)
+  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, hemY)
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const hipHalfD = Math.max(
+    0.23 + CLOTH_OFFSET,
+    halfDForProfile(pelvisHalfW, buttRearSamples(shape, butt)),
+    buttRearDepth(shape, butt) + CLOTH_OFFSET
+  )
+  const { halfW: beltW, halfD: beltD } = waistDims(shape, belly, butt, hipHalfD, pelvisHalfW)
+  const belt = new THREE.TorusGeometry(1, 0.024, 10, 28)
+  belt.rotateX(Math.PI / 2)
+  belt.scale(beltW + 0.022, 1, beltD + 0.022)
+  // Belt rides the waist but never below the hem.
+  belt.translate(0, Math.max(1.09, hemY + 0.04), 0)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const { sleeves, outerX } = shortSleeves(shape, armStart)
+  return bindTop([body, belt, ...sleeves], topSegments(clavEnd, armStart, false, outerX + 0.03))
+}
+
+/**
+ * Dress: fitted bodice shell flaring into a skirt past the knees. Legs
+ * below are bare by design (pair with tights); shirt slot like the robe.
+ */
+export function buildDress(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT
+): GarmentBuildResult {
+  const hemY = 0.55
+  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, 0.95)
+  const bodice = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  // Skirt flares from the hip shell past the knee; waist sash on top.
+  // Depths track hipHalfD (pelvis + full butt silhouette), not fixed numbers.
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const hipHalfD = Math.max(
+    0.23 + CLOTH_OFFSET,
+    halfDForProfile(pelvisHalfW, buttRearSamples(shape, butt)),
+    buttRearDepth(shape, butt) + CLOTH_OFFSET
+  )
+  const skirtFlare = (y: number, wFlare: number, dFlare: number): SweepStation => ({
+    center: [0, y, 0],
+    width: (pelvisHalfW + 0.02 + wFlare) * 2,
+    height: (hipHalfD + 0.02 + dFlare) * 2
+  })
+  const skirt = makeSweep(
+    [
+      skirtFlare(0.98, 0.0, 0.0),
+      skirtFlare(0.8, 0.05, 0.04),
+      skirtFlare(0.66, 0.1, 0.07),
+      skirtFlare(hemY, 0.14, 0.09)
+    ],
+    24
+  )
+  const { halfW: sashW, halfD: sashD } = waistDims(shape, belly, butt, 0.3, pelvisHalfW)
+  const sash = new THREE.TorusGeometry(1, 0.02, 10, 28)
+  sash.rotateX(Math.PI / 2)
+  sash.scale(sashW + 0.018, 1, sashD + 0.018)
+  sash.translate(0, 1.06, 0)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  return bindTop([bodice, skirt, sash], topSegments(clavEnd, armStart, false))
+}
+
+/** Long leather duster: torso shell + long sleeves + flared skirt to the knees. */
+export function buildLongCoat(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT
+): GarmentBuildResult {
+  const hemY = 0.62
+  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, 0.95)
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const hipHalfD = Math.max(
+    0.23 + CLOTH_OFFSET,
+    halfDForProfile(pelvisHalfW, buttRearSamples(shape, butt)),
+    buttRearDepth(shape, butt) + CLOTH_OFFSET
+  )
+  const skirt = makeSweep(
+    [0.98, 0.8, hemY].map((y, i) => ({
+      center: [0, y, 0] as [number, number, number],
+      width: (pelvisHalfW + 0.025 + i * 0.035) * 2,
+      height: (hipHalfD + 0.025 + i * 0.03) * 2
+    })),
+    24
+  )
+  // Turned-up collar standing proud of the neck.
+  const collar = new THREE.TorusGeometry(0.16, 0.032, 10, 24)
+  collar.rotateX(Math.PI / 2)
+  collar.translate(0, 1.6, 0.005)
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  const sleeves = longSleeves(shape, armStart)
+  return bindTop([body, skirt, collar, ...sleeves], topSegments(clavEnd, armStart, true, clavEnd + 0.105))
+}
+
+/**
+ * Crusader tabard: sleeveless long shell to the knees + waist belt +
+ * shoulder flaps. Worn over plate by design (clearance matches the shell).
+ */
+export function buildTabard(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT
+): GarmentBuildResult {
+  const hemY = 0.72
+  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, hemY)
+  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const hipHalfD = Math.max(
+    0.23 + CLOTH_OFFSET,
+    halfDForProfile(pelvisHalfW, buttRearSamples(shape, butt)),
+    buttRearDepth(shape, butt) + CLOTH_OFFSET
+  )
+  const { halfW: beltW, halfD: beltD } = waistDims(shape, belly, butt, hipHalfD, pelvisHalfW)
+  const belt = new THREE.TorusGeometry(1, 0.024, 10, 28)
+  belt.rotateX(Math.PI / 2)
+  belt.scale(beltW + 0.022, 1, beltD + 0.022)
+  belt.translate(0, 1.02, 0)
+  // Shoulder flaps capping the deltoids.
+  const flaps: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const flap = makeEllipsoid(0.11, 0.05, 0.12, 14, 10)
+    translateGeometry(flap, side * (0.36 * shape.shoulderWidth + 0.005), 1.56, 0)
+    flaps.push(flap)
+  }
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  return bindTop([body, belt, ...flaps], topSegments(clavEnd, armStart, false))
+}
+
 /**
  * Shared hip shell for all full pants: waist tracks the belly-scaled body
  * tube, hip depth clears pelvis + full butt silhouette, seat reaches y=0.74.
@@ -918,6 +1103,133 @@ export function buildTights(
   const { stations } = hipShellStations(shape, butt, belly)
   const hip = makeSweep(stations, 20)
   return bindPants([hip, ...legPair(FULL_LEG_STATIONS, TIGHT_OFFSET, 0.92)])
+}
+
+// ---------------------------------------------------------------------------
+// Sprint 31 pants: kilt, leggings, overalls.
+// ---------------------------------------------------------------------------
+
+/**
+ * Pleated kilt: flared shell to the knee with pressed pleat ridges.
+ * Bare legs below by design (like shorts).
+ */
+export function buildKilt(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const { stations } = hipShellStations(shape, butt, belly)
+  const hip = makeSweep(stations, 20)
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const flare = makeSweep(
+    [
+      { center: [0, 0.82, 0], width: (pelvisHalfW + 0.04) * 2, height: 0.54 },
+      { center: [0, 0.68, 0], width: (pelvisHalfW + 0.09) * 2, height: 0.58 },
+      { center: [0, 0.56, 0], width: (pelvisHalfW + 0.13) * 2, height: 0.6 }
+    ],
+    24
+  )
+  // Pleat ridges: thin vertical fins pressed around the flare.
+  const pleats: THREE.BufferGeometry[] = []
+  const pleatCount = 10
+  for (let i = 0; i < pleatCount; i++) {
+    const a = (i / pleatCount) * Math.PI * 2
+    const px = Math.cos(a)
+    const pz = Math.sin(a)
+    const fin = new THREE.BoxGeometry(0.018, 0.26, 0.03)
+    fin.translate(0, 0, 0)
+    // Stand the fin radially on the flare surface, top tucked under the hip.
+    const m = new THREE.Matrix4()
+    const rot = new THREE.Matrix4().makeRotationY(-a + Math.PI / 2)
+    m.copy(rot)
+    m.setPosition(px * (pelvisHalfW + 0.1), 0.68, pz * 0.29)
+    fin.applyMatrix4(m)
+    pleats.push(fin)
+  }
+  // Waistband ring.
+  const { halfW: beltW, halfD: beltD } = waistDims(shape, belly, butt, 0.29, pelvisHalfW)
+  const waistband = new THREE.TorusGeometry(1, 0.02, 10, 28)
+  waistband.rotateX(Math.PI / 2)
+  waistband.scale(beltW + 0.02, 1, beltD + 0.02)
+  waistband.translate(0, 1.0, 0)
+  return bindPants([hip, flare, waistband, ...pleats])
+}
+
+/** Leggings: second-skin tubes + high waistband + ankle cuffs + stirrups. */
+export function buildLeggings(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const TIGHT_OFFSET = 0.004
+  const { stations } = hipShellStations(shape, butt, belly)
+  const hip = makeSweep(stations, 20)
+  const legs = legPair(FULL_LEG_STATIONS, TIGHT_OFFSET, 0.92)
+  const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
+  const { halfW: beltW, halfD: beltD } = waistDims(shape, belly, butt, 0.29, pelvisHalfW)
+  const waistband = new THREE.TorusGeometry(1, 0.024, 10, 28)
+  waistband.rotateX(Math.PI / 2)
+  waistband.scale(beltW + 0.016, 1, beltD + 0.016)
+  waistband.translate(0, 1.04, 0)
+  const extras: THREE.BufferGeometry[] = [waistband]
+  for (const side of [-1, 1] as const) {
+    // Ankle cuff + stirrup strap under the arch.
+    const cuff = new THREE.TorusGeometry(0.0375 * MUSCLE_HEADROOM + TIGHT_OFFSET + 0.008, 0.016, 8, 18)
+    cuff.translate(side * 0.18, 0.16, 0)
+    extras.push(cuff)
+    const stirrup = new THREE.BoxGeometry(0.03, 0.02, 0.16)
+    stirrup.translate(side * 0.18, 0.012, 0.05)
+    extras.push(stirrup)
+  }
+  return bindPants([hip, ...legs, ...extras])
+}
+
+/**
+ * Bib overalls: work pants + chest bib + shoulder straps. Straps ride to
+ * mid-chest (Spine-bound, same region as the chest they hug) with buttons.
+ */
+export function buildOveralls(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  butt = BUTT_DEFAULT,
+  belly = 0.5
+): GarmentBuildResult {
+  const { stations } = hipShellStations(shape, butt, belly)
+  const hip = makeSweep(stations, 20)
+  const legs = legPair(FULL_LEG_STATIONS, CLOTH_OFFSET)
+  // Bib panel up the front to mid-chest.
+  const bellyScale = bellyScaleOf(belly)
+  const bib = makeSweep(
+    [
+      { center: [0, 1.0, 0.16 * bellyScale], width: 0.3, height: 0.1 },
+      { center: [0, 1.15, 0.185 * bellyScale], width: 0.28, height: 0.1 },
+      { center: [0, 1.3, 0.19 * bellyScale], width: 0.26, height: 0.1 }
+    ],
+    12
+  )
+  const parts: THREE.BufferGeometry[] = [hip, ...legs, bib]
+  // Chest front tracks the belly-scaled profile so straps hug the surface.
+  const chestFront = (y: number): number =>
+    profileAt(shape, y).d * (y >= 1.0 && y <= 1.18 ? bellyScale : 1) + CLOTH_OFFSET + 0.03
+  for (const side of [-1, 1] as const) {
+    // Strap up the chest front, over the trapezius crest, down the back.
+    parts.push(
+      makeSweep(
+        [
+          { center: [side * 0.11, 1.3, chestFront(1.3)], width: 0.07, height: 0.05 },
+          { center: [side * 0.12, 1.45, chestFront(1.45)], width: 0.07, height: 0.05 },
+          { center: [side * 0.14, 1.6, 0.05], width: 0.07, height: 0.05 },
+          { center: [side * 0.14, 1.62, -0.04], width: 0.07, height: 0.05 },
+          { center: [side * 0.13, 1.5, -0.17], width: 0.07, height: 0.05 },
+          { center: [side * 0.12, 1.35, -(chestFront(1.35) - 0.02)], width: 0.07, height: 0.05 }
+        ],
+        8
+      )
+    )
+    const button = new THREE.SphereGeometry(0.022, 10, 8)
+    button.translate(side * 0.11, 1.28, 0.2 * bellyScale + 0.045)
+    parts.push(button)
+  }
+  return bindPants(parts)
 }
 
 // ---------------------------------------------------------------------------
@@ -1273,6 +1585,75 @@ export function buildLongHair(
 }
 
 // ---------------------------------------------------------------------------
+// Sprint 31 hair: bun, bob, pigtails, fade.
+// ---------------------------------------------------------------------------
+
+/** Topknot bun: crop shell + knot sphere + tie ring. */
+export function buildBunHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  const cap = hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.72, 0.7)
+  const top = CRANIUM_CENTER_Y + shape.headHeight
+  const knot = new THREE.SphereGeometry(0.075, 16, 12)
+  knot.scale(1, 0.9, 1)
+  knot.translate(0, top + 0.045, CRANIUM_CENTER_Z - 0.02)
+  const tie = new THREE.TorusGeometry(0.062, 0.014, 8, 20)
+  tie.rotateX(Math.PI / 2)
+  tie.translate(0, top - 0.01, CRANIUM_CENTER_Z - 0.02)
+  return bindHair([cap, knot, tie])
+}
+
+/** Bob: jaw-length shell with a nape fall, face open. */
+export function buildBobHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  const shell = hairShell(shape, 0.055, 0.02, 0.035, Math.PI * 0.86, 0.72)
+  // Nape panel down to the shoulders behind the jaw.
+  const fall = makeSweep(
+    [
+      { center: [0, 1.78, -0.2], width: 0.3, height: 0.08 },
+      { center: [0, 1.64, -0.24], width: 0.32, height: 0.08 },
+      { center: [0, 1.52, -0.26], width: 0.3, height: 0.07 }
+    ],
+    14,
+    false,
+    true
+  )
+  return bindHair([shell, fall])
+}
+
+/** Pigtails: cap shell + twin side tails with ties. */
+export function buildPigtailsHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  const cap = hairShell(shape, 0.045, 0.015, 0.028, Math.PI * 0.62, 0.68)
+  const parts: THREE.BufferGeometry[] = [cap]
+  const top = CRANIUM_CENTER_Y + shape.headHeight
+  for (const side of [-1, 1] as const) {
+    const rootX = side * (shape.headWidth + 0.02)
+    // Tails hang behind the shoulder line (z < -0.15) so wide/muscled
+    // deltoids never clip them.
+    parts.push(
+      makeSweep(
+        [
+          { center: [rootX, top - 0.02, -0.05], width: 0.085, height: 0.085 },
+          { center: [side * (shape.headWidth + 0.09), 1.82, -0.16], width: 0.075, height: 0.075 },
+          { center: [side * (shape.headWidth + 0.11), 1.62, -0.2], width: 0.06, height: 0.06 },
+          { center: [side * (shape.headWidth + 0.1), 1.46, -0.22], width: 0.048, height: 0.048 }
+        ],
+        10,
+        false,
+        true
+      )
+    )
+    const tie = new THREE.TorusGeometry(0.045, 0.013, 8, 18)
+    tie.rotateX(Math.PI / 2)
+    tie.translate(rootX, top - 0.03, -0.06)
+    parts.push(tie)
+  }
+  return bindHair(parts)
+}
+
+/** Fade: buzz-short shell hugging the skull, ears out by design. */
+export function buildFadeHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  return bindHair([hairShell(shape, 0.018, 0.008, 0.014, Math.PI * 0.58, 0.66)])
+}
+
+// ---------------------------------------------------------------------------
 // Extremities + facial hair (Sprint 26). Shoes follow Foot, gloves follow
 // Hand (both rigid: no rebuild needed beyond torso refreshes); beards ride
 // the Head bone and track face/nose/mouth anchors like the face itself.
@@ -1427,6 +1808,58 @@ export function buildGauntlets(): GarmentBuildResult {
   return bindHands(parts)
 }
 
+/**
+ * Sandals (Sprint 31): sole + toe strap + ankle strap. Open footwear by
+ * design — exempt from the closed toe/heel bands in the probe.
+ */
+export function buildSandals(): GarmentBuildResult {
+  const parts: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const sole = new THREE.BoxGeometry(0.15, 0.03, 0.36)
+    sole.translate(side * 0.18, 0.015, 0.055)
+    parts.push(sole)
+    // Toe strap across the ball + ankle strap ring.
+    const toeStrap = new THREE.BoxGeometry(0.13, 0.025, 0.035)
+    toeStrap.translate(side * 0.18, 0.075, 0.1)
+    parts.push(toeStrap)
+    const ankle = new THREE.TorusGeometry(0.075, 0.014, 8, 18)
+    ankle.rotateX(Math.PI / 2)
+    ankle.translate(side * 0.18, 0.09, -0.01)
+    parts.push(ankle)
+  }
+  return bindFeet(parts)
+}
+
+/**
+ * Bracers (Sprint 31): tooled forearm cuffs with lace rings, hands bare
+ * by design — exempt from the fingers band in the probe.
+ */
+export function buildBracers(): GarmentBuildResult {
+  const parts: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const s = side
+    parts.push(
+      makeSweep(
+        [
+          { center: [s * 0.88, 1.508, 0], width: 0.125, height: 0.115 },
+          { center: [s * 0.76, 1.505, 0], width: 0.135, height: 0.125 },
+          { center: [s * 0.66, 1.502, 0], width: 0.14, height: 0.13 }
+        ],
+        12,
+        false,
+        true
+      )
+    )
+    for (const lx of [0.7, 0.78, 0.86]) {
+      const lace = new THREE.TorusGeometry(0.068, 0.01, 8, 18)
+      lace.rotateY(Math.PI / 2)
+      lace.translate(s * lx, 1.505, 0)
+      parts.push(lace)
+    }
+  }
+  return bindHands(parts)
+}
+
 /** Mouth anchor (mirrors buildFace): always 2cm below the nose bottom edge. */
 function beardMouthY(shape: BodyShape, face: FaceShape): number {
   const noseWorldY = CRANIUM_CENTER_Y - shape.headHeight * 0.15
@@ -1468,6 +1901,20 @@ export function buildMustache(
   arc.rotateZ(Math.PI * 0.1)
   arc.translate(0, mouthY + 0.028, surfaceZ(shape, 0, mouthY + 0.028) + 0.008)
   return bindHat([arc])
+}
+
+/**
+ * Stubble (Sprint 31): five-o'clock shadow — a thin shell over the jaw
+ * front and chin, deliberately shorter than the full beard.
+ */
+export function buildStubble(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const mouthY = beardMouthY(shape, face)
+  const jaw = makeEllipsoid(shape.headWidth * 0.46, 0.075, 0.075, 16, 12)
+  translateGeometry(jaw, 0, mouthY - 0.045, surfaceZ(shape, 0, mouthY - 0.045) + 0.002)
+  return bindHat([jaw])
 }
 
 // ---------------------------------------------------------------------------
@@ -2009,6 +2456,131 @@ export function buildKettleHat(
   return bindHat([brim, dome])
 }
 
+// ---------------------------------------------------------------------------
+// Sprint 31 hats: crown, boater, circlet, wizard hat.
+// ---------------------------------------------------------------------------
+
+/**
+ * Royal crown: skull-hugging band (sphere section, like hair shells) +
+ * spike cones + closed cap with orb. Sits high (baseY above the brows);
+ * the cap keeps cranium containment green unlike open circlets.
+ */
+export function buildCrown(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  void face
+  const baseY = CRANIUM_CENTER_Y + shape.headHeight * 0.65
+  const grow = 0.025
+  const thetaTop = Math.acos(
+    Math.max(-1, Math.min(1, (baseY + 0.035 - CRANIUM_CENTER_Y) / (shape.headHeight + grow)))
+  )
+  const thetaBot = Math.acos(
+    Math.max(-1, Math.min(1, (baseY - 0.035 - CRANIUM_CENTER_Y) / (shape.headHeight + grow)))
+  )
+  const band = new THREE.SphereGeometry(
+    1, 28, 6, 0, Math.PI * 2, thetaTop, thetaBot - thetaTop
+  )
+  band.scale(shape.headWidth + grow, shape.headHeight + grow, shape.headLength + grow)
+  band.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  const parts: THREE.BufferGeometry[] = [band]
+  // Spikes rooted on the band surface, aimed along the skull normal.
+  const thetaMid = (thetaTop + thetaBot) / 2
+  const up = new THREE.Vector3(0, 1, 0)
+  const spikes = 6
+  for (let i = 0; i < spikes; i++) {
+    const a = (i / spikes) * Math.PI * 2
+    const px = (shape.headWidth + grow) * Math.sin(thetaMid) * Math.cos(a)
+    const py = CRANIUM_CENTER_Y + (shape.headHeight + grow) * Math.cos(thetaMid)
+    const pz = CRANIUM_CENTER_Z + (shape.headLength + grow) * Math.sin(thetaMid) * Math.sin(a)
+    const spike = new THREE.ConeGeometry(0.022, 0.075, 8)
+    spike.translate(0, 0.0375, 0)
+    const normal = new THREE.Vector3(px, py - CRANIUM_CENTER_Y, pz - CRANIUM_CENTER_Z).normalize()
+    spike.applyQuaternion(new THREE.Quaternion().setFromUnitVectors(up, normal))
+    spike.translate(px, py, pz)
+    parts.push(spike)
+  }
+  // Cap dome overlapping the band top + orb.
+  const capGrow = grow + 0.008
+  const cap = new THREE.SphereGeometry(1, 24, 8, 0, Math.PI * 2, 0, thetaTop + 0.1)
+  cap.scale(shape.headWidth + capGrow, shape.headHeight + capGrow, shape.headLength + capGrow)
+  cap.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  parts.push(cap)
+  const orb = new THREE.SphereGeometry(0.028, 12, 10)
+  orb.translate(0, CRANIUM_CENTER_Y + shape.headHeight + capGrow + 0.015, CRANIUM_CENTER_Z)
+  parts.push(orb)
+  return bindHat(parts)
+}
+
+/** Boater: flat-topped straw cylinder + wide flat brim + band. Cloth. */
+export function buildBoaterHat(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const brimY = hatRimY(shape, face) + 0.008
+  const crownR = shape.headWidth + 0.03
+  const crown = new THREE.CylinderGeometry(crownR, crownR + 0.008, 0.13, 24)
+  crown.translate(0, brimY + 0.065, CRANIUM_CENTER_Z)
+  const lid = new THREE.CircleGeometry(crownR, 24)
+  lid.rotateX(-Math.PI / 2)
+  lid.translate(0, brimY + 0.13, CRANIUM_CENTER_Z)
+  const brim = new THREE.CylinderGeometry(crownR + 0.13, crownR + 0.14, 0.016, 28)
+  brim.translate(0, brimY, CRANIUM_CENTER_Z)
+  const band = new THREE.TorusGeometry(crownR + 0.004, 0.018, 8, 24)
+  band.rotateX(Math.PI / 2)
+  band.translate(0, brimY + 0.03, CRANIUM_CENTER_Z)
+  return bindHat([brim, crown, lid, band])
+}
+
+/**
+ * Circlet: thin gold band + front gem. Open-top adornment by design —
+ * exempt from cranium containment in the probe (covers nothing above).
+ */
+export function buildCirclet(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  const bandY = hatRimY(shape, DEFAULT_FACE_SHAPE) + 0.03
+  const bandR = shape.headWidth + 0.015
+  // Slight forehead dip: scale the ring's front down via shear-free tilt.
+  const band = new THREE.TorusGeometry(bandR, 0.012, 8, 28)
+  band.rotateX(Math.PI / 2)
+  band.translate(0, bandY, CRANIUM_CENTER_Z)
+  const gem = new THREE.BoxGeometry(0.034, 0.042, 0.02)
+  gem.rotateZ(Math.PI / 4)
+  gem.translate(0, bandY + 0.005, CRANIUM_CENTER_Z + bandR + 0.008)
+  return bindHat([band, gem])
+}
+
+/** Wizard hat: wide brim + tall bent cone + band. Cloth. */
+export function buildWizardHat(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const brimY = hatRimY(shape, face) + 0.008
+  const baseR = shape.headWidth + 0.035
+  const brim = new THREE.CylinderGeometry(baseR + 0.13, baseR + 0.15, 0.02, 28)
+  brim.translate(0, brimY, CRANIUM_CENTER_Z)
+  // Floppy cone: stacked segments leaning back with growing offset.
+  const parts: THREE.BufferGeometry[] = [brim]
+  const segs: Array<[number, number, number, number]> = [
+    // [rBottom, rTop, height, leanBack]
+    [0.115, 0.095, 0.12, 0.0],
+    [0.095, 0.07, 0.12, 0.03],
+    [0.07, 0.04, 0.12, 0.07],
+    [0.04, 0.008, 0.11, 0.12]
+  ]
+  let y = brimY + 0.01
+  for (const [rB, rT, h, lean] of segs) {
+    const cone = new THREE.CylinderGeometry(rT, rB, h, 20)
+    cone.translate(0, y + h / 2, CRANIUM_CENTER_Z - lean)
+    parts.push(cone)
+    y += h
+  }
+  const band = new THREE.TorusGeometry(baseR + 0.004, 0.02, 8, 24)
+  band.rotateX(Math.PI / 2)
+  band.translate(0, brimY + 0.035, CRANIUM_CENTER_Z)
+  parts.push(band)
+  return bindHat(parts)
+}
+
 export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
   {
     id: 'proc:tshirt',
@@ -2492,6 +3064,225 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
       const face = sanitizeFaceShape(dna.face)
       return buildKettleHat(shape, face)
     }
+  },
+  // ---- Sprint 31 ----
+  {
+    id: 'proc:sweater',
+    slotId: 'shirt',
+    label: 'Sweater',
+    tags: ['shirt', 'chest', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildSweater(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:belted_tunic',
+    slotId: 'shirt',
+    label: 'Belted Tunic',
+    tags: ['shirt', 'chest', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const topLength = clamp01(dna.morphs?.topLength ?? TOP_LENGTH_DEFAULT)
+      return buildBeltedTunic(shape, bust, belly, butt, topLength)
+    }
+  },
+  {
+    id: 'proc:dress',
+    slotId: 'shirt',
+    label: 'Dress',
+    tags: ['shirt', 'dress', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      return buildDress(shape, bust, belly, butt)
+    }
+  },
+  {
+    id: 'proc:long_coat',
+    slotId: 'shirt',
+    label: 'Long Coat',
+    tags: ['shirt', 'coat', 'procedural'],
+    materialId: 'leather',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      return buildLongCoat(shape, bust, belly, butt)
+    }
+  },
+  {
+    id: 'proc:tabard',
+    slotId: 'shirt',
+    label: 'Tabard',
+    tags: ['shirt', 'tabard', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      return buildTabard(shape, bust, belly, butt)
+    }
+  },
+  {
+    id: 'proc:kilt',
+    slotId: 'pants',
+    label: 'Kilt',
+    tags: ['pants', 'legs', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      return buildKilt(shape, butt, belly)
+    }
+  },
+  {
+    id: 'proc:leggings',
+    slotId: 'pants',
+    label: 'Leggings',
+    tags: ['pants', 'legs', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      return buildLeggings(shape, butt, belly)
+    }
+  },
+  {
+    id: 'proc:overalls',
+    slotId: 'pants',
+    label: 'Overalls',
+    tags: ['pants', 'legs', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      return buildOveralls(shape, butt, belly)
+    }
+  },
+  {
+    id: 'proc:crown',
+    slotId: 'helmet',
+    label: 'Crown',
+    tags: ['helmet', 'hat', 'crown', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildCrown(shape, face)
+    }
+  },
+  {
+    id: 'proc:boater',
+    slotId: 'helmet',
+    label: 'Boater Hat',
+    tags: ['helmet', 'hat', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildBoaterHat(shape, face)
+    }
+  },
+  {
+    id: 'proc:circlet',
+    slotId: 'helmet',
+    label: 'Circlet',
+    tags: ['helmet', 'hat', 'circlet', 'procedural'],
+    materialId: 'metal',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      return buildCirclet(shape)
+    }
+  },
+  {
+    id: 'proc:wizard_hat',
+    slotId: 'helmet',
+    label: 'Wizard Hat',
+    tags: ['helmet', 'hat', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildWizardHat(shape, face)
+    }
+  },
+  {
+    id: 'proc:bun_hair',
+    slotId: 'hair',
+    label: 'Topknot Bun',
+    tags: ['hair', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => buildBunHair(sanitizeBodyShape(dna.bodyShape))
+  },
+  {
+    id: 'proc:bob_hair',
+    slotId: 'hair',
+    label: 'Bob',
+    tags: ['hair', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => buildBobHair(sanitizeBodyShape(dna.bodyShape))
+  },
+  {
+    id: 'proc:pigtails_hair',
+    slotId: 'hair',
+    label: 'Pigtails',
+    tags: ['hair', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => buildPigtailsHair(sanitizeBodyShape(dna.bodyShape))
+  },
+  {
+    id: 'proc:fade_hair',
+    slotId: 'hair',
+    label: 'Fade',
+    tags: ['hair', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => buildFadeHair(sanitizeBodyShape(dna.bodyShape))
+  },
+  {
+    id: 'proc:stubble',
+    slotId: 'beard',
+    label: 'Stubble',
+    tags: ['beard', 'procedural'],
+    materialId: 'hair',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      return buildStubble(shape, face)
+    }
+  },
+  {
+    id: 'proc:sandals',
+    slotId: 'shoes',
+    label: 'Sandals',
+    tags: ['shoes', 'sandals', 'procedural'],
+    materialId: 'leather',
+    build: () => buildSandals()
+  },
+  {
+    id: 'proc:bracers',
+    slotId: 'gloves',
+    label: 'Bracers',
+    tags: ['gloves', 'bracers', 'procedural'],
+    materialId: 'leather',
+    build: () => buildBracers()
   }
 ]
 
@@ -2526,10 +3317,18 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
     assetId === 'proc:elven_tunic' ||
     assetId === 'proc:dwarf_vest' ||
     assetId === 'proc:plate' ||
+    assetId === 'proc:sweater' ||
+    assetId === 'proc:belted_tunic' ||
+    assetId === 'proc:dress' ||
+    assetId === 'proc:long_coat' ||
+    assetId === 'proc:tabard' ||
     assetId === 'proc:jeans' ||
     assetId === 'proc:shorts' ||
     assetId === 'proc:baggy' ||
     assetId === 'proc:tights' ||
+    assetId === 'proc:kilt' ||
+    assetId === 'proc:leggings' ||
+    assetId === 'proc:overalls' ||
     assetId === 'proc:plate_legs'
   )
     return key === 'torso'
@@ -2545,19 +3344,32 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
     assetId === 'proc:kettle_hat'
   )
     return key === 'head' || key === 'face'
+  if (assetId === 'proc:boater' || assetId === 'proc:wizard_hat')
+    return key === 'head' || key === 'face'
+  if (assetId === 'proc:circlet' || assetId === 'proc:crown') return key === 'head'
   if (assetId === 'proc:hood') return key === 'head'
   if (assetId === 'proc:sunglasses' || assetId === 'proc:goggles' || assetId === 'proc:mask')
     return key === 'head' || key === 'face'
-  if (assetId === 'proc:goatee' || assetId === 'proc:full_beard' || assetId === 'proc:mustache')
+  if (assetId === 'proc:goatee' || assetId === 'proc:full_beard' || assetId === 'proc:mustache' || assetId === 'proc:stubble')
     return key === 'head' || key === 'face'
   if (
     assetId === 'proc:shoes' ||
     assetId === 'proc:boots' ||
+    assetId === 'proc:sandals' ||
     assetId === 'proc:gloves' ||
-    assetId === 'proc:gauntlets'
+    assetId === 'proc:gauntlets' ||
+    assetId === 'proc:bracers'
   )
     return key === 'torso'
-  if (assetId === 'proc:crop_hair' || assetId === 'proc:ponytail' || assetId === 'proc:mohawk')
+  if (
+    assetId === 'proc:crop_hair' ||
+    assetId === 'proc:ponytail' ||
+    assetId === 'proc:mohawk' ||
+    assetId === 'proc:bun_hair' ||
+    assetId === 'proc:bob_hair' ||
+    assetId === 'proc:pigtails_hair' ||
+    assetId === 'proc:fade_hair'
+  )
     return key === 'head'
   if (assetId === 'proc:long_hair') return key === 'head' || key === 'torso'
   return false

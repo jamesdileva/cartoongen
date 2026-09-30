@@ -26,6 +26,25 @@ import {
   greatHelmExtents,
   buildKettleHat,
   kettleExtents,
+  buildSweater,
+  buildBeltedTunic,
+  buildDress,
+  buildLongCoat,
+  buildTabard,
+  buildKilt,
+  buildLeggings,
+  buildOveralls,
+  buildCrown,
+  buildBoaterHat,
+  buildCirclet,
+  buildWizardHat,
+  buildBunHair,
+  buildBobHair,
+  buildPigtailsHair,
+  buildFadeHair,
+  buildStubble,
+  buildSandals,
+  buildBracers,
   buildCropHair,
   buildPonytail,
   buildMohawk,
@@ -112,17 +131,26 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 40 procedural entries with correct slots', () => {
+  it('exposes all 59 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
       'proc:armet',
       'proc:baggy',
       'proc:beanie',
+      'proc:belted_tunic',
+      'proc:boater',
+      'proc:bob_hair',
       'proc:boots',
+      'proc:bracers',
+      'proc:bun_hair',
       'proc:cap',
+      'proc:circlet',
       'proc:crop_hair',
+      'proc:crown',
+      'proc:dress',
       'proc:dwarf_vest',
       'proc:elven_tunic',
+      'proc:fade_hair',
       'proc:full_beard',
       'proc:gauntlets',
       'proc:gloves',
@@ -134,27 +162,37 @@ describe('procedural asset catalog', () => {
       'proc:jacket',
       'proc:jeans',
       'proc:kettle_hat',
+      'proc:kilt',
+      'proc:leggings',
+      'proc:long_coat',
       'proc:long_hair',
       'proc:longsleeve',
       'proc:mage_robe',
       'proc:mask',
       'proc:mohawk',
       'proc:mustache',
+      'proc:overalls',
+      'proc:pigtails_hair',
       'proc:plate',
       'proc:plate_legs',
       'proc:plumed_armet',
       'proc:polo',
       'proc:ponytail',
       'proc:sallet',
+      'proc:sandals',
       'proc:shoes',
       'proc:shorts',
       'proc:sombrero',
+      'proc:stubble',
       'proc:sunglasses',
+      'proc:sweater',
+      'proc:tabard',
       'proc:tank',
       'proc:tights',
       'proc:tophat',
       'proc:tshirt',
-      'proc:vest'
+      'proc:vest',
+      'proc:wizard_hat'
     ])
     expect(entries.find((e) => e.id === 'proc:tshirt')?.slotId).toBe('shirt')
     expect(entries.find((e) => e.id === 'proc:longsleeve')?.slotId).toBe('shirt')
@@ -195,6 +233,28 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:great_bascinet')?.slotId).toBe('helmet')
     expect(entries.find((e) => e.id === 'proc:great_helm')?.slotId).toBe('helmet')
     expect(entries.find((e) => e.id === 'proc:kettle_hat')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:sweater')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:belted_tunic')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:dress')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:long_coat')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:tabard')?.slotId).toBe('shirt')
+    expect(entries.find((e) => e.id === 'proc:kilt')?.slotId).toBe('pants')
+    expect(entries.find((e) => e.id === 'proc:leggings')?.slotId).toBe('pants')
+    expect(entries.find((e) => e.id === 'proc:overalls')?.slotId).toBe('pants')
+    expect(entries.find((e) => e.id === 'proc:crown')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:boater')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:circlet')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:wizard_hat')?.slotId).toBe('helmet')
+    expect(entries.find((e) => e.id === 'proc:bun_hair')?.slotId).toBe('hair')
+    expect(entries.find((e) => e.id === 'proc:bob_hair')?.slotId).toBe('hair')
+    expect(entries.find((e) => e.id === 'proc:pigtails_hair')?.slotId).toBe('hair')
+    expect(entries.find((e) => e.id === 'proc:fade_hair')?.slotId).toBe('hair')
+    expect(entries.find((e) => e.id === 'proc:stubble')?.slotId).toBe('beard')
+    expect(entries.find((e) => e.id === 'proc:sandals')?.slotId).toBe('shoes')
+    expect(entries.find((e) => e.id === 'proc:bracers')?.slotId).toBe('gloves')
+    expect(findProceduralAsset('proc:long_coat')?.materialId).toBe('leather')
+    expect(findProceduralAsset('proc:crown')?.materialId).toBe('metal')
+    expect(findProceduralAsset('proc:sandals')?.materialId).toBe('leather')
     expect(findProceduralAsset('proc:armet')?.materialId).toBe('metal')
     expect(findProceduralAsset('proc:ponytail')?.materialId).toBe('hair')
     expect(findProceduralAsset('proc:sunglasses')?.materialId).toBe('lens')
@@ -238,10 +298,18 @@ describe('procedural asset catalog', () => {
       'proc:elven_tunic',
       'proc:dwarf_vest',
       'proc:plate',
+      'proc:sweater',
+      'proc:belted_tunic',
+      'proc:dress',
+      'proc:long_coat',
+      'proc:tabard',
       'proc:jeans',
       'proc:shorts',
       'proc:baggy',
       'proc:tights',
+      'proc:kilt',
+      'proc:leggings',
+      'proc:overalls',
       'proc:plate_legs'
     ]) {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
@@ -257,7 +325,9 @@ describe('procedural asset catalog', () => {
       'proc:sallet',
       'proc:great_bascinet',
       'proc:great_helm',
-      'proc:kettle_hat'
+      'proc:kettle_hat',
+      'proc:boater',
+      'proc:wizard_hat'
     ]) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
@@ -265,21 +335,33 @@ describe('procedural asset catalog', () => {
     }
     expect(garmentDependsOnKey('proc:hood', 'head')).toBe(true)
     expect(garmentDependsOnKey('proc:hood', 'face')).toBe(false)
+    for (const id of ['proc:circlet', 'proc:crown']) {
+      expect(garmentDependsOnKey(id, 'head')).toBe(true)
+      expect(garmentDependsOnKey(id, 'face')).toBe(false)
+      expect(garmentDependsOnKey(id, 'torso')).toBe(false)
+    }
     for (const id of ['proc:sunglasses', 'proc:goggles', 'proc:mask']) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
     }
-    for (const id of ['proc:goatee', 'proc:full_beard', 'proc:mustache']) {
+    for (const id of ['proc:goatee', 'proc:full_beard', 'proc:mustache', 'proc:stubble']) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
     }
-    for (const id of ['proc:shoes', 'proc:boots', 'proc:gloves', 'proc:gauntlets']) {
+    for (const id of ['proc:shoes', 'proc:boots', 'proc:sandals', 'proc:gloves', 'proc:gauntlets', 'proc:bracers']) {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
-      expect(garmentDependsOnKey(id, 'head')).toBe(false)
     }
-    for (const id of ['proc:crop_hair', 'proc:ponytail', 'proc:mohawk']) {
+    for (const id of [
+      'proc:crop_hair',
+      'proc:ponytail',
+      'proc:mohawk',
+      'proc:bun_hair',
+      'proc:bob_hair',
+      'proc:pigtails_hair',
+      'proc:fade_hair'
+    ]) {
       expect(garmentDependsOnKey(id, 'head')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
     }
@@ -1657,5 +1739,116 @@ describe('beards', () => {
     // Thin arch band just above the mouth (~1.78).
     expect(maxY - minY).toBeLessThan(0.08)
     expect(minY).toBeGreaterThan(1.72)
+  })
+})
+
+describe('sprint 31 clothing breadth', () => {
+  function yExt(geometry: THREE.BufferGeometry): { min: number; max: number } {
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    let min = Infinity
+    let max = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (y < min) min = y
+      if (y > max) max = y
+    }
+    return { min, max }
+  }
+
+  it('binds correct chains with normalized weights and x symmetry', () => {
+    for (const build of [buildSweater, buildBeltedTunic, buildDress, buildLongCoat, buildTabard]) {
+      const { geometry, boneNames } = build()
+      expect(boneNames).toContain('Spine1')
+      expect(weightSumViolations(geometry)).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
+    }
+    for (const build of [buildSweater, buildLongCoat]) {
+      expect(build().boneNames).toContain('LeftForearm')
+    }
+    for (const build of [buildKilt, buildLeggings, buildOveralls]) {
+      const { geometry, boneNames } = build()
+      expect(boneNames).toEqual([
+        'Root',
+        'Spine',
+        'LeftUpperLeg',
+        'LeftCalf',
+        'RightUpperLeg',
+        'RightCalf'
+      ])
+      expect(weightSumViolations(geometry)).toBe(0)
+    }
+    for (const build of [buildBunHair, buildBobHair, buildPigtailsHair, buildFadeHair]) {
+      const { geometry, boneNames } = build()
+      expect(boneNames).toEqual(['Head'])
+      expect(weightSumViolations(geometry)).toBe(0)
+    }
+  })
+
+  it('dress and coat skirts reach past the hips, kilt flares to the knee', () => {
+    expect(yExt(buildDress().geometry).min).toBeLessThan(0.6)
+    expect(yExt(buildLongCoat().geometry).min).toBeLessThan(0.67)
+    const kiltExt = yExt(buildKilt().geometry)
+    expect(kiltExt.min).toBeLessThan(0.6)
+    // Pleat fins stand proud of the flare (default hipWidth=1).
+    expect(xExtent(buildKilt().geometry).max).toBeGreaterThan(0.44)
+  })
+
+  it('overalls straps rise over the shoulders with buttons on the bib', () => {
+    const ext = yExt(buildOveralls().geometry)
+    expect(ext.max).toBeGreaterThan(1.58)
+    expect(ext.min).toBeLessThan(0.8)
+  })
+
+  it('crowns, brims, and cones sit where hats should', () => {
+    // Crown spikes rise above the band; orb caps the dome.
+    const crownExt = yExt(buildCrown().geometry)
+    expect(crownExt.max).toBeGreaterThan(2.0)
+    // Boater brim spans wide and flat.
+    expect(xExtent(buildBoaterHat().geometry).max).toBeGreaterThan(
+      DEFAULT_BODY_SHAPE.headWidth + 0.13
+    )
+    // Circlet is a thin low band (open-top adornment).
+    const circletExt = yExt(buildCirclet().geometry)
+    expect(circletExt.max - circletExt.min).toBeLessThan(0.09)
+    // Wizard cone climbs well above the crown.
+    expect(yExt(buildWizardHat().geometry).max).toBeGreaterThan(2.3)
+  })
+
+  it('hairstyles read distinctly', () => {
+    const top = CRANIUM_CENTER_Y + DEFAULT_BODY_SHAPE.headHeight
+    // Bun knot clears the crown.
+    expect(yExt(buildBunHair().geometry).max).toBeGreaterThan(top + 0.05)
+    // Bob falls to the shoulders.
+    expect(yExt(buildBobHair().geometry).min).toBeLessThan(1.56)
+    // Pigtails hang past the jaw on both sides.
+    const tails = yExt(buildPigtailsHair().geometry)
+    expect(tails.min).toBeLessThan(1.5)
+    expect(xExtent(buildPigtailsHair().geometry).max).toBeGreaterThan(
+      DEFAULT_BODY_SHAPE.headWidth
+    )
+    // Fade is a thin skull-hugging layer (fixed-seg shells share vert counts).
+    const fadePos = buildFadeHair().geometry.attributes.position as THREE.BufferAttribute
+    const cropPos = buildCropHair().geometry.attributes.position as THREE.BufferAttribute
+    let fadeMin = Infinity
+    let cropMin = Infinity
+    for (let i = 0; i < fadePos.count; i++) fadeMin = Math.min(fadeMin, fadePos.getY(i))
+    for (let i = 0; i < cropPos.count; i++) cropMin = Math.min(cropMin, cropPos.getY(i))
+    expect(fadeMin).toBeGreaterThan(cropMin + 0.05)
+  })
+
+  it('stubble is a shadow of the full beard', () => {
+    const stubble = yExt(buildStubble().geometry)
+    const full = yExt(buildFullBeard().geometry)
+    expect(stubble.max - stubble.min).toBeLessThan(full.max - full.min)
+  })
+
+  it('sandals stay under the foot, bracers on the forearm', () => {
+    const sandalExt = yExt(buildSandals().geometry)
+    expect(sandalExt.min).toBeLessThanOrEqual(0.031)
+    expect(sandalExt.max).toBeLessThan(0.12)
+    const bracerX = xExtent(buildBracers().geometry)
+    expect(bracerX.max).toBeLessThan(0.95)
+    expect(bracerX.max).toBeGreaterThan(0.85)
   })
 })

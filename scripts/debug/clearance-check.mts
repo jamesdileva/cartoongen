@@ -18,6 +18,14 @@ import {
   buildPlate,
   buildPlateLegs,
   buildArmet,
+  buildSweater,
+  buildBeltedTunic,
+  buildDress,
+  buildLongCoat,
+  buildTabard,
+  buildKilt,
+  buildLeggings,
+  buildOveralls,
   armetExtents,
   buildCropHair,
   buildPonytail,
@@ -198,7 +206,10 @@ const pantsBuilders = {
   shorts: (shape: BodyShape, butt: number, belly: number) => buildShorts(shape, butt, belly),
   baggy: (shape: BodyShape, butt: number, belly: number) => buildBaggy(shape, butt, belly),
   tights: (shape: BodyShape, butt: number, belly: number) => buildTights(shape, butt, belly),
-  plate_legs: (shape: BodyShape, butt: number, belly: number) => buildPlateLegs(shape, butt, belly)
+  plate_legs: (shape: BodyShape, butt: number, belly: number) => buildPlateLegs(shape, butt, belly),
+  kilt: (shape: BodyShape, butt: number, belly: number) => buildKilt(shape, butt, belly),
+  leggings: (shape: BodyShape, butt: number, belly: number) => buildLeggings(shape, butt, belly),
+  overalls: (shape: BodyShape, butt: number, belly: number) => buildOveralls(shape, butt, belly)
 } as const
 
 const hairBuilders = {
@@ -228,7 +239,17 @@ const shirtBuilders = {
   elven_tunic: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
     buildElvenTunic(shape, bust, belly, butt, topLength),
   dwarf_vest: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
-    buildDwarfVest(shape, bust, belly, butt, topLength)
+    buildDwarfVest(shape, bust, belly, butt, topLength),
+  sweater: (shape: BodyShape, bust: number, belly: number, butt: number, topLength: number) =>
+    buildSweater(shape, bust, belly, butt, topLength),
+  belted_tunic: (shape: BodyShape, bust: number, belly: number, butt: number, _topLength: number) =>
+    buildBeltedTunic(shape, bust, belly, butt),
+  dress: (shape: BodyShape, bust: number, belly: number, butt: number, _topLength: number) =>
+    buildDress(shape, bust, belly, butt),
+  long_coat: (shape: BodyShape, bust: number, belly: number, butt: number, _topLength: number) =>
+    buildLongCoat(shape, bust, belly, butt),
+  tabard: (shape: BodyShape, bust: number, belly: number, butt: number, _topLength: number) =>
+    buildTabard(shape, bust, belly, butt)
 } as const
 
 let failures = 0
@@ -259,8 +280,8 @@ for (const { name, shape } of shapes) {
                 ? { xMin: 0.2, xMax: delt } // +X side only; symmetry covers -X
                 : shirtName === 'jacket'
                   ? { xMin: 0.2 }
-                  : shirtName === 'tank'
-                    ? { xMin: -delt, xMax: delt }
+                  : shirtName === 'tank' || shirtName === 'dress' || shirtName === 'tabard'
+                    ? { xMin: -delt, xMax: delt } // bare shoulders by design
                     : {}
             report(
               issues,
@@ -287,7 +308,11 @@ for (const { name, shape } of shapes) {
             // (visible torso by design): keep |z| near the true silhouette.
             // Sleeveless tops leave deltoids bare: bound x to the shell.
             const sleevelessSide =
-              shirtName === 'tank' || shirtName === 'vest' || shirtName === 'dwarf_vest'
+              shirtName === 'tank' ||
+              shirtName === 'vest' ||
+              shirtName === 'dwarf_vest' ||
+              shirtName === 'dress' ||
+              shirtName === 'tabard'
             const openSide =
               shirtName === 'jacket' || shirtName === 'vest' || shirtName === 'dwarf_vest'
             report(
@@ -301,7 +326,14 @@ for (const { name, shape } of shapes) {
                 ...(openSide ? { zMax: 0.12 } : {})
               })
             )
-            if (shirtName === 'longsleeve' || shirtName === 'jacket' || shirtName === 'mage_robe' || shirtName === 'plate') {
+            if (
+              shirtName === 'longsleeve' ||
+              shirtName === 'jacket' ||
+              shirtName === 'mage_robe' ||
+              shirtName === 'plate' ||
+              shirtName === 'sweater' ||
+              shirtName === 'long_coat'
+            ) {
               report(
                 issues,
                 `${shirtName} arm`,
@@ -327,6 +359,19 @@ for (const { name, shape } of shapes) {
                 })
               )
             }
+            if (shirtName === 'dress' || shirtName === 'long_coat') {
+              // Flared skirt must cover pelvis/butt to its hem.
+              report(
+                issues,
+                `${shirtName} skirt`,
+                countPokes(torso, shirt, {
+                  yMin: shirtName === 'dress' ? 0.55 : 0.62,
+                  yMax: 0.9,
+                  mode: 'rear',
+                  minAbsZ: 0.05
+                })
+              )
+            }
             if (shirtName === 'tank') {
               // Centerline under the strap footprint only: tube edges
               // graze. Bare shoulder elsewhere is by design.
@@ -344,7 +389,17 @@ for (const { name, shape } of shapes) {
             }
           }
 
-          for (const shirtName of ['tshirt', 'longsleeve', 'jacket', 'polo', 'plate'] as const) {
+          for (const shirtName of [
+            'tshirt',
+            'longsleeve',
+            'jacket',
+            'polo',
+            'plate',
+            'sweater',
+            'belted_tunic',
+            'long_coat'
+            // dress + tabard are sleeveless: deltoids bare by design (like tank)
+          ] as const) {
             const shirt = shirtBuilders[shirtName](shape, bust, belly, butt, topLength).geometry
             const clavEnd = 0.36 * shape.shoulderWidth
             report(
@@ -367,7 +422,8 @@ for (const { name, shape } of shapes) {
               countPokes(torso, pants, { yMin: 0.82, yMax: 1.04, mode: 'rear', minAbsZ: 0.05 })
             )
             // Shorts have no tubes below mid-thigh: bare legs are by design.
-            if (pantsName !== 'shorts') {
+            // Kilts flare to the knee with pleats: bare legs below by design.
+            if (pantsName !== 'shorts' && pantsName !== 'kilt') {
               report(
                 issues,
                 `${pantsName} leg`,
@@ -430,6 +486,7 @@ for (const { name, shape } of shapes) {
   for (const [shoeName, build] of Object.entries({
     shoes: () => buildShoes(),
     boots: () => buildBoots()
+    // sandals: open footwear by design (sole + straps); unit-tested, not banded
   } as const)) {
     const shoe = build().geometry
     report(
@@ -446,6 +503,7 @@ for (const { name, shape } of shapes) {
   for (const [gloveName, build] of Object.entries({
     gloves: () => buildGloves(),
     gauntlets: () => buildGauntlets()
+    // bracers: bare hands by design; unit-tested, not banded
   } as const)) {
     const glove = build().geometry
     report(
@@ -497,6 +555,11 @@ for (const { name, shape } of headShapes) {
       great_bascinet: { kind: 'ellipsoid', rx: W * 1.5 + 0.035, ry: H * 1.15 + 0.04, rz: L * 1.6 + 0.05, cy: 1.86 },
       great_helm: { kind: 'cylinder', rx: W + 0.115, ry: 0.3, rz: W + 0.115, cy: rim + 0.18 },
       kettle_hat: { kind: 'cylinder', rx: W + 0.185, ry: 0.2, rz: W + 0.185, cy: rim + 0.15 },
+      // Sprint 31: crown (closed cap) + boater + wizard cone all cover the
+      // crown. Circlet is open-top adornment: exempt by design (no entry).
+      crown: { kind: 'ellipsoid', rx: W + 0.04, ry: H + 0.04, rz: L + 0.04, cy: 1.86 },
+      boater: { kind: 'cylinder', rx: W + 0.17, ry: 0.2, rz: W + 0.17, cy: rim + 0.15 },
+      wizard_hat: { kind: 'ellipsoid', rx: W + 0.035, ry: H * 1.4 + 0.06, rz: L + 0.035, cy: 1.86 },
       // Armet matches the builder dims: rx from armetExtents, grown to clear
       // the nose ahead of the chin by design (grow only Z here).
       armet: { kind: 'ellipsoid', rx: W * 1.5 + 0.035, ry: H * 1.15 + 0.04, rz: L * 1.6 + 0.05, cy: 1.86 }
@@ -549,9 +612,13 @@ for (const { name, shape } of headShapes) {
   // design (face opening). Ray checks can't express this (up-rays exit the
   // opening, edge rays graze the rim), so test containment directly.
   const hairShells = {
-    crop_hair: { yMin: 1.72, gx: 0.05, gy: 0.015, gz: 0.03 },
-    ponytail: { yMin: 1.83, gx: 0.03, gy: 0.015, gz: 0.02 },
-    long_hair: { yMin: 1.68, gx: 0.035, gy: 0.015, gz: 0.03 }
+    crop_hair: { yMin: 1.72, gx: 0.05, gy: 0.015, gz: 0.03, wedge: 0.7 },
+    ponytail: { yMin: 1.83, gx: 0.03, gy: 0.015, gz: 0.02, wedge: 0.7 },
+    long_hair: { yMin: 1.68, gx: 0.035, gy: 0.015, gz: 0.03, wedge: 0.7 },
+    bun_hair: { yMin: 1.72, gx: 0.05, gy: 0.015, gz: 0.03, wedge: 0.72 },
+    bob_hair: { yMin: 1.7, gx: 0.055, gy: 0.02, gz: 0.035, wedge: 0.75 },
+    pigtails_hair: { yMin: 1.78, gx: 0.045, gy: 0.015, gz: 0.028, wedge: 0.7 }
+    // fade_hair: buzz cut leaves ears out by design (mohawk precedent, no entry)
   } as const
   for (const [hairName, shell] of Object.entries(hairShells)) {
     const hp = head.attributes.position as THREE.BufferAttribute
@@ -569,7 +636,7 @@ for (const { name, shape } of headShapes) {
       const nz = (bz - 0.005) / (shape.headLength + shell.gz)
       const inside = nx * nx + ny * ny + nz * nz < 1.01
       const azimuth = Math.abs(Math.atan2(bx, bz - 0.005))
-      const inWedge = azimuth < 0.7
+      const inWedge = azimuth < shell.wedge
       if (!inside && !inWedge) {
         pokes++
         if (!worstAt) worstAt = [bx, by, bz]

@@ -422,13 +422,15 @@ shapes x 3 eye sizes (probe hat bands + analytic tests).
 
 ### Sprint 31 - Clothing Breadth
 
-- [ ] Tops: sweater (high collar), belted tunic (+ belt torus), dress/skirt
+- [x] Tops: sweater (high collar), belted tunic (+ belt torus), dress/skirt
       (flared shell over hips), long coat, overalls
-- [ ] Lower body: kilt (open-front pleated shell), leggings
-- [ ] Hats: crown (band + spike cones), straw hat (wide brim + dome), circlet
-- [ ] Hair: bun, bob, pigtails, fade; beard: stubble; shoes: sandals;
+- [x] Lower body: kilt (open-front pleated shell), leggings
+- [x] Hats: crown (band + spike cones), straw hat (wide brim + dome), circlet
+- [x] Hair: bun, bob, pigtails, fade; beard: stubble; shoes: sandals;
       gloves: bracers (forearm cuff)
-- [ ] All new assets flow into randomizer pools by slot automatically
+- [x] All new assets flow into randomizer pools by slot automatically
+- [x] Bonus: tabard (crusader sleeveless shell + belt) + wizard hat
+      (bent cone + brim, pairs with the mage robe)
 
 **Acceptance**: Every wearable slot has 3+ options; probe ALL PASSED with
 new bands per garment.
