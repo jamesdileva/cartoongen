@@ -5,6 +5,44 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 055 - Wizard Hat Poke-Through Fix (Live User Report)
+
+### Date
+
+2026-09-30
+
+### What we found
+
+User live-reported a head poking through one of the wizard hats. Root
+cause: the cone used **fixed radii** (base 0.115) while skulls vary with
+head shape. At brim height a wide skull reaches 0.25+ half-width and
+even default heads with small eyes (low brim) exceed the cone. The
+analytic hat solid in the probe only checks cranium-inside-envelope, so
+it could never catch an undersized builder — same blind spot class as
+the Sprint 29 rear-filler lesson (test the built geometry, not the math).
+
+### What we fixed
+
+- Cone base radius now tracks the skull width at brim height + 25mm
+  margin, tapering upward in fractions; lean kept small vs. local radii
+- New point-in-mesh parity regression test: skull surface samples pulled
+  3% inward, +x rays, odd hits = inside — over 5 head shapes x 3 eye
+  sizes (270 rays). Verified 360/360 inside via a throwaway probe script
+  (since removed) before promoting to the suite
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 322 tests passing (321 + 1 new parity test), probe ALL PASSED
+- Pushed as `7b94a85`
+
+### Current status
+
+Wizard hat fixed pending user live confirmation. Next: Sprint 32 - cape
++ wings + cape-rule removal.
+
+---
+
 ## Session 054 - Sprint 31: Clothing Breadth (19 Garments)
 
 ### Date

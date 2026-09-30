@@ -2838,3 +2838,18 @@ test-metric fixes. Full entry in worklog.md.
 
 Sprint 31 complete. Next: Sprint 32 - cape + wings + cape-rule removal.
 
+---
+
+## Session 055 - Wizard Hat Poke-Through Fix
+
+### Date
+
+2026-09-30
+
+### What we fixed
+
+Live user report: head poking through the wizard hat. Fixed cone radii
+(skull-tracking base + fractional taper) + point-in-mesh parity
+regression test (5 shapes x 3 eyes). 322 tests passing, probe green.
+Pushed as `7b94a85`. Full entry in worklog.md.
+
