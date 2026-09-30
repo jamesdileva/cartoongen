@@ -5,6 +5,58 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 054 - Sprint 31: Clothing Breadth (19 Garments)
+
+### Date
+
+2026-09-30
+
+### What we built
+
+Sprint 31 - 19 new garments (40 -> 59 assets). Every wearable slot now
+has 3+ options:
+
+- Tops: sweater (chunky knit + high collar + long sleeves), belted tunic
+  (respects topLength, belt follows the hem), dress (butt-aware flared
+  skirt to the knees), leather long coat, crusader tabard (bonus)
+- Pants: pleated kilt (radial fins + waistband), leggings (waistband +
+  ankle cuffs + stirrups), bib overalls (chest bib + over-shoulder
+  straps + buttons)
+- Hats: skull-conforming crown (band + spikes + cap + orb), flat-topped
+  boater, open-top circlet (exempt from containment by design), bent-cone
+  wizard hat (bonus, pairs with the mage robe)
+- Hair: topknot bun, jaw-length bob, rear-hung pigtails (behind the
+  shoulder line so deltoids never clip), buzz fade (ears out, mohawk
+  precedent); plus stubble, open sandals (exempt from toe/heel bands),
+  forearm bracers (exempt from fingers band)
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Tunic ignored topLength (hem/bar bands tested below its fixed hem) | Tunic respects topLength like all tops; belt rides max(waist, hem+0.04) |
+| Dress/coat/tabard chest band flagged bare shoulders | Same x-bound treatment as tank (bare shoulders by design) |
+| Dress/coat skirts used fixed depths (butt=1 poked through) | Skirts track hipHalfD parametrically, like the hip shell |
+| Crown cap too narrow (forehead top poked through) | Rebuilt skull-conforming: sphere-section band + snug dome, spikes on normals |
+| Bob band floor below its shell on small heads | yMin 1.65 -> 1.70 (shell bottom scales with headHeight) |
+| Octahedron gem broke merging (non-indexed) | Faceted box diamond (indexed) |
+| Snout/bascinet-style graze risk on pigtails | Tails routed rear of the shoulder line |
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 321 tests passing (314 + 7 new), no regressions
+- probe:clearance ALL PASSED (new shirt/pants/hat/hair bands; skirt,
+  arm, deltoid, sleeveless-side handling for the new tops)
+- Pushed as `d13b5ac`
+
+### Current status
+
+Sprint 31 complete. Next: Sprint 32 - cape + wings + cape-rule removal
+(knight gains the cape by default).
+
+---
+
 ## Session 053 - Sprint 30: Sallet + Bascinet + Great Helm + Kettle Hat
 
 ### Date

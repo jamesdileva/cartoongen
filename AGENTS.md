@@ -2812,3 +2812,29 @@ them. 40 procedural assets total. Full entry in worklog.md.
 
 Sprint 30 complete. Next: Sprint 31 - clothing breadth.
 
+---
+
+## Session 054 - Sprint 31: Clothing Breadth
+
+### Date
+
+2026-09-30
+
+### What we built
+
+Sprint 31 - 19 new garments (59 assets): sweater, belted tunic, dress,
+long coat, tabard, kilt, leggings, overalls, crown, boater, circlet,
+wizard hat, bun, bob, pigtails, fade, stubble, sandals, bracers. Probe
+caught 3 real geometry bugs (tunic hem, skirt depths, crown cap) plus
+test-metric fixes. Full entry in worklog.md.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 321 tests passing (314 + 7 new), probe ALL PASSED
+- Pushed as `d13b5ac`
+
+### Current status
+
+Sprint 31 complete. Next: Sprint 32 - cape + wings + cape-rule removal.
+
