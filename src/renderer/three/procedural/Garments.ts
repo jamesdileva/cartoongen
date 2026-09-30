@@ -2558,17 +2558,22 @@ export function buildWizardHat(
   const baseR = shape.headWidth + 0.035
   const brim = new THREE.CylinderGeometry(baseR + 0.13, baseR + 0.15, 0.02, 28)
   brim.translate(0, brimY, CRANIUM_CENTER_Z)
-  // Floppy cone: stacked segments leaning back with growing offset.
+  // Floppy cone: base radius tracks the skull width AT BRIM HEIGHT (fixed
+  // radii poke through on wide/tall heads), tapering up with a backward lean.
+  const tB = Math.max(-0.9, Math.min(0.9, (brimY - CRANIUM_CENTER_Y) / shape.headHeight))
+  const coneR = shape.headWidth * Math.sqrt(1 - tB * tB) + 0.025
   const parts: THREE.BufferGeometry[] = [brim]
   const segs: Array<[number, number, number, number]> = [
-    // [rBottom, rTop, height, leanBack]
-    [0.115, 0.095, 0.12, 0.0],
-    [0.095, 0.07, 0.12, 0.03],
-    [0.07, 0.04, 0.12, 0.07],
-    [0.04, 0.008, 0.11, 0.12]
+    // [rBottom, rTop, height, leanBack] as coneR fractions (tip absolute)
+    [1.04, 0.8, 0.12, 0.0],
+    [0.8, 0.58, 0.12, 0.03],
+    [0.58, 0.34, 0.12, 0.07],
+    [0.34, 0.03, 0.11, 0.12]
   ]
   let y = brimY + 0.01
-  for (const [rB, rT, h, lean] of segs) {
+  for (const [fB, fT, h, lean] of segs) {
+    const rB = fB > 1 ? coneR + 0.005 : coneR * fB
+    const rT = fT < 0.1 ? 0.008 : coneR * fT
     const cone = new THREE.CylinderGeometry(rT, rB, h, 20)
     cone.translate(0, y + h / 2, CRANIUM_CENTER_Z - lean)
     parts.push(cone)

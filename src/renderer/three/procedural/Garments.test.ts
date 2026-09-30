@@ -1851,4 +1851,46 @@ describe('sprint 31 clothing breadth', () => {
     expect(bracerX.max).toBeLessThan(0.95)
     expect(bracerX.max).toBeGreaterThan(0.85)
   })
+
+  it('wizard cone contains the skull on all head shapes (no poke-through)', () => {
+    // Point-in-mesh parity: skull surface samples (pulled 3% inward) cast
+    // +x rays; an odd hit count means inside. Catches fixed-size cones on
+    // wide/tall heads (live user report).
+    const shapes: BodyShape[] = [
+      DEFAULT_BODY_SHAPE,
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.28, headLength: 0.32 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.16, headLength: 0.18 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.16, headLength: 0.32 },
+      { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.28, headLength: 0.18 }
+    ]
+    for (const shape of shapes) {
+      for (const eyeScale of [0.6, 1, 1.6]) {
+        const face = { ...DEFAULT_FACE_SHAPE, eyeScale }
+        const { geometry } = buildWizardHat(shape, face)
+        const mesh = new THREE.Mesh(
+          geometry,
+          new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })
+        )
+        mesh.updateMatrixWorld(true)
+        const brimY = hatRimY(shape, face) + 0.008
+        const yTop = Math.min(brimY + 0.3, CRANIUM_CENTER_Y + shape.headHeight - 0.005)
+        for (let k = 0; k < 3; k++) {
+          const y = brimY + 0.05 + ((yTop - brimY - 0.05) * k) / 2
+          const s = Math.sqrt(Math.max(1 - ((y - CRANIUM_CENTER_Y) / shape.headHeight) ** 2, 0.01))
+          for (let j = 0; j < 6; j++) {
+            const phi = ((j + 0.5) / 6) * Math.PI * 2
+            const p = new THREE.Vector3(
+              shape.headWidth * s * Math.cos(phi) * 0.97,
+              y,
+              0.005 + shape.headLength * s * Math.sin(phi) * 0.97
+            )
+            const ray = new THREE.Raycaster(p, new THREE.Vector3(1, 0, 0))
+            const hits = ray.intersectObject(mesh)
+            expect(hits.length % 2, `w=${shape.headWidth} eye=${eyeScale} y=${y.toFixed(2)}`).toBe(1)
+          }
+        }
+        mesh.geometry.dispose()
+      }
+    }
+  })
 })
