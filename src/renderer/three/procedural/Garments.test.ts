@@ -1274,19 +1274,22 @@ describe('plate armour', () => {
       { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.28, headLength: 0.32 }
     ]) {
       for (const noseSize of [0.6, 1, 1.6]) {
-        const face = { ...DEFAULT_FACE_SHAPE, noseSize }
-        const e = armetExtents(shape, face)
-        const inside = (x: number, y: number, z: number): boolean => {
-          const nx = (x - e.cx) / e.rx
-          const ny = (y - e.cy) / e.ry
-          const nz = (z - e.cz) / e.rz
-          return nx * nx + ny * ny + nz * nz < 1
+        // Pointed projects furthest: tip = surface + 0.049*n.
+        for (const [noseStyle, tipK] of [['button', 0.03], ['pointed', 0.049]] as const) {
+          const face = { ...DEFAULT_FACE_SHAPE, noseSize, noseStyle }
+          const e = armetExtents(shape, face)
+          const inside = (x: number, y: number, z: number): boolean => {
+            const nx = (x - e.cx) / e.rx
+            const ny = (y - e.cy) / e.ry
+            const nz = (z - e.cz) / e.rz
+            return nx * nx + ny * ny + nz * nz < 1
+          }
+          const top = 1.86 + shape.headHeight
+          expect(inside(0, top, 0.005), 'cranium top').toBe(true)
+          const noseY = 1.86 - shape.headHeight * 0.15
+          expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + tipK * noseSize), 'nose tip').toBe(true)
+          expect(inside(0, 1.66, 0.1), 'chin').toBe(true)
         }
-        const top = 1.86 + shape.headHeight
-        expect(inside(0, top, 0.005), 'cranium top').toBe(true)
-        const noseY = 1.86 - shape.headHeight * 0.15
-        expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + 0.03 * noseSize), 'nose tip').toBe(true)
-        expect(inside(0, 1.66, 0.1), 'chin').toBe(true)
       }
     }
   })
@@ -1388,19 +1391,22 @@ describe('sprint 30 helms', () => {
         { ...DEFAULT_BODY_SHAPE, headWidth: 0.2, headHeight: 0.18, headLength: 0.22 }
       ]) {
         for (const noseSize of [0.6, 1.6]) {
-          const face = { ...DEFAULT_FACE_SHAPE, noseSize }
-          const e = helm.extents(shape, face)
-          const inside = (x: number, y: number, z: number): boolean => {
-            const nx = (x - e.cx) / e.rx
-            const ny = (y - e.cy) / e.ry
-            const nz = (z - e.cz) / e.rz
-            return nx * nx + ny * ny + nz * nz < 1
+          // Pointed projects furthest: tip = surface + 0.049*n.
+          for (const [noseStyle, tipK] of [['button', 0.03], ['pointed', 0.049]] as const) {
+            const face = { ...DEFAULT_FACE_SHAPE, noseSize, noseStyle }
+            const e = helm.extents(shape, face)
+            const inside = (x: number, y: number, z: number): boolean => {
+              const nx = (x - e.cx) / e.rx
+              const ny = (y - e.cy) / e.ry
+              const nz = (z - e.cz) / e.rz
+              return nx * nx + ny * ny + nz * nz < 1
+            }
+            const top = 1.86 + shape.headHeight
+            expect(inside(0, top, 0.005), `${helm.id} cranium top`).toBe(true)
+            const noseY = 1.86 - shape.headHeight * 0.15
+            expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + tipK * noseSize), `${helm.id} nose tip`).toBe(true)
+            expect(inside(0, 1.66, 0.1), `${helm.id} chin`).toBe(true)
           }
-          const top = 1.86 + shape.headHeight
-          expect(inside(0, top, 0.005), `${helm.id} cranium top`).toBe(true)
-          const noseY = 1.86 - shape.headHeight * 0.15
-          expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + 0.03 * noseSize), `${helm.id} nose tip`).toBe(true)
-          expect(inside(0, 1.66, 0.1), `${helm.id} chin`).toBe(true)
         }
       }
     }

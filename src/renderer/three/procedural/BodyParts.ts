@@ -3,6 +3,7 @@ import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js
 import { makeEllipsoid, makeLathe, makeSweep, translateGeometry } from './GeometryKernel'
 import { applySkinAttributes, computeSkinBindings, type BoneSegment } from './SkinWeights'
 import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
+import type { EarStyle } from '../../../shared/types/faceShape'
 
 export const HEAD_BONE_SEGMENTS: BoneSegment[] = [
   { name: 'Neck', start: [0, 1.55, 0], end: [0, 1.75, 0] },
@@ -14,7 +15,8 @@ const CRANIUM_CENTER_Z = 0.005
 
 export function buildHead(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
-  neckWidth = 0.5
+  neckWidth = 0.5,
+  earStyle: EarStyle = 'round'
 ): {
   geometry: THREE.BufferGeometry
   segments: BoneSegment[]
@@ -27,14 +29,34 @@ export function buildHead(
     CRANIUM_CENTER_Z
   )
 
-  const earGeo = makeEllipsoid(0.042, 0.07, 0.05, 10, 8)
-  const leftEar = translateGeometry(
-    earGeo.clone(),
-    -shape.headWidth * 0.92,
-    CRANIUM_CENTER_Y + 0.01,
-    -0.01
-  )
-  const rightEar = translateGeometry(earGeo, shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
+  // Round: soft bumps. Pointy (elf): swept tips rising out-back.
+  const earParts: THREE.BufferGeometry[] = []
+  if (earStyle === 'pointy') {
+    for (const side of [-1, 1] as const) {
+      const tip = makeSweep(
+        [
+          { center: [side * shape.headWidth * 0.88, CRANIUM_CENTER_Y + 0.01, -0.01], width: 0.075, height: 0.09 },
+          { center: [side * (shape.headWidth * 0.92 + 0.05), CRANIUM_CENTER_Y + 0.07, -0.03], width: 0.05, height: 0.06 },
+          { center: [side * (shape.headWidth * 0.92 + 0.1), CRANIUM_CENTER_Y + 0.14, -0.05], width: 0.02, height: 0.025 }
+        ],
+        10
+      )
+      earParts.push(tip)
+    }
+  } else {
+    const earGeo = makeEllipsoid(0.042, 0.07, 0.05, 10, 8)
+    earParts.push(
+      translateGeometry(
+        earGeo.clone(),
+        -shape.headWidth * 0.92,
+        CRANIUM_CENTER_Y + 0.01,
+        -0.01
+      )
+    )
+    earParts.push(
+      translateGeometry(earGeo, shape.headWidth * 0.92, CRANIUM_CENTER_Y + 0.01, -0.01)
+    )
+  }
 
   const chinR = 0.07 * (1 - shape.jawChin) + 0.02
   const chinY = 1.68 - 0.05 * shape.jawChin
@@ -46,7 +68,7 @@ export function buildHead(
   ]
   const jaw = makeLathe(jawProfile, 24)
 
-  const skull = mergeGeometries([cranium, leftEar, rightEar, jaw])
+  const skull = mergeGeometries([cranium, ...earParts, jaw])
   if (!skull) {
     throw new Error('buildHead: skull mergeGeometries returned null')
   }

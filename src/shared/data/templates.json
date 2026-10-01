@@ -121,7 +121,8 @@
       "chestDepth": 0.85,
       "waistTaper": 0.82,
       "hipWidth": 0.92
-    }
+    },
+    "face": { "earStyle": "pointy", "eyeStyle": "narrow", "noseStyle": "pointed" }
   },
   {
     "id": "mage",

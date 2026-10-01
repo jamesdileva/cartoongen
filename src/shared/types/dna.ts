@@ -15,4 +15,4 @@ export interface CharacterDNA {
   }
 }
 
-export const CURRENT_DNA_VERSION = 3
+export const CURRENT_DNA_VERSION = 4

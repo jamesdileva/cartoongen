@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import * as THREE from 'three'
 import { buildFace, type FaceMaterials } from './FaceFeatures'
 import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodyShape'
-import { DEFAULT_FACE_SHAPE, type FaceShape } from '../../../shared/types/faceShape'
+import {
+  DEFAULT_FACE_SHAPE,
+  sanitizeFaceShape,
+  type FaceShape
+} from '../../../shared/types/faceShape'
 
 const mats: FaceMaterials = {
   skin: new THREE.MeshStandardMaterial(),
@@ -193,5 +197,101 @@ describe('buildFace', () => {
         }
       }
     }
+  })
+})
+
+describe('face styles (Sprint 33)', () => {
+  function meshBounds(name: string, face: { group: THREE.Group }): THREE.Box3 {
+    const found = face.group.getObjectByName(name)
+    if (!found) throw new Error(`missing ${name}`)
+    return new THREE.Box3().setFromObject(found)
+  }
+
+  it('nose styles project and spread distinctly', () => {
+    const button = meshBounds('Nose', buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats))
+    const pointed = meshBounds(
+      'Nose',
+      buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, noseStyle: 'pointed' }, mats)
+    )
+    const broad = meshBounds(
+      'Nose',
+      buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, noseStyle: 'broad' }, mats)
+    )
+    expect(pointed.max.z).toBeGreaterThan(button.max.z + 0.01)
+    const size = (b: THREE.Box3) => new THREE.Vector3().subVectors(b.max, b.min)
+    expect(size(broad).x).toBeGreaterThan(size(button).x + 0.01)
+  })
+
+  it('eye styles flatten and sink distinctly', () => {
+    const round = meshBounds(
+      'Eye_Left',
+      buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats)
+    )
+    const narrow = meshBounds(
+      'Eye_Left',
+      buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, eyeStyle: 'narrow' }, mats)
+    )
+    const deep = meshBounds(
+      'Eye_Left',
+      buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, eyeStyle: 'deep' }, mats)
+    )
+    const size = (b: THREE.Box3) => new THREE.Vector3().subVectors(b.max, b.min)
+    expect(size(narrow).y).toBeLessThan(size(round).y * 0.8)
+    expect(size(deep).x).toBeLessThan(size(round).x * 0.9)
+  })
+
+  it('brow styles arc distinctly', () => {
+    const arc = meshBounds(
+      'Eyebrow_Left',
+      buildFace(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, mats)
+    )
+    const bushy = meshBounds(
+      'Eyebrow_Left',
+      buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, browStyle: 'bushy' }, mats)
+    )
+    const straight = meshBounds(
+      'Eyebrow_Left',
+      buildFace(DEFAULT_BODY_SHAPE, { ...DEFAULT_FACE_SHAPE, browStyle: 'straight' }, mats)
+    )
+    const size = (b: THREE.Box3) => new THREE.Vector3().subVectors(b.max, b.min)
+    // Bushy sweep runs longer; straight radius runs wider and taller.
+    expect(size(bushy).x).toBeGreaterThan(size(arc).x)
+    expect(size(straight).x).toBeGreaterThan(size(arc).x)
+    expect(size(straight).y).toBeGreaterThan(size(arc).y)
+  })
+
+  it('mouth stays on the surface across style combos', () => {
+    const CY = 1.86
+    const CZ = 0.005
+    const combos: FaceShape[] = [
+      { ...DEFAULT_FACE_SHAPE, noseStyle: 'pointed', eyeStyle: 'narrow', browStyle: 'bushy' },
+      { ...DEFAULT_FACE_SHAPE, noseStyle: 'broad', eyeStyle: 'deep', browStyle: 'straight' }
+    ]
+    for (const combo of combos) {
+      for (const curve of [0.7, -0.7]) {
+        const face = buildFace(DEFAULT_BODY_SHAPE, { ...combo, mouthCurve: curve }, mats)
+        for (const pt of face.mouthPoints) {
+          const worldY = pt.y + 1.75
+          const ny = (worldY - CY) / DEFAULT_BODY_SHAPE.headHeight
+          const nx = pt.x / DEFAULT_BODY_SHAPE.headWidth
+          const surf =
+            CZ + DEFAULT_BODY_SHAPE.headLength * Math.sqrt(Math.max(1 - nx * nx - ny * ny, 0))
+          expect(pt.z).toBeGreaterThanOrEqual(surf - 0.002)
+        }
+      }
+    }
+  })
+
+  it('sanitize falls back to default styles for unknown values', () => {
+    const clean = sanitizeFaceShape({
+      noseStyle: 'alien' as unknown as FaceShape['noseStyle'],
+      eyeStyle: 'round',
+      browStyle: 'wavy' as unknown as FaceShape['browStyle'],
+      earStyle: 'pointy'
+    })
+    expect(clean.noseStyle).toBe('button')
+    expect(clean.eyeStyle).toBe('round')
+    expect(clean.browStyle).toBe('arc')
+    expect(clean.earStyle).toBe('pointy')
   })
 })

@@ -2244,7 +2244,7 @@ export function buildArmet(
 
 /** Sallet extents: armet-like envelope with an extended rear (tail). */
 export function salletExtents(shape: BodyShape, face: FaceShape): HelmExtents {
-  const front = noseFrontZ(shape, face) + 0.035
+  const front = noseFrontZ(shape, face) + 0.05
   const rear = CRANIUM_CENTER_Z - shape.headLength - 0.1
   const top = CRANIUM_CENTER_Y + shape.headHeight + 0.05
   const bottom = 1.56

@@ -102,6 +102,17 @@ describe('generateRandomDNA', () => {
     expect(a.colors).toEqual(b.colors)
     expect(a.name).toEqual(b.name)
     expect(a.version).toEqual(b.version)
+    expect(a.face).toEqual(b.face)
+  })
+
+  it('picks valid face styles (deterministic per seed)', () => {
+    const a = generateRandomDNA({ seed: 'styles', slots: testSlots, assets: testAssets, palettes: testPalettes, rules: testRules })
+    expect(['button', 'pointed', 'broad']).toContain(a.face?.noseStyle)
+    expect(['round', 'narrow', 'deep']).toContain(a.face?.eyeStyle)
+    expect(['arc', 'straight', 'bushy']).toContain(a.face?.browStyle)
+    expect(['round', 'pointy']).toContain(a.face?.earStyle)
+    const b = generateRandomDNA({ seed: 'styles', slots: testSlots, assets: testAssets, palettes: testPalettes, rules: testRules })
+    expect(b.face).toEqual(a.face)
   })
 
   it('produces different output for different seeds', () => {

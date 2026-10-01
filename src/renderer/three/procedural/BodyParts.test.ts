@@ -237,3 +237,29 @@ describe('buildHead skinning', () => {
     expect(maxFeatureSkullGap).toBeLessThan(0.002)
   })
 })
+
+describe('ear styles (Sprint 33)', () => {
+  it('defaults to round ears', () => {
+    const def = buildHead(DEFAULT_BODY_SHAPE, 0.5).geometry
+    const round = buildHead(DEFAULT_BODY_SHAPE, 0.5, 'round').geometry
+    expect(def.attributes.position.count).toBe(round.attributes.position.count)
+  })
+
+  it('pointy ears sweep out past round ears and rise', () => {
+    const round = buildHead(DEFAULT_BODY_SHAPE, 0.5, 'round').geometry
+    const pointy = buildHead(DEFAULT_BODY_SHAPE, 0.5, 'pointy').geometry
+    const roundX = xExtent(round).max
+    const pointyX = xExtent(pointy).max
+    expect(pointyX).toBeGreaterThan(roundX + 0.03)
+    // Tips rise (verts far outboard sit above the ear base line).
+    const pos = pointy.attributes.position as THREE.BufferAttribute
+    let risen = 0
+    for (let i = 0; i < pos.count; i++) {
+      if (Math.abs(pos.getX(i)) > roundX && pos.getY(i) > 1.9) risen++
+    }
+    expect(risen).toBeGreaterThan(0)
+    expect(weightSumViolations(pointy)).toBe(0)
+    const ext = xExtent(pointy)
+    expect(ext.min).toBeCloseTo(-ext.max, 3)
+  })
+})

@@ -148,13 +148,14 @@ function clamp01(v: number): number {
 const BUST_DEFAULT = 0.15
 const BUTT_DEFAULT = 0.2
 
-function headKeyOf(shape: BodyShape, neckWidth: number): string {
+function headKeyOf(shape: BodyShape, neckWidth: number, earStyle: string): string {
   return JSON.stringify([
     shape.headWidth,
     shape.headHeight,
     shape.headLength,
     shape.jawChin,
-    neckWidth
+    neckWidth,
+    earStyle
   ])
 }
 
@@ -189,7 +190,11 @@ function faceKeyOf(shape: BodyShape, face: FaceShape): string {
     face.browHeight,
     face.mouthCurve,
     face.mouthWidth,
-    face.noseSize
+    face.noseSize,
+    face.noseStyle,
+    face.eyeStyle,
+    face.browStyle,
+    face.earStyle
   ])
 }
 
@@ -419,10 +424,10 @@ export class CharacterManager {
       this.headMesh = null
     }
 
-    this.lastHeadShapeKey = headKeyOf(shape, neckWidth)
+    this.lastHeadShapeKey = headKeyOf(shape, neckWidth, faceShape.earStyle ?? 'round')
     const skinMat = this.skinMaterial ?? this.materialManager.getMaterial('skin')
 
-    const geo = buildHead(shape, neckWidth).geometry
+    const geo = buildHead(shape, neckWidth, faceShape.earStyle ?? 'round').geometry
     const mesh = this.bindToBones(geo, ['Neck', 'Head'], skinMat)
     this.headMesh = mesh ?? new THREE.Mesh(geo, skinMat)
     this.scene.add(this.headMesh)
@@ -978,7 +983,7 @@ export class CharacterManager {
     const muscle = clamp01(dna.morphs?.muscleMass ?? 0.5)
     const neckWidth = clamp01(dna.morphs?.neckWidth ?? 0.5)
     const face = sanitizeFaceShape(dna.face)
-    const nextHeadKey = headKeyOf(shape, neckWidth)
+    const nextHeadKey = headKeyOf(shape, neckWidth, face.earStyle ?? 'round')
     const nextTorsoKey = torsoKeyOf(shape, bust, butt, belly, topLength, muscle)
     const nextFaceKey = faceKeyOf(shape, face)
     const torsoChanged = nextTorsoKey !== this.lastTorsoShapeKey

@@ -50,33 +50,43 @@ export function buildFace(
   const eyeY = eyeWorldY - HEAD_BONE_Y
 
   for (const side of [-1, 1]) {
-    const scleraR = 0.062 * faceShape.eyeScale
+    // Eye style: round (default), narrow (hooded slit), deep (smaller, set back).
+    const eyeStyle = faceShape.eyeStyle ?? 'round'
+    const flatK = eyeStyle === 'narrow' ? 0.68 : 1
+    const deepK = eyeStyle === 'deep' ? 0.82 : 1
+    const sinkK = eyeStyle === 'deep' ? 0.012 : 0
+    const scleraR = 0.062 * faceShape.eyeScale * deepK
     const scleraHalfZ = scleraR * 0.58
     const scleraGeo = new THREE.SphereGeometry(scleraR, 18, 14)
-    scleraGeo.scale(1, 1, 0.58)
+    scleraGeo.scale(1, flatK, 0.58)
     const sclera = new THREE.Mesh(scleraGeo, EYE_WHITE)
     sclera.name = side < 0 ? 'Eye_Left' : 'Eye_Right'
-    const scleraZ = surfaceZ(bodyShape, side * eyeX, eyeWorldY) - scleraHalfZ * 0.45
+    const scleraZ = surfaceZ(bodyShape, side * eyeX, eyeWorldY) - scleraHalfZ * 0.45 - sinkK
     sclera.position.set(side * eyeX, eyeY, scleraZ)
     group.add(sclera)
     eyes.push(sclera)
 
-    const iris = new THREE.Mesh(new THREE.CircleGeometry(0.027 * faceShape.eyeScale, 16), mats.eye)
+    const iris = new THREE.Mesh(new THREE.CircleGeometry(0.027 * faceShape.eyeScale * deepK, 16), mats.eye)
     iris.name = side < 0 ? 'Iris_Left' : 'Iris_Right'
     iris.position.set(side * eyeX, eyeY, scleraZ + scleraHalfZ + 0.002)
     group.add(iris)
     eyes.push(iris)
 
     const pupil = new THREE.Mesh(
-      new THREE.CircleGeometry(0.013 * faceShape.eyeScale, 12),
+      new THREE.CircleGeometry(0.013 * faceShape.eyeScale * deepK, 12),
       PUPIL_BLACK
     )
     pupil.name = side < 0 ? 'Pupil_Left' : 'Pupil_Right'
     pupil.position.set(side * eyeX, eyeY, scleraZ + scleraHalfZ + 0.005)
     group.add(pupil)
 
-    const browArc = Math.PI * 0.7
-    const brow = new THREE.Mesh(new THREE.TorusGeometry(0.075, 0.014, 8, 16, browArc), mats.hair)
+    // Brow style: arc (default torus arch), straight (flatter, wider arc),
+    // bushy (thicker tube, longer sweep).
+    const browStyle = faceShape.browStyle ?? 'arc'
+    const browArc = Math.PI * (browStyle === 'bushy' ? 0.85 : 0.7)
+    const browTube = browStyle === 'bushy' ? 0.02 : 0.014
+    const browRad = browStyle === 'straight' ? 0.095 : 0.075
+    const brow = new THREE.Mesh(new THREE.TorusGeometry(browRad, browTube, 8, 16, browArc), mats.hair)
     brow.name = side < 0 ? 'Eyebrow_Left' : 'Eyebrow_Right'
     const archCenter = 0.5 * Math.PI
     brow.rotation.z = archCenter - browArc / 2 + side * faceShape.browTilt * 0.3
@@ -91,15 +101,24 @@ export function buildFace(
   }
 
   const noseSize = faceShape.noseSize
+  const noseStyle = faceShape.noseStyle ?? 'button'
+  // Button: soft wide knob. Pointed: narrow, longer projection. Broad:
+  // wide flat bridge.
+  const noseDims =
+    noseStyle === 'pointed'
+      ? [0.022, 0.055, 0.045]
+      : noseStyle === 'broad'
+        ? [0.042, 0.045, 0.028]
+        : [0.03, 0.05, 0.03]
   const noseGeo = new THREE.SphereGeometry(1, 12, 10)
-  noseGeo.scale(0.03 * noseSize, 0.05 * noseSize, 0.03 * noseSize)
+  noseGeo.scale(noseDims[0] * noseSize, noseDims[1] * noseSize, noseDims[2] * noseSize)
   const nose = new THREE.Mesh(noseGeo, mats.skin)
   nose.name = 'Nose'
   const noseWorldY = CRANIUM_CENTER_Y - H * 0.15
   nose.position.set(
     0,
     noseWorldY - HEAD_BONE_Y,
-    surfaceZ(bodyShape, 0, noseWorldY) - 0.008 * noseSize
+    surfaceZ(bodyShape, 0, noseWorldY) - 0.008 * noseSize + (noseStyle === 'pointed' ? 0.012 * noseSize : 0)
   )
   group.add(nose)
 

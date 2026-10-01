@@ -448,12 +448,14 @@ attach to Spine2; rules suite still green (4 rules remain).
 
 ### Sprint 33 - Face Style System (DNA v4)
 
-- [ ] `FaceShape` gains style IDs: `noseStyle` (button/pointed/broad),
+- [x] `FaceShape` gains style IDs: `noseStyle` (button/pointed/broad),
       `eyeStyle` (round/narrow/deep), `browStyle` (arc/straight/bushy),
       `earStyle` (round/pointy)
-- [ ] `migration.ts` v3->v4 (styles default, existing faces unchanged);
+- [x] `migration.ts` v3->v4 (styles default, existing faces unchanged);
       `faceKeyOf` extended; `buildFace` branches per style; randomizer
       picks coherent combos; PropertiesPanel gains a style row
+- [x] Ears ride the head rebuild path (`headKeyOf` + `buildHead` param);
+      Elf template presets pointy ears + narrow eyes
 
 **Acceptance**: Style options per feature; old saves migrate silently;
 surface-projection placement holds per style; 310+ tests green.

@@ -1,21 +1,40 @@
 import { useCharacterStore } from '../stores/useCharacterStore'
 import { PROPORTION_MORPHS } from '../three/ProportionManager'
-import { DEFAULT_FACE_SHAPE, type FaceShape } from '../../shared/types/faceShape'
+import {
+  DEFAULT_FACE_SHAPE,
+  NOSE_STYLES,
+  EYE_STYLES,
+  BROW_STYLES,
+  EAR_STYLES
+} from '../../shared/types/faceShape'
 import ColorPicker from './ColorPicker'
 
+type NumericFaceKey = 'eyeScale' | 'eyeSpacing' | 'browTilt' | 'browHeight' | 'mouthCurve' | 'mouthWidth' | 'noseSize'
+
 const FACE_SLIDERS: Array<{
-  key: keyof FaceShape
+  key: NumericFaceKey
   label: string
   min: number
   max: number
 }> = [
   { key: 'eyeScale', label: 'Eye Size', min: 0.6, max: 1.6 },
   { key: 'eyeSpacing', label: 'Eye Spacing', min: 0.7, max: 1.4 },
-  { key: 'browTilt', label: 'Brow Tilt (sad \u2192 angry)', min: -1, max: 1 },
+  { key: 'browTilt', label: 'Brow Tilt (sad → angry)', min: -1, max: 1 },
   { key: 'browHeight', label: 'Brow Height', min: 0.8, max: 1.25 },
-  { key: 'mouthCurve', label: 'Mouth Curve (frown \u2192 smile)', min: -1, max: 1 },
+  { key: 'mouthCurve', label: 'Mouth Curve (frown → smile)', min: -1, max: 1 },
   { key: 'mouthWidth', label: 'Mouth Width', min: 0.7, max: 1.4 },
   { key: 'noseSize', label: 'Nose Size', min: 0.6, max: 1.6 }
+]
+
+const FACE_STYLES: Array<{
+  key: 'noseStyle' | 'eyeStyle' | 'browStyle' | 'earStyle'
+  label: string
+  options: string[]
+}> = [
+  { key: 'noseStyle', label: 'Nose', options: [...NOSE_STYLES] },
+  { key: 'eyeStyle', label: 'Eyes', options: [...EYE_STYLES] },
+  { key: 'browStyle', label: 'Brows', options: [...BROW_STYLES] },
+  { key: 'earStyle', label: 'Ears', options: [...EAR_STYLES] }
 ]
 
 export default function PropertiesPanel() {
@@ -34,6 +53,34 @@ export default function PropertiesPanel() {
       <div style={sectionStyle}>
         <div style={sectionTitleStyle}>Face</div>
         <div style={{ padding: '8px 10px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+          {FACE_STYLES.map(({ key, label, options }) => {
+            const value = (face?.[key] ?? DEFAULT_FACE_SHAPE[key]) as string
+            return (
+              <div key={key} style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                <div style={{ fontSize: 11, color: '#aaa', width: 44 }}>{label}</div>
+                <div style={{ display: 'flex', gap: 4, flexWrap: 'wrap' }}>
+                  {options.map((opt) => (
+                    <button
+                      key={opt}
+                      onClick={() => setFace({ [key]: opt })}
+                      style={{
+                        fontSize: 11,
+                        padding: '2px 8px',
+                        borderRadius: 10,
+                        border: '1px solid #444',
+                        background: value === opt ? '#4a7a9c' : '#2a2a2a',
+                        color: value === opt ? '#fff' : '#ccc',
+                        cursor: 'pointer',
+                        textTransform: 'capitalize'
+                      }}
+                    >
+                      {opt}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            )
+          })}
           {FACE_SLIDERS.map(({ key, label, min, max }) => {
             const value = face?.[key] ?? DEFAULT_FACE_SHAPE[key]
             const normalized = (value - min) / (max - min)

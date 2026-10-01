@@ -6,6 +6,12 @@ import type { Rule } from '../../shared/types/rule'
 import { evaluateRules } from '../../shared/rules/engine'
 import type { BodyShape } from '../../shared/types/bodyShape'
 import type { FaceShape } from '../../shared/types/faceShape'
+import type {
+  NoseStyle,
+  EyeStyle,
+  BrowStyle,
+  EarStyle
+} from '../../shared/types/faceShape'
 
 interface PaletteData {
   [category: string]: {
@@ -226,6 +232,21 @@ function pickMood(rng: SeededPRNG): ExpressionMood {
 function randomFaceShape(rng: SeededPRNG): FaceShape {
   const mood = pickMood(rng)
   const jitter = (amount: number) => noise(rng, amount)
+  // Weighted style picks (coherent, deterministic per seed). Grumpy moods
+  // lean bushy/straight brows; pointy ears stay rare.
+  const pickWeighted = <T,>(entries: Array<[T, number]>): T => {
+    const total = entries.reduce((a, [, w]) => a + w, 0)
+    let roll = rng.next() * total
+    for (const [v, w] of entries) {
+      roll -= w
+      if (roll <= 0) return v
+    }
+    return entries[0][0]
+  }
+  const grumpy = mood.mouthCurve < -0.2
+  const browStyle: BrowStyle = grumpy
+    ? pickWeighted<BrowStyle>([['bushy', 0.45], ['straight', 0.35], ['arc', 0.2]])
+    : pickWeighted<BrowStyle>([['arc', 0.5], ['straight', 0.3], ['bushy', 0.2]])
   return {
     eyeScale: Math.round((1 + jitter(0.22)) * 100) / 100,
     eyeSpacing: Math.round((1 + jitter(0.14)) * 100) / 100,
@@ -236,6 +257,21 @@ function randomFaceShape(rng: SeededPRNG): FaceShape {
     ),
     mouthCurve: Math.max(-1, Math.min(1, Math.round((mood.mouthCurve + jitter(0.3)) * 100) / 100)),
     mouthWidth: Math.round((1 + jitter(0.16)) * 100) / 100,
-    noseSize: Math.round((1 + jitter(0.25)) * 100) / 100
+    noseSize: Math.round((1 + jitter(0.25)) * 100) / 100,
+    noseStyle: pickWeighted<NoseStyle>([
+      ['button', 0.5],
+      ['pointed', 0.3],
+      ['broad', 0.2]
+    ]),
+    eyeStyle: pickWeighted<EyeStyle>([
+      ['round', 0.5],
+      ['narrow', 0.3],
+      ['deep', 0.2]
+    ]),
+    browStyle,
+    earStyle: pickWeighted<EarStyle>([
+      ['round', 0.85],
+      ['pointy', 0.15]
+    ])
   }
 }
