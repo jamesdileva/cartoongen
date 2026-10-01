@@ -5,6 +5,45 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 060 - Polish Batch (Slots, Presets, Mustache, Hair, Fringe)
+
+### Date
+
+2026-10-01
+
+### What we built (live user feedback, 6 items)
+
+| # | Report | Fix |
+|---|---|---|
+| 1 | Empty tabs (none/body/mouth/eyes/eyebrows) | SlotPanel shows only tabs with assets; slider slots hidden until imports arrive; None tab removed |
+| 2 | Mage preset hatless | Gains `proc:wizard_hat` |
+| 3 | Farmer should wear overalls | Pants `proc:jeans` -> `proc:overalls` (kept tee + cap) |
+| 4 | Mustache inside the nose | Rebuilt as twin surface-projected wings parted at the philtrum; max wing height clears every nose bottom by construction |
+| 5 | Hair starts mid-scalp | Lowered hairlines (crop/bun 0.72->0.76PI, ponytail 0.55->0.6, pigtails 0.62->0.66, fade 0.58->0.62); probe floors updated |
+| 6 | Helmet-hides-hair = bald look | `buildHairFringe` (bangs + sideburns, snug +0.01 layer) auto-shows via `updateFringe` whenever the rule fires; removed otherwise |
+
+On the farmer peek (random_muoyoj): no character files on disk (projects
+live outside the repo), but the signature matches the Session 059
+midriff mechanism exactly (pre-cap randomize) — covered by that fix. If
+it reproduces post-fix, save + share the DNA per the standing note.
+
+Process note: `npm run format` (prettier --write) rewrites line endings
+repo-wide (70 files churned); reverted all but the 6 touched files.
+Prefer targeted checks over repo-wide --write in future sessions.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 344 tests passing (340 + mustache x2 + fringe x3 - arch x1), probe ALL PASSED
+- Pushed as `392494b`
+
+### Current status
+
+Polish batch complete pending user live confirmation. Next: continued
+polish testing, then Sprint 34 win-unpack (last).
+
+---
+
 ## Session 059 - Midriff Gaps + Residual Skin (Live User Report)
 
 ### Date

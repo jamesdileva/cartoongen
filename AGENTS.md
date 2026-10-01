@@ -2947,3 +2947,21 @@ Pushed as `31d8e0e`. Full entry in worklog.md.
 Still open: any leftover minimal-skin sightings need a saved character
 for exact reproduction.
 
+---
+
+## Session 060 - Polish Batch (Slots, Presets, Mustache, Hair, Fringe)
+
+### Date
+
+2026-10-01
+
+### What we built (6 user items)
+
+Empty slot tabs hidden (slider slots); mage+=wizard hat;
+farmer+=overalls; mustache rebuilt as surface-projected twin wings
+below every nose; hairlines lowered; hat fringe auto-shows under hats
+via updateFringe (never bald). Farmer peek attributed to pre-cap
+midriff (no DNA on disk to confirm). Format-churn lesson documented.
+344 tests passing, probe green. Pushed as `392494b`. Full entry in
+worklog.md.
+
