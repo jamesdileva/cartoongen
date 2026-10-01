@@ -5,6 +5,46 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 058 - Pre-Polish Audit
+
+### Date
+
+2026-10-01
+
+### What we did
+
+First full audit since Session 024 (which predates the entire
+procedural track). Verified: git tree clean, 19-commit history sane,
+typecheck 0 errors, lint 0 errors (4 pre-existing warnings in unrelated
+files), 337 tests passing, build succeeds, probe ALL PASSED. Swept for
+stale references: no TODOs, no `*-outfit` ornaments in code (history
+docs only), version chain consistent (v4 current, mock `version: 3` in
+Garments.test.ts is an inert fixture).
+
+### Issues found and fixed
+
+| # | Issue | Fix |
+|---|---|---|
+| 1 | Stale `[Rebuild]` console.log + dead `actions` array (Session 039 temporary debug, "remove when stable" never done) | Removed both; rebuild branching untouched |
+| 2 | `future.md` stale (Quaternius worldview, wrong rule/template counts) | Supersession header pointing at `procedural-character.md`; history preserved |
+
+### Not issues (verified)
+
+- `console.error` in tryLoadBaseBody: legitimate error path, kept
+- Old sprint checkboxes in procedural-character.md detail sections: historical detail; sprint-level boxes are the live status (33/34 ticked)
+- No CharacterManager unit test: needs live scene; covered via headless geometry tests + build
+
+### Verification
+
+- Full suite green after fixes; pushed as `29e5f46`
+
+### Current status
+
+Audit complete. Ready for user polish testing (wizard fix +
+knight/cape + face styles), then Sprint 34 win-unpack (last).
+
+---
+
 ## Session 057 - Sprint 33: Face Style System (DNA v4)
 
 ### Date

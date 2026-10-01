@@ -2906,3 +2906,24 @@ bump for pointed noses. Full entry in worklog.md.
 Sprint 33 complete. Next: user polish testing (wizard fix +
 knight/cape), then Sprint 34 win-unpack (last).
 
+---
+
+## Session 058 - Pre-Polish Audit
+
+### Date
+
+2026-10-01
+
+### What we did
+
+First audit since Session 024 (pre-procedural). All green: typecheck 0,
+lint 0 (4 pre-existing warnings), 337 tests, build + probe pass. Fixed:
+removed stale `[Rebuild]` debug log + dead array; marked `future.md`
+superseded by `procedural-character.md`. Full entry in worklog.md.
+
+Pushed as `29e5f46`.
+
+### Current status
+
+Audit complete. Ready for user polish testing, then Sprint 34.
+
