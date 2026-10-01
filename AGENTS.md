@@ -2879,3 +2879,30 @@ test. Sweep-frame lesson documented (3PI/2 gap + drift + closed hem).
 
 Sprint 32 complete. Next: Sprint 33 - face style system (DNA v4).
 
+---
+
+## Session 057 - Sprint 33: Face Style System (DNA v4)
+
+### Date
+
+2026-10-01
+
+### What we built
+
+Sprint 33 - discrete face variants: nose/eye/brow/ear style IDs in
+FaceShape, DNA v4 + migration, buildFace branches, pointy elf ears via
+the head rebuild path, coherent randomizer styles, pill-button style
+row in PropertiesPanel, Elf template presets pointy ears. Sallet margin
+bump for pointed noses. Full entry in worklog.md.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 337 tests passing (328 + 9 new), probe ALL PASSED
+- Pushed as `671276f`
+
+### Current status
+
+Sprint 33 complete. Next: user polish testing (wizard fix +
+knight/cape), then Sprint 34 win-unpack (last).
+

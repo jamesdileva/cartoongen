@@ -5,6 +5,50 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 057 - Sprint 33: Face Style System (DNA v4)
+
+### Date
+
+2026-10-01
+
+### What we built
+
+Sprint 33 - discrete face variants, the one thing the parametric face
+couldn't do. `FaceShape` gains `noseStyle` (button/pointed/broad),
+`eyeStyle` (round/narrow/deep), `browStyle` (arc/straight/bushy),
+`earStyle` (round/pointy), all with sanitize fallbacks. DNA v4 with a
+v3->v4 migration (styles default at render; stored faces untouched).
+
+- `buildFace` branches per style (nose dims/projection, eye flatten/sink,
+  brow radius/tube/arc); mouth surface projection holds across combos
+- Ears ride the head rebuild path: `buildHead(shape, neckWidth,
+  earStyle)` (pointy = swept tips) + `headKeyOf` carries the style, so
+  ear switches rebuild head+face together; `faceKeyOf` carries all four
+- Randomizer picks weighted coherent styles (grumpy moods lean bushy
+  brows, pointy ears rare); PropertiesPanel gains a pill-button style
+  row above the sliders; Elf template presets pointy ears + narrow eyes
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Sallet containment failed pointed noses (tighter +0.035 margin) | Bumped to armet-class +0.05 front margin |
+| Brow test compared the wrong trait (bushy arc is flatter, not taller) | Assert actual distinctive traits (x-spans); debug via throwaway script |
+| `browRad`/`browTube` scare (thought unwired) | Verified wired; test premise was wrong, not the builder |
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 337 tests passing (328 + migration/v4, ears x2, face styles x5, randomizer), probe ALL PASSED
+- Pushed as `671276f`
+
+### Current status
+
+Sprint 33 complete. Next: user polish testing (wizard fix + knight/cape),
+then Sprint 34 win-unpack (last).
+
+---
+
 ## Session 056 - Sprint 32: Cape + Wings + Cape-Rule Removal
 
 ### Date
