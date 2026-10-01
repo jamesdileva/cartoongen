@@ -1501,7 +1501,12 @@ function bindHair(parts: THREE.BufferGeometry[]): GarmentBuildResult {
   return { geometry: merged, boneNames: HAIR_SEGMENTS.map((s) => s.name) }
 }
 
-/** Partial sphere shell around the cranium with a face wedge cut out. */
+/**
+ * Skull shell with a FRONT-ONLY crescent opening: the crown/sides/back are
+ * always covered; the opening spans between the temples and reaches down to
+ * the hat line. No more parted-sides bald stripe — hair frames the face
+ * instead of a curtain drawn back.
+ */
 function hairShell(
   shape: BodyShape,
   growX: number,
@@ -1523,6 +1528,9 @@ function hairShell(
   geo.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
   return geo
 }
+
+/** Front crescent half-angle at shell equator (radians). */
+const FACE_CREST_HALF = 0.5
 
 /** Short crop: skull-hugging shell over ears to the nape, face open. */
 export function buildCropHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
@@ -1692,13 +1700,14 @@ export function buildHairFringe(
       Math.min(1, (eyeTop - 0.025 - CRANIUM_CENTER_Y) / (shape.headHeight + grow))
     )
   )
-  // Front swath ±63° around +Z (bangs + temples), open at the back.
+  // Front swath fully across the forehead: ±65° around +Z at equator,
+  // so the two shell edges (±0.5 rad ≈ ±29°) sit inside it.
   const band = new THREE.SphereGeometry(
     1,
     24,
     4,
-    Math.PI / 2 - 1.1,
-    2.2,
+    Math.PI / 2 - 1.134,
+    2.268,
     thetaTop,
     thetaBot - thetaTop
   )
