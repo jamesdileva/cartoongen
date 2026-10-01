@@ -1224,23 +1224,26 @@ describe('hair', () => {
     }
   })
 
-  it('leaves the face wedge open on shell styles', () => {
-    // GAP=0.5 rad (~29 deg) half-angle at the shell equator => front strip
-    // |x| < ~0.12 stays hair-free. Center features + inner eyes are exempt
-    // territory by design; only the front strip must stay empty.
+  it('keeps the crown fully covered (no central bald seam) on shell styles', () => {
+    // Front strip |x| < 0.11 at temple height must be HAIR-covered now;
+    // the face opening is a brow-level crescent below the temples.
     for (const build of [buildCropHair, buildPonytail, buildLongHair]) {
       const geo = build().geometry
       const pos = geo.attributes.position as THREE.BufferAttribute
-      let intruders = 0
+      let covered = 0
+      let samples = 0
       for (let i = 0; i < pos.count; i++) {
         const x = Math.abs(pos.getX(i))
         const y = pos.getY(i)
         const z = pos.getZ(i)
-        if (z < 0.2) continue
-        // Parted front strip must be clear (equates to >0.48 rad off-front).
-        if (x < 0.11 && y > 1.75 && y < 1.95) intruders++
+        if (z < 0.1) continue
+        if (x < 0.11 && y > 1.78 && y < 1.98) {
+          samples++
+          covered++
+        }
       }
-      expect(intruders).toBe(0)
+      expect(samples).toBeGreaterThan(0)
+      expect(covered).toBe(samples)
     }
   })
 

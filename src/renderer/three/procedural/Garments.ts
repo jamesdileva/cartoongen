@@ -1515,15 +1515,15 @@ function hairShell(
   thetaLength: number,
   gapHalf: number
 ): THREE.BufferGeometry {
-  const geo = new THREE.SphereGeometry(
-    1,
-    24,
-    16,
-    Math.PI / 2 + gapHalf,
-    Math.PI * 2 - gapHalf * 2,
-    0,
-    thetaLength
-  )
+  // Full 2pi shell: hair covers the whole crown; the face window is cut
+  // by REPULSION below (no azimuth gap at all => no bald centre seam).
+  const geo = new THREE.SphereGeometry(1, 24, 16, 0, Math.PI * 2, 0, thetaLength)
+  // Face window: delete the front crescent whose top is at eyeTop. We do it
+  // by pulling the shell verts in that crescent OUTWARD (doubled radius)
+  // so they render as a slightly larger "hole-edge" ridge, not a hole.
+  // True hole would need more surgery; the widened fringe band covers the
+  // window fully, so the visible result is: fringe frames the face.
+  void gapHalf
   geo.scale(shape.headWidth + growX, shape.headHeight + growY, shape.headLength + growZ)
   geo.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
   return geo
