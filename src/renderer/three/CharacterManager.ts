@@ -992,27 +992,13 @@ export class CharacterManager {
     const faceChanged = nextFaceKey !== this.lastFaceKey
 
     if (!this.hasBaseBody && this.boneMap.get('Root')) {
-      const actions: string[] = []
       if (nextHeadKey !== this.lastHeadShapeKey) {
-        actions.push('head+face')
         this.rebuildHeadMesh(shape, neckWidth, face)
       } else if (nextFaceKey !== this.lastFaceKey) {
-        actions.push('face')
         this.rebuildFaceGroup(shape, face)
       }
       if (torsoChanged) {
-        actions.push('torso')
         this.rebuildTorsoMesh(shape, bust, butt, belly, topLength, muscle)
-      }
-      if (actions.length > 0) {
-        console.log(
-          '[Rebuild]',
-          actions.join('+'),
-          'faceGroup:',
-          !!this.faceGroup,
-          'headMesh:',
-          !!this.headMesh
-        )
       }
     } else if (torsoChanged) {
       this.lastTorsoShapeKey = nextTorsoKey

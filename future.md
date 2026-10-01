@@ -1,5 +1,12 @@
 # Future Roadmap
 
+> **NOTE (2026-10-01, audit)**: This document is SUPERSEDED for character
+> work — the procedural track in `procedural-character.md` (Sprints 13–33
+> complete: parametric body, 61 procedural garments, face style system,
+> DNA v4) replaced the Quaternius phases below. Remaining live item is
+> Sprint 34 (win-unpack installer). Preserved as history; counts below
+> (rules, templates, morphs) predate the procedural sprints.
+
 This document tracks work beyond the initial 12 sprints. It is organized into phases by priority and dependency.
 
 ---
