@@ -47,6 +47,10 @@ export default function SlotPanel({
   if (favoritesOnly) {
     slotAssets = slotAssets.filter((a) => favorites.includes(a.id))
   }
+  // Slider-driven slots (body, mouth, eyes, eyebrows…) have no assets to
+  // browse — only tabs with something to show stay visible. Tabs reappear
+  // automatically if assets are imported for those slots later.
+  const visibleSlots = slots.filter((s: SlotDefinition) => assets.some((a) => a.slotId === s.id))
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100%', overflow: 'hidden' }}>
@@ -60,16 +64,7 @@ export default function SlotPanel({
           flexShrink: 0
         }}
       >
-        <div
-          onClick={() => setActiveSlot('none')}
-          style={{
-            ...tabStyle,
-            background: activeSlot === 'none' ? '#4488ff' : '#2a2a2a'
-          }}
-        >
-          None
-        </div>
-        {slots.map((s: SlotDefinition) => (
+        {visibleSlots.map((s: SlotDefinition) => (
           <div
             key={s.id}
             onClick={() => setActiveSlot(s.id)}
@@ -112,7 +107,7 @@ export default function SlotPanel({
         </label>
       </div>
 
-      {activeSlot === 'none' && (
+      {visibleSlots.length === 0 && (
         <div
           style={{
             flex: 1,
@@ -125,11 +120,13 @@ export default function SlotPanel({
             textAlign: 'center'
           }}
         >
-          Select a slot above to browse its assets.
+          No assets yet.
+          <br />
+          Import some!
         </div>
       )}
 
-      {activeSlot !== 'none' && slotAssets.length === 0 && (
+      {visibleSlots.length > 0 && slotAssets.length === 0 && (
         <div
           style={{
             flex: 1,
@@ -148,7 +145,7 @@ export default function SlotPanel({
         </div>
       )}
 
-      {activeSlot !== 'none' && slotAssets.length > 0 && (
+      {visibleSlots.length > 0 && slotAssets.length > 0 && (
         <div style={{ flex: 1, overflow: 'auto', padding: 8 }}>
           <div
             style={{

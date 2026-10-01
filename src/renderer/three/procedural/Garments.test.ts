@@ -42,6 +42,7 @@ import {
   buildBobHair,
   buildPigtailsHair,
   buildFadeHair,
+  buildHairFringe,
   buildStubble,
   buildSandals,
   buildBracers,
@@ -358,7 +359,14 @@ describe('procedural asset catalog', () => {
       expect(garmentDependsOnKey(id, 'face')).toBe(true)
       expect(garmentDependsOnKey(id, 'torso')).toBe(false)
     }
-    for (const id of ['proc:shoes', 'proc:boots', 'proc:sandals', 'proc:gloves', 'proc:gauntlets', 'proc:bracers']) {
+    for (const id of [
+      'proc:shoes',
+      'proc:boots',
+      'proc:sandals',
+      'proc:gloves',
+      'proc:gauntlets',
+      'proc:bracers'
+    ]) {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
     }
     for (const id of ['proc:cape', 'proc:wings']) {
@@ -798,13 +806,8 @@ describe('garment skinned under morphs', () => {
       belly: number,
       butt: number,
       topLength: number
-    ) => { geometry: THREE.BufferGeometry; boneNames: string[] } = (
-      s,
-      bust,
-      belly,
-      butt,
-      len
-    ) => buildTShirt(s, bust, belly, butt, len),
+    ) => { geometry: THREE.BufferGeometry; boneNames: string[] } = (s, bust, belly, butt, len) =>
+      buildTShirt(s, bust, belly, butt, len),
     bust = 0.15
   ): {
     torso: THREE.BufferGeometry
@@ -1307,7 +1310,10 @@ describe('plate armour', () => {
     ]) {
       for (const noseSize of [0.6, 1, 1.6]) {
         // Pointed projects furthest: tip = surface + 0.049*n.
-        for (const [noseStyle, tipK] of [['button', 0.03], ['pointed', 0.049]] as const) {
+        for (const [noseStyle, tipK] of [
+          ['button', 0.03],
+          ['pointed', 0.049]
+        ] as const) {
           const face = { ...DEFAULT_FACE_SHAPE, noseSize, noseStyle }
           const e = armetExtents(shape, face)
           const inside = (x: number, y: number, z: number): boolean => {
@@ -1319,7 +1325,9 @@ describe('plate armour', () => {
           const top = 1.86 + shape.headHeight
           expect(inside(0, top, 0.005), 'cranium top').toBe(true)
           const noseY = 1.86 - shape.headHeight * 0.15
-          expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + tipK * noseSize), 'nose tip').toBe(true)
+          expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + tipK * noseSize), 'nose tip').toBe(
+            true
+          )
           expect(inside(0, 1.66, 0.1), 'chin').toBe(true)
         }
       }
@@ -1337,7 +1345,8 @@ describe('plate armour', () => {
     expect(plumed?.tags).toContain('hat')
   })
 
-  it('plate v2 binds the full arm chain and reaches the wrist', () => {    const { boneNames, geometry } = buildPlate()
+  it('plate v2 binds the full arm chain and reaches the wrist', () => {
+    const { boneNames, geometry } = buildPlate()
     expect(boneNames).toContain('LeftForearm')
     expect(boneNames).toContain('RightForearm')
     expect(weightSumViolations(geometry)).toBe(0)
@@ -1350,9 +1359,7 @@ describe('plate armour', () => {
   it('plate ignores topLength (armour never crops the midriff)', () => {
     const full = buildPlate(DEFAULT_BODY_SHAPE, 0.5, 0.5, 0.5, 0)
     const cropped = buildPlate(DEFAULT_BODY_SHAPE, 0.5, 0.5, 0.5, 1)
-    expect(cropped.geometry.attributes.position.count).toBe(
-      full.geometry.attributes.position.count
-    )
+    expect(cropped.geometry.attributes.position.count).toBe(full.geometry.attributes.position.count)
     const hem = (g: THREE.BufferGeometry): number => {
       const pos = g.attributes.position as THREE.BufferAttribute
       let min = Infinity
@@ -1398,7 +1405,8 @@ describe('plate armour', () => {
     expect(frontHit(mouthY + 0.06)!).toBeGreaterThan(e.cz)
   })
 
-  it('plumed armet shares extents and crests above the crown', () => {    const plain = buildArmet(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE).geometry
+  it('plumed armet shares extents and crests above the crown', () => {
+    const plain = buildArmet(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE).geometry
     const plumed = buildArmet(DEFAULT_BODY_SHAPE, DEFAULT_FACE_SHAPE, true).geometry
     const maxY = (g: THREE.BufferGeometry): number => {
       const pos = g.attributes.position as THREE.BufferAttribute
@@ -1426,7 +1434,10 @@ describe('sprint 30 helms', () => {
   }
 
   it('binds 100% to Head with normalized weights and x symmetry', () => {
-    for (const helm of [...closedHelms, { id: 'proc:kettle_hat', build: buildKettleHat, extents: kettleExtents }]) {
+    for (const helm of [
+      ...closedHelms,
+      { id: 'proc:kettle_hat', build: buildKettleHat, extents: kettleExtents }
+    ]) {
       const { geometry, boneNames } = helm.build()
       expect(boneNames, helm.id).toEqual(['Head'])
       expect(weightSumViolations(geometry), helm.id).toBe(0)
@@ -1444,7 +1455,10 @@ describe('sprint 30 helms', () => {
       ]) {
         for (const noseSize of [0.6, 1.6]) {
           // Pointed projects furthest: tip = surface + 0.049*n.
-          for (const [noseStyle, tipK] of [['button', 0.03], ['pointed', 0.049]] as const) {
+          for (const [noseStyle, tipK] of [
+            ['button', 0.03],
+            ['pointed', 0.049]
+          ] as const) {
             const face = { ...DEFAULT_FACE_SHAPE, noseSize, noseStyle }
             const e = helm.extents(shape, face)
             const inside = (x: number, y: number, z: number): boolean => {
@@ -1456,7 +1470,10 @@ describe('sprint 30 helms', () => {
             const top = 1.86 + shape.headHeight
             expect(inside(0, top, 0.005), `${helm.id} cranium top`).toBe(true)
             const noseY = 1.86 - shape.headHeight * 0.15
-            expect(inside(0, noseY, surfaceZ(shape, 0, noseY) + tipK * noseSize), `${helm.id} nose tip`).toBe(true)
+            expect(
+              inside(0, noseY, surfaceZ(shape, 0, noseY) + tipK * noseSize),
+              `${helm.id} nose tip`
+            ).toBe(true)
             expect(inside(0, 1.66, 0.1), `${helm.id} chin`).toBe(true)
           }
         }
@@ -1797,19 +1814,49 @@ describe('beards', () => {
     expect(inside).toBe(false)
   })
 
-  it('mustache arches over the mouth', () => {
+  it('mustache wings part at the philtrum below the nose', () => {
+    for (const noseSize of [0.6, 1, 1.6]) {
+      for (const noseStyle of ['button', 'pointed', 'broad'] as const) {
+        const shape = DEFAULT_BODY_SHAPE
+        const face = { ...DEFAULT_FACE_SHAPE, noseSize, noseStyle }
+        const geo = buildMustache(shape, face).geometry
+        const pos = geo.attributes.position as THREE.BufferAttribute
+        let minY = Infinity
+        let maxY = -Infinity
+        for (let i = 0; i < pos.count; i++) {
+          const y = pos.getY(i)
+          if (y < minY) minY = y
+          if (y > maxY) maxY = y
+        }
+        // Nose bottom edge (mirrors beardMouthY): wings + tube stay below it.
+        const noseBottomY = 1.86 - shape.headHeight * 0.15 - 0.05 * noseSize
+        expect(maxY).toBeLessThan(noseBottomY - 0.002)
+        // Parted center: no wing rises over the philtrum column.
+        const mouthY = noseBottomY - 0.02
+        let centerTop = -Infinity
+        for (let i = 0; i < pos.count; i++) {
+          if (Math.abs(pos.getX(i)) < 0.02) {
+            centerTop = Math.max(centerTop, pos.getY(i))
+          }
+        }
+        expect(centerTop).toBeLessThan(mouthY + 0.018)
+        // Wings hug the mouth zone, not the chin.
+        expect(minY).toBeGreaterThan(mouthY - 0.03)
+      }
+    }
+  })
+
+  it('mustache wings ride the face surface', () => {
     const geo = buildMustache().geometry
     const pos = geo.attributes.position as THREE.BufferAttribute
-    let minY = Infinity
-    let maxY = -Infinity
     for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i)
       const y = pos.getY(i)
-      if (y < minY) minY = y
-      if (y > maxY) maxY = y
+      const z = pos.getZ(i)
+      const surf = surfaceZ(DEFAULT_BODY_SHAPE, x, y)
+      // Tube surface stays outside the skull (center +4mm min, tube 12mm).
+      expect(z).toBeGreaterThan(surf - 0.014)
     }
-    // Thin arch band just above the mouth (~1.78).
-    expect(maxY - minY).toBeLessThan(0.08)
-    expect(minY).toBeGreaterThan(1.72)
   })
 })
 
@@ -1895,9 +1942,7 @@ describe('sprint 31 clothing breadth', () => {
     // Pigtails hang past the jaw on both sides.
     const tails = yExt(buildPigtailsHair().geometry)
     expect(tails.min).toBeLessThan(1.5)
-    expect(xExtent(buildPigtailsHair().geometry).max).toBeGreaterThan(
-      DEFAULT_BODY_SHAPE.headWidth
-    )
+    expect(xExtent(buildPigtailsHair().geometry).max).toBeGreaterThan(DEFAULT_BODY_SHAPE.headWidth)
     // Fade is a thin skull-hugging layer (fixed-seg shells share vert counts).
     const fadePos = buildFadeHair().geometry.attributes.position as THREE.BufferAttribute
     const cropPos = buildCropHair().geometry.attributes.position as THREE.BufferAttribute
@@ -2017,44 +2062,82 @@ describe('sprint 32 back slot', () => {
   })
 })
 
-  it('wizard cone contains the skull on all head shapes (no poke-through)', () => {
-    // Point-in-mesh parity: skull surface samples (pulled 3% inward) cast
-    // +x rays; an odd hit count means inside. Catches fixed-size cones on
-    // wide/tall heads (live user report).
-    const shapes: BodyShape[] = [
-      DEFAULT_BODY_SHAPE,
-      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.28, headLength: 0.32 },
-      { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.16, headLength: 0.18 },
-      { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.16, headLength: 0.32 },
-      { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.28, headLength: 0.18 }
-    ]
-    for (const shape of shapes) {
-      for (const eyeScale of [0.6, 1, 1.6]) {
-        const face = { ...DEFAULT_FACE_SHAPE, eyeScale }
-        const { geometry } = buildWizardHat(shape, face)
-        const mesh = new THREE.Mesh(
-          geometry,
-          new THREE.MeshBasicMaterial({ side: THREE.DoubleSide })
-        )
-        mesh.updateMatrixWorld(true)
-        const brimY = hatRimY(shape, face) + 0.008
-        const yTop = Math.min(brimY + 0.3, CRANIUM_CENTER_Y + shape.headHeight - 0.005)
-        for (let k = 0; k < 3; k++) {
-          const y = brimY + 0.05 + ((yTop - brimY - 0.05) * k) / 2
-          const s = Math.sqrt(Math.max(1 - ((y - CRANIUM_CENTER_Y) / shape.headHeight) ** 2, 0.01))
-          for (let j = 0; j < 6; j++) {
-            const phi = ((j + 0.5) / 6) * Math.PI * 2
-            const p = new THREE.Vector3(
-              shape.headWidth * s * Math.cos(phi) * 0.97,
-              y,
-              0.005 + shape.headLength * s * Math.sin(phi) * 0.97
-            )
-            const ray = new THREE.Raycaster(p, new THREE.Vector3(1, 0, 0))
-            const hits = ray.intersectObject(mesh)
-            expect(hits.length % 2, `w=${shape.headWidth} eye=${eyeScale} y=${y.toFixed(2)}`).toBe(1)
-          }
+it('wizard cone contains the skull on all head shapes (no poke-through)', () => {
+  // Point-in-mesh parity: skull surface samples (pulled 3% inward) cast
+  // +x rays; an odd hit count means inside. Catches fixed-size cones on
+  // wide/tall heads (live user report).
+  const shapes: BodyShape[] = [
+    DEFAULT_BODY_SHAPE,
+    { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.28, headLength: 0.32 },
+    { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.16, headLength: 0.18 },
+    { ...DEFAULT_BODY_SHAPE, headWidth: 0.31, headHeight: 0.16, headLength: 0.32 },
+    { ...DEFAULT_BODY_SHAPE, headWidth: 0.18, headHeight: 0.28, headLength: 0.18 }
+  ]
+  for (const shape of shapes) {
+    for (const eyeScale of [0.6, 1, 1.6]) {
+      const face = { ...DEFAULT_FACE_SHAPE, eyeScale }
+      const { geometry } = buildWizardHat(shape, face)
+      const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+      mesh.updateMatrixWorld(true)
+      const brimY = hatRimY(shape, face) + 0.008
+      const yTop = Math.min(brimY + 0.3, CRANIUM_CENTER_Y + shape.headHeight - 0.005)
+      for (let k = 0; k < 3; k++) {
+        const y = brimY + 0.05 + ((yTop - brimY - 0.05) * k) / 2
+        const s = Math.sqrt(Math.max(1 - ((y - CRANIUM_CENTER_Y) / shape.headHeight) ** 2, 0.01))
+        for (let j = 0; j < 6; j++) {
+          const phi = ((j + 0.5) / 6) * Math.PI * 2
+          const p = new THREE.Vector3(
+            shape.headWidth * s * Math.cos(phi) * 0.97,
+            y,
+            0.005 + shape.headLength * s * Math.sin(phi) * 0.97
+          )
+          const ray = new THREE.Raycaster(p, new THREE.Vector3(1, 0, 0))
+          const hits = ray.intersectObject(mesh)
+          expect(hits.length % 2, `w=${shape.headWidth} eye=${eyeScale} y=${y.toFixed(2)}`).toBe(1)
         }
-        mesh.geometry.dispose()
       }
+      mesh.geometry.dispose()
+    }
+  }
+})
+
+describe('hat fringe (polish)', () => {
+  it('binds Head-only with normalized weights and x symmetry', () => {
+    const { geometry, boneNames } = buildHairFringe()
+    expect(boneNames).toEqual(['Head'])
+    expect(weightSumViolations(geometry)).toBe(0)
+    const ext = xExtent(geometry)
+    expect(ext.min).toBeCloseTo(-ext.max, 3)
+  })
+
+  it('bangs sit between the eyes and the hat rim on all eye sizes', () => {
+    for (const eyeScale of [0.6, 1, 1.6]) {
+      const face = { ...DEFAULT_FACE_SHAPE, eyeScale }
+      const { geometry } = buildHairFringe(DEFAULT_BODY_SHAPE, face)
+      const eyeTop = 1.86 + DEFAULT_BODY_SHAPE.headHeight * 0.12 + 0.062 * eyeScale
+      const pos = geometry.attributes.position as THREE.BufferAttribute
+      // Front band only (sideburns legitimately hang lower at the sides).
+      let min = Infinity
+      let max = -Infinity
+      for (let i = 0; i < pos.count; i++) {
+        if (Math.abs(pos.getX(i)) > 0.12 || pos.getZ(i) < 0) continue
+        const y = pos.getY(i)
+        if (y < min) min = y
+        if (y > max) max = y
+      }
+      // Band bottom clears the tallest eyes; band top tucks under hat rims.
+      expect(min).toBeGreaterThan(eyeTop)
+      expect(max).toBeLessThan(eyeTop + 0.25)
     }
   })
+
+  it('sideburns flank the ears below hat lines', () => {
+    const { geometry } = buildHairFringe()
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    let lowSide = 0
+    for (let i = 0; i < pos.count; i++) {
+      if (Math.abs(pos.getX(i)) > DEFAULT_BODY_SHAPE.headWidth && pos.getY(i) < 1.86) lowSide++
+    }
+    expect(lowSide).toBeGreaterThan(0)
+  })
+})

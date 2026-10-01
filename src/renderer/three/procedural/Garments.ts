@@ -779,7 +779,10 @@ export function buildSweater(
   const clavEnd = 0.36 * shape.shoulderWidth
   const armStart = sleeveArmStart(shape)
   const sleeves = longSleeves(shape, armStart)
-  return bindTop([body, hemBand, collar, ...sleeves], topSegments(clavEnd, armStart, true, clavEnd + 0.105))
+  return bindTop(
+    [body, hemBand, collar, ...sleeves],
+    topSegments(clavEnd, armStart, true, clavEnd + 0.105)
+  )
 }
 
 /** Belted tunic: short-sleeved shell with a waist belt. Respects topLength. */
@@ -887,7 +890,10 @@ export function buildLongCoat(
   const clavEnd = 0.36 * shape.shoulderWidth
   const armStart = sleeveArmStart(shape)
   const sleeves = longSleeves(shape, armStart)
-  return bindTop([body, skirt, collar, ...sleeves], topSegments(clavEnd, armStart, true, clavEnd + 0.105))
+  return bindTop(
+    [body, skirt, collar, ...sleeves],
+    topSegments(clavEnd, armStart, true, clavEnd + 0.105)
+  )
 }
 
 /**
@@ -1174,7 +1180,12 @@ export function buildLeggings(
   const extras: THREE.BufferGeometry[] = [waistband]
   for (const side of [-1, 1] as const) {
     // Ankle cuff + stirrup strap under the arch.
-    const cuff = new THREE.TorusGeometry(0.0375 * MUSCLE_HEADROOM + TIGHT_OFFSET + 0.008, 0.016, 8, 18)
+    const cuff = new THREE.TorusGeometry(
+      0.0375 * MUSCLE_HEADROOM + TIGHT_OFFSET + 0.008,
+      0.016,
+      8,
+      18
+    )
     cuff.translate(side * 0.18, 0.16, 0)
     extras.push(cuff)
     const stirrup = new THREE.BoxGeometry(0.03, 0.02, 0.16)
@@ -1515,12 +1526,12 @@ function hairShell(
 
 /** Short crop: skull-hugging shell over ears to the nape, face open. */
 export function buildCropHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  return bindHair([hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.72, 0.7)])
+  return bindHair([hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 0.7)])
 }
 
 /** Ponytail: cap plus a tail sweep rooted under the crown. */
 export function buildPonytail(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const cap = hairShell(shape, 0.03, 0.015, 0.02, Math.PI * 0.55, 0.7)
+  const cap = hairShell(shape, 0.03, 0.015, 0.02, Math.PI * 0.6, 0.7)
   // Tail root starts inside the skull (hidden joint), emerging below the cap.
   // Widths/heights are full extents (diameter).
   const tail = makeSweep(
@@ -1590,7 +1601,7 @@ export function buildLongHair(
 
 /** Topknot bun: crop shell + knot sphere + tie ring. */
 export function buildBunHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const cap = hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.72, 0.7)
+  const cap = hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 0.7)
   const top = CRANIUM_CENTER_Y + shape.headHeight
   const knot = new THREE.SphereGeometry(0.075, 16, 12)
   knot.scale(1, 0.9, 1)
@@ -1620,7 +1631,7 @@ export function buildBobHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuil
 
 /** Pigtails: cap shell + twin side tails with ties. */
 export function buildPigtailsHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const cap = hairShell(shape, 0.045, 0.015, 0.028, Math.PI * 0.62, 0.68)
+  const cap = hairShell(shape, 0.045, 0.015, 0.028, Math.PI * 0.66, 0.68)
   const parts: THREE.BufferGeometry[] = [cap]
   const top = CRANIUM_CENTER_Y + shape.headHeight
   for (const side of [-1, 1] as const) {
@@ -1650,7 +1661,47 @@ export function buildPigtailsHair(shape: BodyShape = DEFAULT_BODY_SHAPE): Garmen
 
 /** Fade: buzz-short shell hugging the skull, ears out by design. */
 export function buildFadeHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  return bindHair([hairShell(shape, 0.018, 0.008, 0.014, Math.PI * 0.58, 0.66)])
+  return bindHair([hairShell(shape, 0.018, 0.008, 0.014, Math.PI * 0.62, 0.66)])
+}
+
+/**
+ * Hat fringe (bangs + sideburns): shown INSTEAD of a hidden hair asset
+ * whenever a hat hides the hair, so hatted characters are never bald.
+ * Snug layer (grow 0.01) tucks inside every hat rim (smallest: cap +0.015);
+ * band spans eyeTop..rim, front swath only; sideburns sit below hat lines.
+ */
+export function buildHairFringe(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  face: FaceShape = DEFAULT_FACE_SHAPE
+): GarmentBuildResult {
+  const grow = 0.01
+  const rim = hatRimY(shape, face)
+  const eyeTop = rim - 0.005
+  const thetaTop = Math.acos(
+    Math.max(-1, Math.min(1, (rim + 0.02 - CRANIUM_CENTER_Y) / (shape.headHeight + grow)))
+  )
+  const thetaBot = Math.acos(
+    Math.max(-1, Math.min(1, (eyeTop + 0.008 - CRANIUM_CENTER_Y) / (shape.headHeight + grow)))
+  )
+  // Front swath ±63° around +Z (bangs + temples), open at the back.
+  const band = new THREE.SphereGeometry(
+    1,
+    24,
+    4,
+    Math.PI / 2 - 1.1,
+    2.2,
+    thetaTop,
+    thetaBot - thetaTop
+  )
+  band.scale(shape.headWidth + grow, shape.headHeight + grow, shape.headLength + grow)
+  band.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  const parts: THREE.BufferGeometry[] = [band]
+  for (const side of [-1, 1] as const) {
+    const burn = new THREE.BoxGeometry(0.024, 0.09, 0.035)
+    burn.translate(side * (shape.headWidth - 0.002), 1.8, 0.015)
+    parts.push(burn)
+  }
+  return bindHair(parts)
 }
 
 // ---------------------------------------------------------------------------
@@ -1889,18 +1940,37 @@ export function buildFullBeard(
   return bindHat([beard])
 }
 
-/** Mustache: hair torus arched over the mouth. */
+/**
+ * Mustache: twin wings parted at the philtrum, surface-projected like the
+ * mouth tube. The old single arch buried its apex in big noses; wings stay
+ * below the nose bottom edge by construction (max wing y + tube clears it
+ * for every noseSize/style).
+ */
 export function buildMustache(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
   face: FaceShape = DEFAULT_FACE_SHAPE
 ): GarmentBuildResult {
   const mouthY = beardMouthY(shape, face)
-  const radius = 0.055 * face.mouthWidth
-  const arc = new THREE.TorusGeometry(radius, 0.013, 8, 16, Math.PI * 0.8)
-  // Upper-half arch (frown orientation) centered over the mouth.
-  arc.rotateZ(Math.PI * 0.1)
-  arc.translate(0, mouthY + 0.028, surfaceZ(shape, 0, mouthY + 0.028) + 0.008)
-  return bindHat([arc])
+  const mw = face.mouthWidth
+  const tubeR = 0.012
+  const parts: THREE.BufferGeometry[] = []
+  for (const side of [-1, 1] as const) {
+    const pts = [
+      new THREE.Vector3(side * 0.01, mouthY + 0.004, 0),
+      new THREE.Vector3(side * 0.04 * mw, mouthY + 0.001, 0),
+      new THREE.Vector3(side * 0.075 * mw, mouthY - 0.008, 0)
+    ]
+    // Project onto the face surface so wings hug cheeks on any head shape.
+    const surfed = pts.map((p) => new THREE.Vector3(p.x, p.y, surfaceZ(shape, p.x, p.y) + 0.008))
+    const curve = new THREE.CatmullRomCurve3(surfed)
+    parts.push(new THREE.TubeGeometry(curve, 12, tubeR, 8, false))
+    for (const end of [surfed[0], surfed[surfed.length - 1]]) {
+      const capSphere = new THREE.SphereGeometry(tubeR, 8, 6)
+      capSphere.translate(end.x, end.y, end.z)
+      parts.push(capSphere)
+    }
+  }
+  return bindHat(parts)
 }
 
 /**
@@ -1945,13 +2015,7 @@ export function buildPlate(
   // Armour never crops: fixed full hem overlapping the faulds, so no
   // midriff gap can open between cuirass and leg harness at any morph.
   const hemY = 0.9
-  const { stations, phiStart, phiLength } = torsoShellStations(
-    shape,
-    bust,
-    belly,
-    butt,
-    hemY
-  )
+  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, hemY)
   const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
   // Sternum ridge riding the chest tube surface (belly-scaled at waist).
   const ridgeZ = (y: number): number => {
@@ -1985,8 +2049,16 @@ export function buildPlate(
   const hemStation = stations[0]
   const hemTrim = makeSweep(
     [
-      { center: [0, hemY + 0.005, 0], width: hemStation.width + 0.016, height: hemStation.height + 0.016 },
-      { center: [0, hemY + 0.05, 0], width: hemStation.width + 0.02, height: hemStation.height + 0.02 }
+      {
+        center: [0, hemY + 0.005, 0],
+        width: hemStation.width + 0.016,
+        height: hemStation.height + 0.016
+      },
+      {
+        center: [0, hemY + 0.05, 0],
+        width: hemStation.width + 0.02,
+        height: hemStation.height + 0.02
+      }
     ],
     20
   )
@@ -2030,7 +2102,11 @@ export function buildPlate(
       makeSweep(
         [
           { center: [s * (clavEnd - 0.05), 1.47, 0], width: 0.23, height: 0.24 },
-          { center: [s * (clavEnd + 0.12), 1.485, 0], width: armR(0.0625) * 2, height: armR(0.0625) * 2 },
+          {
+            center: [s * (clavEnd + 0.12), 1.485, 0],
+            width: armR(0.0625) * 2,
+            height: armR(0.0625) * 2
+          },
           { center: [s * 0.52, 1.495, 0], width: armR(0.058) * 2, height: armR(0.058) * 2 },
           { center: [s * 0.64, 1.5, 0], width: armR(0.052) * 2, height: armR(0.052) * 2 }
         ],
@@ -2060,7 +2136,18 @@ export function buildPlate(
   }
   const armStart = sleeveArmStart(shape)
   return bindTop(
-    [body, ridge, lameBand(1.02, 0.02), lameBand(1.1, 0.022), hemTrim, faulds, collarRing(), gorget, ...pauldrons, ...arms],
+    [
+      body,
+      ridge,
+      lameBand(1.02, 0.02),
+      lameBand(1.1, 0.022),
+      hemTrim,
+      faulds,
+      collarRing(),
+      gorget,
+      ...pauldrons,
+      ...arms
+    ],
     topSegments(clavEnd, armStart, true, clavEnd + 0.23)
   )
 }
@@ -2150,7 +2237,13 @@ function helmFiller(
 ): THREE.BufferGeometry {
   const t0 = helmThetaOf(e, yTop)
   const g = new THREE.SphereGeometry(
-    1, 20, 4, Math.PI / 2 + halfAngle, Math.PI * 2 - halfAngle * 2, t0, helmThetaOf(e, yBot) - t0
+    1,
+    20,
+    4,
+    Math.PI / 2 + halfAngle,
+    Math.PI * 2 - halfAngle * 2,
+    t0,
+    helmThetaOf(e, yBot) - t0
   )
   g.scale(e.rx, e.ry, e.rz)
   g.translate(e.cx, e.cy, e.cz)
@@ -2209,8 +2302,16 @@ export function buildArmet(
   const bevor = makeSweep(
     [
       { center: [0, eyeY - 0.03, helmFrontZ(e, eyeY - 0.03) + 0.008], width: 0.045, height: 0.045 },
-      { center: [0, mouthY + 0.1, helmFrontZ(e, mouthY + 0.1) + 0.008], width: 0.045, height: 0.045 },
-      { center: [0, mouthY + 0.045, helmFrontZ(e, mouthY + 0.045) + 0.008], width: 0.04, height: 0.04 }
+      {
+        center: [0, mouthY + 0.1, helmFrontZ(e, mouthY + 0.1) + 0.008],
+        width: 0.045,
+        height: 0.045
+      },
+      {
+        center: [0, mouthY + 0.045, helmFrontZ(e, mouthY + 0.045) + 0.008],
+        width: 0.04,
+        height: 0.04
+      }
     ],
     10
   )
@@ -2393,8 +2494,14 @@ export function buildGreatHelm(
   // Cylinder theta puts +Z front at theta=0; the filler is the complement.
   const cylFiller = (yTop: number, yBot: number, halfAngle: number): THREE.BufferGeometry => {
     const g = new THREE.CylinderGeometry(
-      radiusAt(yTop) + 0.002, radiusAt(yBot) + 0.002, yTop - yBot + 0.012, 20, 1, true,
-      halfAngle, Math.PI * 2 - halfAngle * 2
+      radiusAt(yTop) + 0.002,
+      radiusAt(yBot) + 0.002,
+      yTop - yBot + 0.012,
+      20,
+      1,
+      true,
+      halfAngle,
+      Math.PI * 2 - halfAngle * 2
     )
     g.translate(0, (yTop + yBot) / 2, cz)
     return g
@@ -2411,7 +2518,10 @@ export function buildGreatHelm(
   lid.rotateX(-Math.PI / 2)
   lid.translate(0, top, cz)
   parts.push(lid)
-  for (const [ry, rr] of [[top - 0.01, rTop + 0.004], [bottom + 0.01, rBot + 0.004]] as const) {
+  for (const [ry, rr] of [
+    [top - 0.01, rTop + 0.004],
+    [bottom + 0.01, rBot + 0.004]
+  ] as const) {
     const band = new THREE.TorusGeometry(rr, 0.016, 8, 28)
     band.rotateX(Math.PI / 2)
     band.translate(0, ry, cz)
@@ -2447,11 +2557,13 @@ export function buildKettleHat(
   face: FaceShape = DEFAULT_FACE_SHAPE
 ): GarmentBuildResult {
   const brimY = eyeTopY(shape, face) + 0.008
-  const brim = new THREE.CylinderGeometry(
-    shape.headWidth + 0.17, shape.headWidth + 0.185, 0.02, 28
-  )
+  const brim = new THREE.CylinderGeometry(shape.headWidth + 0.17, shape.headWidth + 0.185, 0.02, 28)
   brim.translate(0, brimY, CRANIUM_CENTER_Z)
-  const domeR = { rx: shape.headWidth + 0.02, ry: shape.headHeight * 0.9 + 0.02, rz: shape.headLength + 0.02 }
+  const domeR = {
+    rx: shape.headWidth + 0.02,
+    ry: shape.headHeight * 0.9 + 0.02,
+    rz: shape.headLength + 0.02
+  }
   const t0 = Math.acos(Math.max(-1, Math.min(1, (brimY - CRANIUM_CENTER_Y) / domeR.ry)))
   const dome = new THREE.SphereGeometry(1, 24, 10, 0, Math.PI * 2, 0, t0)
   dome.scale(domeR.rx, domeR.ry, domeR.rz)
@@ -2481,9 +2593,7 @@ export function buildCrown(
   const thetaBot = Math.acos(
     Math.max(-1, Math.min(1, (baseY - 0.035 - CRANIUM_CENTER_Y) / (shape.headHeight + grow)))
   )
-  const band = new THREE.SphereGeometry(
-    1, 28, 6, 0, Math.PI * 2, thetaTop, thetaBot - thetaTop
-  )
+  const band = new THREE.SphereGeometry(1, 28, 6, 0, Math.PI * 2, thetaTop, thetaBot - thetaTop)
   band.scale(shape.headWidth + grow, shape.headHeight + grow, shape.headLength + grow)
   band.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
   const parts: THREE.BufferGeometry[] = [band]
@@ -3503,7 +3613,12 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
   if (assetId === 'proc:hood') return key === 'head'
   if (assetId === 'proc:sunglasses' || assetId === 'proc:goggles' || assetId === 'proc:mask')
     return key === 'head' || key === 'face'
-  if (assetId === 'proc:goatee' || assetId === 'proc:full_beard' || assetId === 'proc:mustache' || assetId === 'proc:stubble')
+  if (
+    assetId === 'proc:goatee' ||
+    assetId === 'proc:full_beard' ||
+    assetId === 'proc:mustache' ||
+    assetId === 'proc:stubble'
+  )
     return key === 'head' || key === 'face'
   if (
     assetId === 'proc:shoes' ||

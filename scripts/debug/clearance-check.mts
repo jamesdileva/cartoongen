@@ -628,12 +628,12 @@ for (const { name, shape } of headShapes) {
   // design (face opening). Ray checks can't express this (up-rays exit the
   // opening, edge rays graze the rim), so test containment directly.
   const hairShells = {
-    crop_hair: { yMin: 1.72, gx: 0.05, gy: 0.015, gz: 0.03, wedge: 0.7 },
-    ponytail: { yMin: 1.83, gx: 0.03, gy: 0.015, gz: 0.02, wedge: 0.7 },
+    crop_hair: { yMin: 1.7, gx: 0.05, gy: 0.015, gz: 0.03, wedge: 0.7 },
+    ponytail: { yMin: 1.79, gx: 0.03, gy: 0.015, gz: 0.02, wedge: 0.7 },
     long_hair: { yMin: 1.68, gx: 0.035, gy: 0.015, gz: 0.03, wedge: 0.7 },
-    bun_hair: { yMin: 1.72, gx: 0.05, gy: 0.015, gz: 0.03, wedge: 0.72 },
+    bun_hair: { yMin: 1.7, gx: 0.05, gy: 0.015, gz: 0.03, wedge: 0.72 },
     bob_hair: { yMin: 1.7, gx: 0.055, gy: 0.02, gz: 0.035, wedge: 0.75 },
-    pigtails_hair: { yMin: 1.78, gx: 0.045, gy: 0.015, gz: 0.028, wedge: 0.7 }
+    pigtails_hair: { yMin: 1.75, gx: 0.045, gy: 0.015, gz: 0.028, wedge: 0.7 }
     // fade_hair: buzz cut leaves ears out by design (mohawk precedent, no entry)
   } as const
   for (const [hairName, shell] of Object.entries(hairShells)) {

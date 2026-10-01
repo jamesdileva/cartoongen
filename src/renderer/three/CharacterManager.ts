@@ -19,6 +19,7 @@ import {
   findProceduralAsset,
   garmentDependsOnKey,
   isProceduralAssetId,
+  buildHairFringe,
   TOP_LENGTH_DEFAULT,
   type GarmentKey
 } from './procedural/Garments'
@@ -573,6 +574,7 @@ export class CharacterManager {
 
     this.unsubRuleStore = useRuleStore.subscribe((state) => {
       this.applyRuleVisibility(state.results)
+      if (this.currentDNA) this.updateFringe(this.currentDNA, state.results)
     })
 
     this.unsubAssetStore = useAssetStore.subscribe((state) => {
@@ -1014,7 +1016,9 @@ export class CharacterManager {
     }
 
     if (gen !== this.updateGeneration) return
-    this.applyRuleVisibility(useRuleStore.getState().results)
+    const results = useRuleStore.getState().results
+    this.applyRuleVisibility(results)
+    this.updateFringe(dna, results)
   }
 
   private COVERAGE_SLOTS = new Set(['shirt', 'pants', 'shoes', 'gloves', 'helmet'])
@@ -1093,6 +1097,50 @@ export class CharacterManager {
         this.slotManager.setSlotVisibility(result.slotId, true)
       }
     }
+  }
+
+  /**
+   * Hat fringe: whenever a helmet hides the hair slot, show bangs +
+   * sideburns so hatted characters are never bald. Removed otherwise.
+   * Keyed on head dims + eye scale (fringe bottom tracks the eyes).
+   */
+  private fringeMesh: THREE.Mesh | null = null
+  private lastFringeKey: string | null = null
+
+  private updateFringe(dna: CharacterDNA, results: RuleResult[]): void {
+    const hatOn = !!dna.slots?.helmet
+    const hairHidden = results.some((r) => r.type === 'hide' && r.slotId === 'hair')
+    if (!this.hasBaseBody && hatOn && hairHidden) {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const face = sanitizeFaceShape(dna.face)
+      const key = JSON.stringify([
+        shape.headWidth,
+        shape.headHeight,
+        shape.headLength,
+        face.eyeScale
+      ])
+      if (!this.fringeMesh || key !== this.lastFringeKey) {
+        this.removeFringe()
+        this.lastFringeKey = key
+        const hairMat = this.materialManager.getMaterial('hair')
+        const geo = buildHairFringe(shape, face).geometry
+        const mesh = this.bindToBones(geo, ['Head'], hairMat)
+        this.fringeMesh = mesh ?? new THREE.Mesh(geo, hairMat)
+        this.scene.add(this.fringeMesh)
+        this.proceduralMeshes.push(this.fringeMesh)
+      }
+      return
+    }
+    this.removeFringe()
+  }
+
+  private removeFringe(): void {
+    if (!this.fringeMesh) return
+    this.fringeMesh.geometry.dispose()
+    this.fringeMesh.removeFromParent()
+    this.proceduralMeshes = this.proceduralMeshes.filter((m) => m !== this.fringeMesh)
+    this.fringeMesh = null
+    this.lastFringeKey = null
   }
 
   private findBone(name: string): THREE.Bone | null {

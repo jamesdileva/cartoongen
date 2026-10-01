@@ -35,7 +35,7 @@
     "description": "Mystical blues and purples with slender proportions",
     "icon": "🧙",
     "outfit": true,
-    "slots": { "shirt": "proc:mage_robe", "pants": null, "helmet": null },
+    "slots": { "shirt": "proc:mage_robe", "pants": null, "helmet": "proc:wizard_hat" },
     "morphs": { "shoulderWidth": 0.3, "neckWidth": 0.4, "height": 0.55, "headSize": 0.45 },
     "colors": {
       "cloth": "#6b3fa0",
@@ -52,7 +52,7 @@
     "description": "Rustic earth tones and sturdy proportions",
     "icon": "🌾",
     "outfit": true,
-    "slots": { "shirt": "proc:tshirt", "pants": "proc:jeans", "helmet": "proc:cap" },
+    "slots": { "shirt": "proc:tshirt", "pants": "proc:overalls", "helmet": "proc:cap" },
     "morphs": { "shoulderWidth": 0.6, "neckWidth": 0.5, "height": 0.4, "bellySize": 0.6 },
     "colors": {
       "cloth": "#8b4513",
