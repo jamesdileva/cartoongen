@@ -1680,11 +1680,17 @@ export function buildHairFringe(
   const grow = 0.01
   const rim = hatRimY(shape, face)
   const eyeTop = rim - 0.005
+  // Cover from just above the brows to high on the crown: bottom edge at
+  // eyeTop - 25mm (bangs dip over the brow), top edge deep enough to
+  // intersect the crown vertex so the fringe reads as a hairline.
   const thetaTop = Math.acos(
     Math.max(-1, Math.min(1, (rim + 0.02 - CRANIUM_CENTER_Y) / (shape.headHeight + grow)))
   )
   const thetaBot = Math.acos(
-    Math.max(-1, Math.min(1, (eyeTop + 0.008 - CRANIUM_CENTER_Y) / (shape.headHeight + grow)))
+    Math.max(
+      -1,
+      Math.min(1, (eyeTop - 0.025 - CRANIUM_CENTER_Y) / (shape.headHeight + grow))
+    )
   )
   // Front swath ±63° around +Z (bangs + temples), open at the back.
   const band = new THREE.SphereGeometry(

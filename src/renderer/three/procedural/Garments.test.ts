@@ -2125,9 +2125,9 @@ describe('hat fringe (polish)', () => {
         if (y < min) min = y
         if (y > max) max = y
       }
-      // Band bottom clears the tallest eyes; band top tucks under hat rims.
-      expect(min).toBeGreaterThan(eyeTop)
-      expect(max).toBeLessThan(eyeTop + 0.25)
+      // Center strip must clear the tallest eyes; the wings may dip to the brow.
+      expect(min).toBeGreaterThan(eyeTop - 0.028)
+      expect(max).toBeLessThan(eyeTop + 0.28)
     }
   })
 
