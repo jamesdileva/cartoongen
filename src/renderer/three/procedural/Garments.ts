@@ -1940,8 +1940,11 @@ export function buildPlate(
   butt = BUTT_DEFAULT,
   topLength = TOP_LENGTH_DEFAULT
 ): GarmentBuildResult {
+  void topLength
   const bellyScale = bellyScaleOf(belly)
-  const hemY = hemYOf(topLength)
+  // Armour never crops: fixed full hem overlapping the faulds, so no
+  // midriff gap can open between cuirass and leg harness at any morph.
+  const hemY = 0.9
   const { stations, phiStart, phiLength } = torsoShellStations(
     shape,
     bust,

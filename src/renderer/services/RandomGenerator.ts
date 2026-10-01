@@ -125,8 +125,10 @@ export function generateRandomDNA(params: RandomGeneratorParams): CharacterDNA {
   const bustBias = shape.hipWidth > 1.04 ? 1.2 : 1.9
   dna.morphs.bust = Math.round(Math.pow(rng.next(), bustBias) * 100) / 100
   dna.morphs.butt = Math.round((0.2 + 0.8 * Math.pow(rng.next(), 1.4)) * 100) / 100
-  // top length skews to full length so cropped tops stay occasional
-  dna.morphs.topLength = Math.round(Math.pow(rng.next(), 2.2) * 100) / 100
+  // top length stays at/below the pants waistband (hem ~1.04 vs hip top
+  // 1.06) so random outfits never midriff-bare; the slider keeps full range
+  // for intentional crops and plate ignores the morph entirely.
+  dna.morphs.topLength = Math.round(Math.pow(rng.next(), 2.2) * 40) / 100
 
   dna.face = randomFaceShape(rng)
 

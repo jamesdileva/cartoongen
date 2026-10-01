@@ -791,7 +791,21 @@ describe('garment skinned under morphs', () => {
   // both meshes, then raycast cloth from body verts (DoubleSide).
   function morphedScene(
     shape: BodyShape,
-    morphs: Record<string, number>
+    morphs: Record<string, number>,
+    shirtBuild: (
+      shape: BodyShape,
+      bust: number,
+      belly: number,
+      butt: number,
+      topLength: number
+    ) => { geometry: THREE.BufferGeometry; boneNames: string[] } = (
+      s,
+      bust,
+      belly,
+      butt,
+      len
+    ) => buildTShirt(s, bust, belly, butt, len),
+    bust = 0.15
   ): {
     torso: THREE.BufferGeometry
     shirt: THREE.BufferGeometry
@@ -858,8 +872,8 @@ describe('garment skinned under morphs', () => {
       }
       return g
     }
-    const torso = buildTorso(shape, 0.15, 0.2, 0.5)
-    const shirt = buildTShirt(shape, 0.15, 0.5, 0.2, 0)
+    const torso = buildTorso(shape, bust, 0.2, 0.5)
+    const shirt = shirtBuild(shape, bust, 0.5, 0.2, 0)
     return {
       torso: skin(
         torso.geometry,
@@ -916,6 +930,24 @@ describe('garment skinned under morphs', () => {
       expect(
         rayPokes(torso, shirt, { yMin: 1.36, yMax: 1.56, mode: 'sideX', xMin: clavEnd - 0.1 })
       ).toBe(0)
+    }
+  })
+
+  it('deltoids stay inside every sleeved top at double-extreme corners', () => {
+    const tops = [buildTShirt, buildLongsleeve, buildSweater, buildJacket, buildPlate] as const
+    for (const build of tops) {
+      for (const bust of [0, 1]) {
+        const { torso, shirt } = morphedScene(
+          { ...DEFAULT_BODY_SHAPE, shoulderWidth: 1.3 },
+          { muscleMass: 1, shoulderWidth: 1 },
+          build,
+          bust
+        )
+        const clavEnd = 0.36 * 1.3
+        expect(
+          rayPokes(torso, shirt, { yMin: 1.36, yMax: 1.56, mode: 'sideX', xMin: clavEnd - 0.1 })
+        ).toBe(0)
+      }
     }
   })
 })
@@ -1305,8 +1337,7 @@ describe('plate armour', () => {
     expect(plumed?.tags).toContain('hat')
   })
 
-  it('plate v2 binds the full arm chain and reaches the wrist', () => {
-    const { boneNames, geometry } = buildPlate()
+  it('plate v2 binds the full arm chain and reaches the wrist', () => {    const { boneNames, geometry } = buildPlate()
     expect(boneNames).toContain('LeftForearm')
     expect(boneNames).toContain('RightForearm')
     expect(weightSumViolations(geometry)).toBe(0)
@@ -1314,6 +1345,27 @@ describe('plate armour', () => {
     // Vambrace runs to the wrist, tucking under the gauntlet cuff at 0.7+.
     expect(ext.max).toBeGreaterThan(0.85)
     expect(ext.min).toBeCloseTo(-ext.max, 3)
+  })
+
+  it('plate ignores topLength (armour never crops the midriff)', () => {
+    const full = buildPlate(DEFAULT_BODY_SHAPE, 0.5, 0.5, 0.5, 0)
+    const cropped = buildPlate(DEFAULT_BODY_SHAPE, 0.5, 0.5, 0.5, 1)
+    expect(cropped.geometry.attributes.position.count).toBe(
+      full.geometry.attributes.position.count
+    )
+    const hem = (g: THREE.BufferGeometry): number => {
+      const pos = g.attributes.position as THREE.BufferAttribute
+      let min = Infinity
+      for (let i = 0; i < pos.count; i++) {
+        // Front center wall of the cuirass body shell.
+        if (Math.abs(pos.getX(i)) < 0.05 && pos.getZ(i) > 0.1) {
+          min = Math.min(min, pos.getY(i))
+        }
+      }
+      return min
+    }
+    // Cuirass hem stays at full length, overlapping the faulds.
+    expect(hem(cropped.geometry)).toBeLessThan(0.95)
   })
 
   it('armet v2 has a real sight slit and breath vent (gaps, not paint)', () => {
