@@ -2853,3 +2853,29 @@ Live user report: head poking through the wizard hat. Fixed cone radii
 regression test (5 shapes x 3 eyes). 322 tests passing, probe green.
 Pushed as `7b94a85`. Full entry in worklog.md.
 
+---
+
+## Session 056 - Sprint 32: Cape + Wings + Cape-Rule Removal
+
+### Date
+
+2026-09-30
+
+### What we built
+
+Sprint 32 - `buildCape` (open-front drape, clasps + cord) + `buildWings`
+(feather fan), first assets in both slots. Heavy-armor cape rule deleted
+(cape + plate combine freely); knight gains the cape; engine coexistence
+test. Sweep-frame lesson documented (3PI/2 gap + drift + closed hem).
+61 assets total. Full entry in worklog.md.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 328 tests passing (322 + 6 new), probe ALL PASSED
+- Pushed as `1f1eee7`
+
+### Current status
+
+Sprint 32 complete. Next: Sprint 33 - face style system (DNA v4).
+

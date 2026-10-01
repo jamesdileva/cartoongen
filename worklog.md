@@ -5,6 +5,47 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 056 - Sprint 32: Cape + Wings + Cape-Rule Removal
+
+### Date
+
+2026-09-30
+
+### What we built
+
+Sprint 32 - the last two empty slots filled (61 assets): `buildCape`
+(open-front drape shoulders->calves, butt-aware rear, clasp spheres +
+chest cord + closed hem band, cloth) and `buildWings` (3-shingle feather
+fan per side + covert caps, cloth). `heavy-armor-disables-cape` deleted
+from rules.json per user call — nothing carried the `heavy_armor` tag,
+so it was dormant; knight preset gains `proc:cape` by default. Engine
+test proves plate + cape coexist with zero cape-targeting results.
+
+### Bugs found and fixed during development
+
+| Bug | Fix |
+|---|---|
+| Cape gap opened a rear slit, not the front (probe: 373 rear misses) | Tilted sweep paths take the kernel's refUp=Y frame (front at ring-angle 3PI/2, not PI/2 — torso shells use PI/2 only because perfectly-centered paths take the other frame) |
+| Rings straddled the frame threshold (phase chaos) | Monotonic backward drift keeps every step in one regime; hem band made fully closed (frame-agnostic) |
+| Test band clipped tilt-shifted rear verts (false failure) | Band widened to match the tilted rings; probe uses rays (immune) |
+
+Geometric regression tests pin the opening: front-center ray must reach
+the rear half, rear/side rays must stop at cloth.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 328 tests passing (322 + catalog/keys + 4 cape/wings + frame + engine)
+- probe:clearance ALL PASSED (new cape rear band, back-zone x-bound)
+- Pushed as `1f1eee7`
+
+### Current status
+
+Sprint 32 complete. Next: Sprint 33 - face style system (DNA v4), then
+Sprint 34 win-unpack (last).
+
+---
+
 ## Session 055 - Wizard Hat Poke-Through Fix (Live User Report)
 
 ### Date
