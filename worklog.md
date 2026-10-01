@@ -5,6 +5,53 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 059 - Midriff Gaps + Residual Skin (Live User Report)
+
+### Date
+
+2026-10-01
+
+### What we found
+
+User reported midriff skin between chest and legs on knight + cloth
+randomizes, plus minimal skin elsewhere. A union scan (torso verts vs
+shirt+pants shells over the morph grid) proved the waist is clean
+except the crop mechanism itself: zero exposure at topLength <= 0.4,
+up to 40/598 bare at len=1. Mechanism: pants top out at y=1.06 while
+shirt hems rise to 1.25 — and plate followed topLength, so even armour
+cropped. Randomizer rolled topLength 0-1 (~31% above the gap threshold).
+
+### What we fixed
+
+- `buildPlate` ignores topLength (fixed full hem overlapping faulds);
+  armour never midriff-bares
+- Randomizer topLength capped at 0.4 (hem ~1.04, always under the pants
+  waistband); the Clothes slider keeps full range for intentional crops
+- Extended the morphedScene deltoid grid to all sleeved tops at
+  double-extreme corners (bust 0/1, wide shape, max morphs): zero grazes
+  — shoulders hold, no tweak needed
+
+### Still open (needs live DNA)
+
+Any remaining "minimal skin" sightings need a saved character for exact
+reproduction (Save immediately when seen and share the name) — the known
+candidate is single-digit grazes at triple-extreme corners, which no
+grid has reproduced yet.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 340 tests passing (337 + plate-hem + randomizer-cap + deltoid grid)
+- probe:clearance ALL PASSED; union scan script removed after use
+- Pushed as `31d8e0e`
+
+### Current status
+
+Midriff gaps closed pending user live confirmation. Next: user polish
+testing continues, then Sprint 34 win-unpack (last).
+
+---
+
 ## Session 058 - Pre-Polish Audit
 
 ### Date

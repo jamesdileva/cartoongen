@@ -2927,3 +2927,23 @@ Pushed as `29e5f46`.
 
 Audit complete. Ready for user polish testing, then Sprint 34.
 
+---
+
+## Session 059 - Midriff Gaps + Residual Skin
+
+### Date
+
+2026-10-01
+
+### What we fixed (live user report)
+
+Midriff skin between chest/legs on knight + cloth randomizes: union scan
+proved the crop mechanism (pants top 1.06 vs shirt hem to 1.25, ~31% of
+random rolls). Plate now ignores topLength (fixed full hem); randomizer
+caps topLength at 0.4; slider keeps full range. Deltoids verified clean
+at double-extremes for all sleeved tops. 340 tests passing, probe green.
+Pushed as `31d8e0e`. Full entry in worklog.md.
+
+Still open: any leftover minimal-skin sightings need a saved character
+for exact reproduction.
+
