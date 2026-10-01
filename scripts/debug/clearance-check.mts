@@ -26,6 +26,7 @@ import {
   buildKilt,
   buildLeggings,
   buildOveralls,
+  buildCape,
   armetExtents,
   buildCropHair,
   buildPonytail,
@@ -414,8 +415,23 @@ for (const { name, shape } of shapes) {
             )
           }
 
-          for (const [pantsName, build] of Object.entries(pantsBuilders)) {
-            const pants = build(shape, butt, belly).geometry
+          // Cape claims the back panel only: arms/deltoids fall outside the
+          // drape by design, so bound x to the back zone.
+          const cape = buildCape(shape, bust, belly, butt).geometry
+          report(
+            issues,
+            'cape rear',
+            countPokes(torso, cape, {
+              yMin: 0.3,
+              yMax: 1.5,
+              mode: 'rear',
+              minAbsZ: 0.05,
+              xMin: -0.28,
+              xMax: 0.28
+            })
+          )
+
+          for (const [pantsName, build] of Object.entries(pantsBuilders)) {            const pants = build(shape, butt, belly).geometry
             report(
               issues,
               `${pantsName} rear`,

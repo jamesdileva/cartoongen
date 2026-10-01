@@ -2586,6 +2586,129 @@ export function buildWizardHat(
   return bindHat(parts)
 }
 
+// ---------------------------------------------------------------------------
+// Sprint 32: cape (back slot) + wings. First assets in both slots.
+// ---------------------------------------------------------------------------
+
+/** Body rear depth at height y: torso tube, belly-scaled waist, or butt. */
+function capeBodyRear(shape: BodyShape, belly: number, butt: number, y: number): number {
+  const bellyScale = bellyScaleOf(belly)
+  const tubeD = profileAt(shape, y).d * (y >= 1.0 && y <= 1.18 ? bellyScale : 1)
+  return Math.max(tubeD, buttRearAtY(shape, butt, y), 0.2)
+}
+
+/**
+ * Draped cape: open-front shell hanging from the shoulders to the calves.
+ * The front wedge stays open (no front coverage claim); cross-section
+ * tracks the body rear + butt so the seat never pokes through. Clasp
+ * spheres + sagging cord across the chest front.
+ */
+export function buildCape(
+  shape: BodyShape = DEFAULT_BODY_SHAPE,
+  bust = BUST_DEFAULT,
+  belly = 0.5,
+  butt = BUTT_DEFAULT
+): GarmentBuildResult {
+  void bust
+  const stations: SweepStation[] = []
+  // [y, widthAdd, rearMargin]: drape widens and stands further off downward.
+  const rows: Array<[number, number, number]> = [
+    [1.56, 0.06, 0.05],
+    [1.3, 0.09, 0.06],
+    [1.0, 0.12, 0.08],
+    [0.7, 0.16, 0.1],
+    [0.4, 0.19, 0.11],
+    [0.25, 0.2, 0.11]
+  ]
+  for (const [rowIdx, [y, wAdd, margin]] of rows.entries()) {
+    const rear = capeBodyRear(shape, belly, butt, y)
+    const hw = 0.24 * (0.85 + 0.15 * shape.hipWidth) + wAdd
+    // Monotonic backward drift: keeps every step tilted (|tangent.y| < 0.999)
+    // so ALL rings use the kernel's refUp=Y frame. Parallel rings straddle
+    // the frame threshold and bowtie (rear slit instead of front opening).
+    const zc = -(rear * 0.45 + 0.04) - rowIdx * 0.016
+    const hd = rear * 0.55 + 0.05 + margin * 0.4
+    stations.push({ center: [0, y, zc], width: hw * 2, height: hd * 2 })
+  }
+  // Open front wedge around +Z. The drape path tilts (varying zc), so the
+  // kernel uses its refUp=Y frame: ring x=-cos(a)*w/2, z~-sin(a)*h/2, which
+  // puts front +Z at a=3PI/2 (NOT PI/2 — that opens a rear slit). Edges at
+  // 3PI/2+-GAP: |x|=cos(0.5)*hw, z=zc+sin(0.5)*hd.
+  const GAP = 0.5
+  const PHI_START = (Math.PI * 3) / 2 + GAP
+  const PHI_LEN = Math.PI * 2 - GAP * 2
+  const drape = makeSweep(stations, 22, false, false, PHI_START, PHI_LEN)
+  const parts: THREE.BufferGeometry[] = [drape]
+  // Clasp spheres rooted on the cape's front edges + cord draping forward
+  // across the chest front.
+  const topStation = stations[0]
+  const edgeX = 0.479 * (topStation.width / 2)
+  const edgeZ = topStation.center[2] + 0.869 * (topStation.height / 2)
+  const chestZ = profileAt(shape, 1.5).d + CLOTH_OFFSET + 0.02
+  for (const side of [-1, 1] as const) {
+    const clasp = new THREE.SphereGeometry(0.032, 12, 10)
+    clasp.translate(side * edgeX, 1.55, edgeZ + 0.01)
+    parts.push(clasp)
+  }
+  parts.push(
+    makeSweep(
+      [
+        { center: [-edgeX, 1.55, edgeZ + 0.01], width: 0.05, height: 0.05 },
+        { center: [-0.18, 1.5, chestZ], width: 0.05, height: 0.05 },
+        { center: [0, 1.46, chestZ + 0.01], width: 0.05, height: 0.05 },
+        { center: [0.18, 1.5, chestZ], width: 0.05, height: 0.05 },
+        { center: [edgeX, 1.55, edgeZ + 0.01], width: 0.05, height: 0.05 }
+      ],
+      8
+    )
+  )
+  // Hem band weighting the bottom edge: fully closed ring (a trim band needs
+  // no opening, and full circles are frame-agnostic).
+  const hem = stations[stations.length - 1]
+  parts.push(
+    makeSweep(
+      [
+        { center: [0, 0.25, hem.center[2]], width: hem.width + 0.02, height: hem.height + 0.02 },
+        { center: [0, 0.32, hem.center[2]], width: hem.width + 0.024, height: hem.height + 0.024 }
+      ],
+      22
+    )
+  )
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  return bindTop(parts, topSegments(clavEnd, armStart, false))
+}
+
+/**
+ * Feathered wings: three overlapping shingle ellipsoids per side fanning
+ * up-out-back from the shoulder blades + covert cap at the root. Cloth
+ * (palette-colorable). Wings slot, first asset.
+ */
+export function buildWings(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
+  const parts: THREE.BufferGeometry[] = []
+  // [span, rise, back, sizeL, sizeT, sizeW, yaw, pitch]: fan layout per side.
+  const feathers: Array<[number, number, number, number, number, number, number, number]> = [
+    [0.38, 0.34, -0.22, 0.2, 0.03, 0.075, -0.45, 0.5],
+    [0.3, 0.22, -0.18, 0.17, 0.03, 0.07, -0.3, 0.65],
+    [0.2, 0.1, -0.14, 0.13, 0.035, 0.08, -0.15, 0.8]
+  ]
+  for (const side of [-1, 1] as const) {
+    for (const [span, rise, back, l, t, w, yaw, pitch] of feathers) {
+      const f = makeEllipsoid(l, t, w, 14, 10)
+      f.rotateZ(side * pitch)
+      f.rotateY(side * yaw)
+      f.translate(side * span, 1.5 + rise, back)
+      parts.push(f)
+    }
+    const covert = makeEllipsoid(0.11, 0.06, 0.1, 12, 10)
+    covert.translate(side * 0.12, 1.52, -0.12)
+    parts.push(covert)
+  }
+  const clavEnd = 0.36 * shape.shoulderWidth
+  const armStart = sleeveArmStart(shape)
+  return bindTop(parts, topSegments(clavEnd, armStart, false))
+}
+
 export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
   {
     id: 'proc:tshirt',
@@ -3288,6 +3411,28 @@ export const PROCEDURAL_ASSETS: ProceduralAssetDef[] = [
     tags: ['gloves', 'bracers', 'procedural'],
     materialId: 'leather',
     build: () => buildBracers()
+  },
+  {
+    id: 'proc:cape',
+    slotId: 'cape',
+    label: 'Cape',
+    tags: ['cape', 'back', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => {
+      const shape = sanitizeBodyShape(dna.bodyShape)
+      const bust = clamp01(dna.morphs?.bust ?? BUST_DEFAULT)
+      const belly = clamp01(dna.morphs?.bellySize ?? 0.5)
+      const butt = clamp01(dna.morphs?.butt ?? BUTT_DEFAULT)
+      return buildCape(shape, bust, belly, butt)
+    }
+  },
+  {
+    id: 'proc:wings',
+    slotId: 'wings',
+    label: 'Wings',
+    tags: ['wings', 'back', 'procedural'],
+    materialId: 'cloth',
+    build: (dna) => buildWings(sanitizeBodyShape(dna.bodyShape))
   }
 ]
 
@@ -3377,5 +3522,6 @@ export function garmentDependsOnKey(assetId: string, key: GarmentKey): boolean {
   )
     return key === 'head'
   if (assetId === 'proc:long_hair') return key === 'head' || key === 'torso'
+  if (assetId === 'proc:cape' || assetId === 'proc:wings') return key === 'torso'
   return false
 }

@@ -437,11 +437,11 @@ new bands per garment.
 
 ### Sprint 32 - Empty Slots + Cape Rule Removal
 
-- [ ] `buildCape` (draped back shell, `cape` slot, Spine2-attached) +
+- [x] `buildCape` (draped back shell, `cape` slot, Spine2-attached) +
       `buildWings` (paired wing shells, `wings` slot)
-- [ ] Delete `heavy-armor-disables-cape` from `rules.json` so cape + heavy
+- [x] Delete `heavy-armor-disables-cape` from `rules.json` so cape + heavy
       armour combine freely; knight preset gains the cape by default
-- [ ] Engine test: plate + cape coexist with no disable result
+- [x] Engine test: plate + cape coexist with no disable result
 
 **Acceptance**: Cape + full plate equips cleanly with no warnings; wings
 attach to Spine2; rules suite still green (4 rules remain).

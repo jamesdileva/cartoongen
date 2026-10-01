@@ -17,16 +17,6 @@
     "actions": [{ "type": "warn", "message": "Beard may clip through full-face helmet" }]
   },
   {
-    "id": "heavy-armor-disables-cape",
-    "description": "Heavy armor disables cape (bulk conflict)",
-    "trigger": { "slotId": "shirt", "tag": "heavy_armor" },
-    "conditions": [{ "slotId": "cape", "equipped": true }],
-    "actions": [
-      { "type": "disable_slot", "target": "cape" },
-      { "type": "warn", "message": "Cape is hidden by heavy armor" }
-    ]
-  },
-  {
     "id": "beard-and-helmet-warn",
     "description": "Beard may clip through helmet",
     "trigger": { "slotId": "helmet" },

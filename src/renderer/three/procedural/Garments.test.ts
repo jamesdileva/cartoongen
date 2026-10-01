@@ -45,6 +45,8 @@ import {
   buildStubble,
   buildSandals,
   buildBracers,
+  buildCape,
+  buildWings,
   buildCropHair,
   buildPonytail,
   buildMohawk,
@@ -131,7 +133,7 @@ describe('procedural asset catalog', () => {
     expect(isProceduralAssetId('abc')).toBe(false)
   })
 
-  it('exposes all 59 procedural entries with correct slots', () => {
+  it('exposes all 61 procedural entries with correct slots', () => {
     const entries = getProceduralAssetEntries()
     expect(entries.map((e) => e.id).sort()).toEqual([
       'proc:armet',
@@ -144,6 +146,7 @@ describe('procedural asset catalog', () => {
       'proc:bracers',
       'proc:bun_hair',
       'proc:cap',
+      'proc:cape',
       'proc:circlet',
       'proc:crop_hair',
       'proc:crown',
@@ -192,6 +195,7 @@ describe('procedural asset catalog', () => {
       'proc:tophat',
       'proc:tshirt',
       'proc:vest',
+      'proc:wings',
       'proc:wizard_hat'
     ])
     expect(entries.find((e) => e.id === 'proc:tshirt')?.slotId).toBe('shirt')
@@ -252,6 +256,10 @@ describe('procedural asset catalog', () => {
     expect(entries.find((e) => e.id === 'proc:stubble')?.slotId).toBe('beard')
     expect(entries.find((e) => e.id === 'proc:sandals')?.slotId).toBe('shoes')
     expect(entries.find((e) => e.id === 'proc:bracers')?.slotId).toBe('gloves')
+    expect(entries.find((e) => e.id === 'proc:cape')?.slotId).toBe('cape')
+    expect(entries.find((e) => e.id === 'proc:wings')?.slotId).toBe('wings')
+    expect(findProceduralAsset('proc:cape')?.materialId).toBe('cloth')
+    expect(findProceduralAsset('proc:wings')?.materialId).toBe('cloth')
     expect(findProceduralAsset('proc:long_coat')?.materialId).toBe('leather')
     expect(findProceduralAsset('proc:crown')?.materialId).toBe('metal')
     expect(findProceduralAsset('proc:sandals')?.materialId).toBe('leather')
@@ -352,6 +360,11 @@ describe('procedural asset catalog', () => {
     }
     for (const id of ['proc:shoes', 'proc:boots', 'proc:sandals', 'proc:gloves', 'proc:gauntlets', 'proc:bracers']) {
       expect(garmentDependsOnKey(id, 'torso')).toBe(true)
+    }
+    for (const id of ['proc:cape', 'proc:wings']) {
+      expect(garmentDependsOnKey(id, 'torso')).toBe(true)
+      expect(garmentDependsOnKey(id, 'head')).toBe(false)
+      expect(garmentDependsOnKey(id, 'face')).toBe(false)
     }
     for (const id of [
       'proc:crop_hair',
@@ -1851,6 +1864,100 @@ describe('sprint 31 clothing breadth', () => {
     expect(bracerX.max).toBeLessThan(0.95)
     expect(bracerX.max).toBeGreaterThan(0.85)
   })
+})
+
+describe('sprint 32 back slot', () => {
+  function zExt(geometry: THREE.BufferGeometry): { min: number; max: number } {
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    let min = Infinity
+    let max = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const z = pos.getZ(i)
+      if (z < min) min = z
+      if (z > max) max = z
+    }
+    return { min, max }
+  }
+
+  function yExt32(geometry: THREE.BufferGeometry): { min: number; max: number } {
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    let min = Infinity
+    let max = -Infinity
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (y < min) min = y
+      if (y > max) max = y
+    }
+    return { min, max }
+  }
+
+  it('cape and wings bind torso chains with normalized weights and x symmetry', () => {
+    for (const build of [buildCape, buildWings]) {
+      const { geometry, boneNames } = build()
+      expect(boneNames).toContain('Spine2')
+      expect(weightSumViolations(geometry)).toBe(0)
+      const ext = xExtent(geometry)
+      expect(ext.min).toBeCloseTo(-ext.max, 3)
+    }
+  })
+
+  it('cape drapes shoulders to calves with cord across the chest', () => {
+    const { geometry } = buildCape()
+    const y = yExt32(geometry)
+    expect(y.max).toBeGreaterThan(1.5)
+    expect(y.min).toBeLessThan(0.3)
+    // Cord crosses the chest front.
+    expect(zExt(geometry).max).toBeGreaterThan(0.18)
+  })
+
+  it('cape rear stands proud of the full butt silhouette', () => {
+    for (const butt of [0, 0.5, 1]) {
+      const { geometry } = buildCape(DEFAULT_BODY_SHAPE, 0.5, 0.5, butt)
+      const pos = geometry.attributes.position as THREE.BufferAttribute
+      let capeRear = Infinity
+      // Band widened for the frame-tilted rings (rear verts ride ~25mm high).
+      for (let i = 0; i < pos.count; i++) {
+        const y = pos.getY(i)
+        if (y < 0.75 || y > 1.05) continue
+        capeRear = Math.min(capeRear, pos.getZ(i))
+      }
+      expect(capeRear).toBeLessThan(-(buttRearDepth(DEFAULT_BODY_SHAPE, butt) + 0.03))
+    }
+  })
+
+  it('wings span past the shoulders with tips high', () => {
+    const { geometry } = buildWings()
+    expect(xExtent(geometry).max).toBeGreaterThan(0.5)
+    expect(yExt32(geometry).max).toBeGreaterThan(1.9)
+  })
+
+  it('cape opening faces front, rear and sides are closed (frame regression)', () => {
+    // The drape path straddles the sweep kernel's frame threshold; a wrong
+    // frame puts the wedge at the rear (caught live by the probe). These
+    // rays pin the opening placement on the built geometry.
+    const { geometry } = buildCape()
+    const mesh = new THREE.Mesh(geometry, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+    mesh.updateMatrixWorld(true)
+    const cast = (o: THREE.Vector3, d: THREE.Vector3): THREE.Vector3 | null => {
+      const ray = new THREE.Raycaster(o, d)
+      ray.far = 10
+      const hits = ray.intersectObject(mesh)
+      return hits.length > 0 ? hits[0].point : null
+    }
+    // Front-center ray sails through the wedge into the rear half.
+    const frontHit = cast(new THREE.Vector3(0, 1.2, 2), new THREE.Vector3(0, 0, -1))
+    expect(frontHit).not.toBeNull()
+    expect(frontHit!.z).toBeLessThan(-0.15)
+    // Rear-center ray stops at the rear wall.
+    const rearHit = cast(new THREE.Vector3(0, 1.2, -2), new THREE.Vector3(0, 0, 1))
+    expect(rearHit).not.toBeNull()
+    expect(rearHit!.z).toBeLessThan(-0.15)
+    // Side ray stops at the drape flank.
+    const sideHit = cast(new THREE.Vector3(0.6, 1.2, -0.1), new THREE.Vector3(-1, 0, 0))
+    expect(sideHit).not.toBeNull()
+    expect(sideHit!.x).toBeGreaterThan(0.2)
+  })
+})
 
   it('wizard cone contains the skull on all head shapes (no poke-through)', () => {
     // Point-in-mesh parity: skull surface samples (pulled 3% inward) cast
@@ -1893,4 +2000,3 @@ describe('sprint 31 clothing breadth', () => {
       }
     }
   })
-})

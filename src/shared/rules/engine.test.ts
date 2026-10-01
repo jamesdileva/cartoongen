@@ -171,6 +171,24 @@ describe('evaluateRules', () => {
     expect(results.some((r) => r.type === 'hide' && r.slotId === 'hair')).toBe(true)
   })
 
+  it('plate armour and cape coexist (heavy-armor rule retired)', async () => {
+    const rulesJson = await import('../data/rules.json')
+    const rules = rulesJson.default as Rule[]
+    expect(rules.some((r) => r.id === 'heavy-armor-disables-cape')).toBe(false)
+    const procTags = (id: string): string[] | undefined => {
+      const tags: Record<string, string[]> = {
+        'proc:plate': ['shirt', 'armour', 'procedural'],
+        'proc:cape': ['cape', 'back', 'procedural']
+      }
+      return tags[id]
+    }
+    let dna = createDNA('Test')
+    dna = setSlot(dna, 'shirt', 'proc:plate')
+    dna = setSlot(dna, 'cape', 'proc:cape')
+    const results = evaluateRules(dna, rules, procTags)
+    expect(results.filter((r) => r.slotId === 'cape')).toHaveLength(0)
+  })
+
   it('produces warn results correctly', () => {
     const warnRule: Rule = {
       id: 'test-warn',

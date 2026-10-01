@@ -10,7 +10,8 @@
       "pants": "proc:plate_legs",
       "helmet": "proc:armet",
       "gloves": "proc:gauntlets",
-      "shoes": "proc:boots"
+      "shoes": "proc:boots",
+      "cape": "proc:cape"
     },
     "morphs": {
       "shoulderWidth": 0.8,
