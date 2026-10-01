@@ -1526,12 +1526,12 @@ function hairShell(
 
 /** Short crop: skull-hugging shell over ears to the nape, face open. */
 export function buildCropHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  return bindHair([hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 0.7)])
+  return bindHair([hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 0.5)])
 }
 
 /** Ponytail: cap plus a tail sweep rooted under the crown. */
 export function buildPonytail(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const cap = hairShell(shape, 0.03, 0.015, 0.02, Math.PI * 0.6, 0.7)
+  const cap = hairShell(shape, 0.03, 0.015, 0.02, Math.PI * 0.6, 0.5)
   // Tail root starts inside the skull (hidden joint), emerging below the cap.
   // Widths/heights are full extents (diameter).
   const tail = makeSweep(
@@ -1579,7 +1579,7 @@ export function buildLongHair(
   butt = BUTT_DEFAULT,
   belly = 0.5
 ): GarmentBuildResult {
-  const shell = hairShell(shape, 0.035, 0.015, 0.03, Math.PI * 0.8, 0.7)
+  const shell = hairShell(shape, 0.035, 0.015, 0.03, Math.PI * 0.8, 0.5)
   const bellyScale = bellyScaleOf(belly)
   const stations: SweepStation[] = []
   for (const y of [1.95, 1.7, 1.5, 1.3, 1.12]) {
@@ -1601,7 +1601,7 @@ export function buildLongHair(
 
 /** Topknot bun: crop shell + knot sphere + tie ring. */
 export function buildBunHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const cap = hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 0.7)
+  const cap = hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 0.5)
   const top = CRANIUM_CENTER_Y + shape.headHeight
   const knot = new THREE.SphereGeometry(0.075, 16, 12)
   knot.scale(1, 0.9, 1)
@@ -1614,7 +1614,8 @@ export function buildBunHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuil
 
 /** Bob: jaw-length shell with a nape fall, face open. */
 export function buildBobHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const shell = hairShell(shape, 0.055, 0.02, 0.035, Math.PI * 0.86, 0.72)
+  const shell = hairShell(shape, 0.055, 0.02, 0.035, Math.PI * 0.86,
+    0.5)
   // Nape panel down to the shoulders behind the jaw.
   const fall = makeSweep(
     [
@@ -1631,7 +1632,8 @@ export function buildBobHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuil
 
 /** Pigtails: cap shell + twin side tails with ties. */
 export function buildPigtailsHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const cap = hairShell(shape, 0.045, 0.015, 0.028, Math.PI * 0.66, 0.68)
+  const cap = hairShell(shape, 0.045, 0.015, 0.028, Math.PI * 0.66,
+    0.55)
   const parts: THREE.BufferGeometry[] = [cap]
   const top = CRANIUM_CENTER_Y + shape.headHeight
   for (const side of [-1, 1] as const) {
@@ -1661,7 +1663,8 @@ export function buildPigtailsHair(shape: BodyShape = DEFAULT_BODY_SHAPE): Garmen
 
 /** Fade: buzz-short shell hugging the skull, ears out by design. */
 export function buildFadeHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  return bindHair([hairShell(shape, 0.018, 0.008, 0.014, Math.PI * 0.62, 0.66)])
+  return bindHair([hairShell(shape, 0.018, 0.008, 0.014, Math.PI *
+    0.62, 0.5)])
 }
 
 /**
@@ -1696,9 +1699,10 @@ export function buildHairFringe(
   band.scale(shape.headWidth + grow, shape.headHeight + grow, shape.headLength + grow)
   band.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
   const parts: THREE.BufferGeometry[] = [band]
+  // Sideburns: frames from hat line to the jaw corner on BOTH sides.
   for (const side of [-1, 1] as const) {
-    const burn = new THREE.BoxGeometry(0.024, 0.09, 0.035)
-    burn.translate(side * (shape.headWidth - 0.002), 1.8, 0.015)
+    const burn = new THREE.BoxGeometry(0.028, 0.14, 0.045)
+    burn.translate(side * (shape.headWidth - 0.002), 1.83, 0.02)
     parts.push(burn)
   }
   return bindHair(parts)

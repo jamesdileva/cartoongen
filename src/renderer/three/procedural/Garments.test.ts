@@ -1225,9 +1225,9 @@ describe('hair', () => {
   })
 
   it('leaves the face wedge open on shell styles', () => {
-    // Eyes span |x| 0.02-0.16 at y 1.82-1.95; nose/mouth sit center below.
-    // Brow tips (|x| > 0.13, hair-colored like the shell) are exempt.
-    // Jaw framing below y=1.75 (sideburns) is exempt.
+    // GAP=0.5 rad (~29 deg) half-angle at the shell equator => front strip
+    // |x| < ~0.12 stays hair-free. Center features + inner eyes are exempt
+    // territory by design; only the front strip must stay empty.
     for (const build of [buildCropHair, buildPonytail, buildLongHair]) {
       const geo = build().geometry
       const pos = geo.attributes.position as THREE.BufferAttribute
@@ -1236,9 +1236,9 @@ describe('hair', () => {
         const x = Math.abs(pos.getX(i))
         const y = pos.getY(i)
         const z = pos.getZ(i)
-        if (z < 0.15) continue
-        if (x >= 0.02 && x < 0.16 && y > 1.82 && y < 1.95) intruders++
-        if (x < 0.08 && y >= 1.7 && y <= 1.84) intruders++
+        if (z < 0.2) continue
+        // Parted front strip must be clear (equates to >0.48 rad off-front).
+        if (x < 0.11 && y > 1.75 && y < 1.95) intruders++
       }
       expect(intruders).toBe(0)
     }

@@ -537,7 +537,9 @@ export class CharacterManager {
       this.slotManager.attachSlot(slot.id, group, this.scene)
       this.slotManager.setSlotVisibility(slot.id, true)
     }
-    this.applyRuleVisibility(useRuleStore.getState().results)
+    const results2 = useRuleStore.getState().results
+    this.applyRuleVisibility(results2)
+    this.updateFringe(dna, results2)
   }
 
   private ensureDataLoaded(): void {
