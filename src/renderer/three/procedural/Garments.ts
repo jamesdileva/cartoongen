@@ -1502,10 +1502,10 @@ function bindHair(parts: THREE.BufferGeometry[]): GarmentBuildResult {
 }
 
 /**
- * Skull shell with a FRONT-ONLY crescent opening: the crown/sides/back are
- * always covered; the opening spans between the temples and reaches down to
- * the hat line. No more parted-sides bald stripe — hair frames the face
- * instead of a curtain drawn back.
+ * Hair shell in two sections: a CLOSED crown cap (full 2PI, pole down past
+ * the notch line) plus a lower band with the front face window. The crown
+ * can never part down the middle; the face stays open below the notch.
+ * Notch height clears the tallest eyes/brows, derived from shape alone.
  */
 function hairShell(
   shape: BodyShape,
@@ -1515,22 +1515,34 @@ function hairShell(
   thetaLength: number,
   gapHalf: number
 ): THREE.BufferGeometry {
-  // Full 2pi shell: hair covers the whole crown; the face window is cut
-  // by REPULSION below (no azimuth gap at all => no bald centre seam).
-  const geo = new THREE.SphereGeometry(1, 24, 16, 0, Math.PI * 2, 0, thetaLength)
-  // Face window: delete the front crescent whose top is at eyeTop. We do it
-  // by pulling the shell verts in that crescent OUTWARD (doubled radius)
-  // so they render as a slightly larger "hole-edge" ridge, not a hole.
-  // True hole would need more surgery; the widened fringe band covers the
-  // window fully, so the visible result is: fringe frames the face.
-  void gapHalf
-  geo.scale(shape.headWidth + growX, shape.headHeight + growY, shape.headLength + growZ)
-  geo.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
-  return geo
+  const notchTop = CRANIUM_CENTER_Y + shape.headHeight * 0.12 + 0.13
+  const thetaNotch = Math.acos(
+    Math.max(
+      -1,
+      Math.min(1, (notchTop - CRANIUM_CENTER_Y) / (shape.headHeight + growY))
+    )
+  )
+  // Closed cap: pole to just below the notch line (overlap hides the seam;
+  // the fringe band overlaps here too).
+  const cap = new THREE.SphereGeometry(1, 24, 8, 0, Math.PI * 2, 0, thetaNotch + 0.06)
+  // Lower band: notch line to hem, front window open for the face.
+  const band = new THREE.SphereGeometry(
+    1,
+    24,
+    12,
+    Math.PI / 2 + gapHalf,
+    Math.PI * 2 - gapHalf * 2,
+    thetaNotch,
+    Math.max(thetaLength - thetaNotch, 0.05)
+  )
+  for (const part of [cap, band]) {
+    part.scale(shape.headWidth + growX, shape.headHeight + growY, shape.headLength + growZ)
+    part.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
+  }
+  const merged = mergeGeometries([cap, band])
+  if (!merged) throw new Error('hairShell: mergeGeometries returned null')
+  return merged
 }
-
-/** Front crescent half-angle at shell equator (radians). */
-const FACE_CREST_HALF = 0.5
 
 /** Short crop: skull-hugging shell over ears to the nape, face open. */
 export function buildCropHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {

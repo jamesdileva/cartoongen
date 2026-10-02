@@ -1224,26 +1224,34 @@ describe('hair', () => {
     }
   })
 
-  it('keeps the crown fully covered (no central bald seam) on shell styles', () => {
-    // Front strip |x| < 0.11 at temple height must be HAIR-covered now;
-    // the face opening is a brow-level crescent below the temples.
+  it('crown stays covered while the face window stays open', () => {
+    // Two-section shell: above the notch line the front strip must be
+    // HAIR-covered (no centre seam); below it the strip must be OPEN
+    // (eyes/brows/nose live there). Notch ≈ CY + H*0.12 + 0.13.
+    const notchTop = 1.86 + DEFAULT_BODY_SHAPE.headHeight * 0.12 + 0.13
     for (const build of [buildCropHair, buildPonytail, buildLongHair]) {
       const geo = build().geometry
       const pos = geo.attributes.position as THREE.BufferAttribute
-      let covered = 0
-      let samples = 0
+      let crownCovered = 0
+      let crownSamples = 0
+      let windowIntruders = 0
+      let bandExists = 0
       for (let i = 0; i < pos.count; i++) {
         const x = Math.abs(pos.getX(i))
         const y = pos.getY(i)
         const z = pos.getZ(i)
+        if (y > 1.8 && y < 1.95) bandExists++
         if (z < 0.1) continue
-        if (x < 0.11 && y > 1.78 && y < 1.98) {
-          samples++
-          covered++
+        if (x < 0.11 && y > notchTop + 0.01) {
+          crownSamples++
+          crownCovered++
         }
+        if (x < 0.11 && y > 1.8 && y < 1.95) windowIntruders++
       }
-      expect(samples).toBeGreaterThan(0)
-      expect(covered).toBe(samples)
+      expect(bandExists).toBeGreaterThan(0)
+      expect(crownSamples).toBeGreaterThan(0)
+      expect(crownCovered).toBe(crownSamples)
+      expect(windowIntruders).toBe(0)
     }
   })
 
