@@ -2965,3 +2965,18 @@ midriff (no DNA on disk to confirm). Format-churn lesson documented.
 344 tests passing, probe green. Pushed as `392494b`. Full entry in
 worklog.md.
 
+---
+
+## Session 061 - Hair Shell Rework (Closed Crown + Open Face)
+
+### Date
+
+2026-10-01
+
+### What we did
+
+Reviewed last 3 commits (2 fringe keepers + 1 face-covering closed cap).
+Replaced with two-section shell: closed crown + open face window.
+Restored honest test (both halves + non-vacuity). 344 passing, probe
+green. Pushed as `135b83c`. Full entry in worklog.md.
+

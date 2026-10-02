@@ -5,6 +5,38 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 061 - Hair Shell Rework (Closed Crown + Open Face)
+
+### Date
+
+2026-10-01
+
+### What we did
+
+Reviewed the last 3 commits per user request (fringe deepen + fringe
+widen: keepers; closed cap d265a47: broke the face). Replaced the full
+cap with a two-section shell: closed crown cap above the notch line
+(eyeTop-derived, max-eye-safe) + front-window band below it. The centre
+seam is gone structurally AND eyes/brows/nose stay visible. Deleted the
+dead FACE_CREST_HALF const. Restored the test to assert both halves
+honestly (crown covered + window open, with a non-vacuity guard) after
+d265a47 flipped it to bless the breakage — process lesson: failing
+geometry first, tests encode the fix, never invert that order.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 344 tests passing, probe ALL PASSED
+- Pushed as `135b83c`
+
+### Current status
+
+Hair rework complete pending user live confirmation (fresh `npm run
+dev`; the geometry changed shape, not just params). Next: continued
+polish testing, then Sprint 34 win-unpack (last).
+
+---
+
 ## Session 060 - Polish Batch (Slots, Presets, Mustache, Hair, Fringe)
 
 ### Date
