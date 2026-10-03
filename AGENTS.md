@@ -2980,3 +2980,19 @@ Replaced with two-section shell: closed crown + open face window.
 Restored honest test (both halves + non-vacuity). 344 passing, probe
 green. Pushed as `135b83c`. Full entry in worklog.md.
 
+---
+
+## Session 062 - Polish Round 2 (9 User Items)
+
+### Date
+
+2026-10-01
+
+### What we built
+
+Beard cheeks+curtain (mouth open) + distinct stubble; hood via shared
+cappedShell; hair gaps re-differentiated; cape hangs behind shoulders;
+goggles cups+bridge; mask nose pocket; wings outward; bust front-only;
+deltoids tucked via shared deltoidCxOf. 346 tests, probe green. Pushed
+as `357faac`. Full entry in worklog.md.
+

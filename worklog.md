@@ -5,6 +5,45 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 062 - Polish Round 2 (9 User Items)
+
+### Date
+
+2026-10-01
+
+### What we built (live user feedback)
+
+| # | Report | Fix |
+|---|---|---|
+| 1 | Full beard over mouth; stubble same | Beard rebuilt as cheek masses + chin curtain with the mouth window open; stubble slimmed to a jaw patch (distinct, below mouth) |
+| 2 | Hood middle split | Hood shares the new `cappedShell` helper (closed crown + open band) — same cure as hair |
+| 3 | All hair same base + `n` arch | Gaps re-differentiated per style (0.45–0.6); probe wedges track with margin |
+| 4 | Cape melded into back | Top rows hang from shoulders (shoulder-scaled, inside arms); lower rows flare over hips; brooches moved to the visible cord-chest junction |
+| 5 | Goggles = VR headset; mask under nose | Twin lens cups + bridge + slim strap; mask gains a nose pocket swallowing every nose style/size |
+| 6 | Wings point up | Fan flattened outward (tips near shoulder height, span > 0.55) |
+| 7 | Bust grows the upper back | Bust projects forward only now (fixed lateral footprint; sampler updated in lockstep) |
+| 8 | Shoulder lump sticks out | Deltoids tuck 20mm inboard via shared `deltoidCxOf` (meat + all sleeves + pauldrons + tests move together) |
+| 9 | Clothes overall pass | Covered by 1–8; remainder deferred to live testing |
+
+Repo note: slot tabs + presets + fringe-attach from Session 060 were
+found already on main (idempotent re-application verified by diff —
+net-new this session is beards/hood/gaps/cape/goggles/wings/bust/
+deltoids + fringe-attach fix).
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 346 tests passing, probe ALL PASSED (cape band re-tuned twice:
+  ±0.28 → ±0.24 back zone, then shoulder-scaled top rows)
+- Pushed as `357faac`
+
+### Current status
+
+Polish round 2 complete pending user live confirmation. Next: continued
+polish testing, then Sprint 34 win-unpack (last).
+
+---
+
 ## Session 061 - Hair Shell Rework (Closed Crown + Open Face)
 
 ### Date
