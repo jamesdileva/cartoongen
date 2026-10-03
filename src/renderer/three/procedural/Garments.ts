@@ -1598,12 +1598,12 @@ function cappedShell(
 /** Short crop: skull-hugging shell over ears to the nape, face open. */
 export function buildCropHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
   return bindHair([hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 
-0.55)])
+0.65)])
 }
 
 /** Ponytail: cap plus a tail sweep rooted under the crown. */
 export function buildPonytail(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const cap = hairShell(shape, 0.03, 0.015, 0.02, Math.PI * 0.6, 0.5)
+  const cap = hairShell(shape, 0.03, 0.015, 0.02, Math.PI * 0.6, 0.6)
   // Tail root starts inside the skull (hidden joint), emerging below the cap.
   // Widths/heights are full extents (diameter).
   const tail = makeSweep(
@@ -1651,7 +1651,7 @@ export function buildLongHair(
   butt = BUTT_DEFAULT,
   belly = 0.5
 ): GarmentBuildResult {
-  const shell = hairShell(shape, 0.035, 0.015, 0.03, Math.PI * 0.8, 0.55)
+  const shell = hairShell(shape, 0.035, 0.015, 0.03, Math.PI * 0.8, 0.65)
   const bellyScale = bellyScaleOf(belly)
   const stations: SweepStation[] = []
   for (const y of [1.95, 1.7, 1.5, 1.3, 1.12]) {
@@ -1673,7 +1673,7 @@ export function buildLongHair(
 
 /** Topknot bun: crop shell + knot sphere + tie ring. */
 export function buildBunHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
-  const cap = hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 0.55)
+  const cap = hairShell(shape, 0.05, 0.015, 0.03, Math.PI * 0.76, 0.65)
   const top = CRANIUM_CENTER_Y + shape.headHeight
   const knot = new THREE.SphereGeometry(0.075, 16, 12)
   knot.scale(1, 0.9, 1)
@@ -1687,7 +1687,7 @@ export function buildBunHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuil
 /** Bob: jaw-length shell with a nape fall, face open. */
 export function buildBobHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
   const shell = hairShell(shape, 0.055, 0.02, 0.035, Math.PI * 0.86,
-    0.6)
+    0.7)
   // Nape panel down to the shoulders behind the jaw.
   const fall = makeSweep(
     [
@@ -1705,7 +1705,7 @@ export function buildBobHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuil
 /** Pigtails: cap shell + twin side tails with ties. */
 export function buildPigtailsHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBuildResult {
   const cap = hairShell(shape, 0.045, 0.015, 0.028, Math.PI * 0.66,
-    0.5)
+    0.6)
   const parts: THREE.BufferGeometry[] = [cap]
   const top = CRANIUM_CENTER_Y + shape.headHeight
   for (const side of [-1, 1] as const) {
@@ -1740,10 +1740,10 @@ export function buildFadeHair(shape: BodyShape = DEFAULT_BODY_SHAPE): GarmentBui
 }
 
 /**
- * Hat fringe (bangs + sideburns): shown INSTEAD of a hidden hair asset
+ * Hat fringe (forehead bangs): shown INSTEAD of a hidden hair asset
  * whenever a hat hides the hair, so hatted characters are never bald.
  * Snug layer (grow 0.01) tucks inside every hat rim (smallest: cap +0.015);
- * band spans eyeTop..rim, front swath only; sideburns sit below hat lines.
+ * narrow front swath only — no sideburns, cheeks stay clear.
  */
 export function buildHairFringe(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
@@ -1752,39 +1752,29 @@ export function buildHairFringe(
   const grow = 0.01
   const rim = hatRimY(shape, face)
   const eyeTop = rim - 0.005
-  // Cover from just above the brows to high on the crown: bottom edge at
-  // eyeTop - 25mm (bangs dip over the brow), top edge deep enough to
-  // intersect the crown vertex so the fringe reads as a hairline.
+  // Bangs from just above the brows to high on the crown.
   const thetaTop = Math.acos(
     Math.max(-1, Math.min(1, (rim + 0.02 - CRANIUM_CENTER_Y) / (shape.headHeight + grow)))
   )
   const thetaBot = Math.acos(
     Math.max(
       -1,
-      Math.min(1, (eyeTop - 0.025 - CRANIUM_CENTER_Y) / (shape.headHeight + grow))
+      Math.min(1, (eyeTop - 0.01 - CRANIUM_CENTER_Y) / (shape.headHeight + grow))
     )
   )
-  // Front swath fully across the forehead: ±65° around +Z at equator,
-  // so the two shell edges (±0.5 rad ≈ ±29°) sit inside it.
+  // Narrow front swath ±50° around +Z, open everywhere else.
   const band = new THREE.SphereGeometry(
     1,
     24,
     4,
-    Math.PI / 2 - 1.134,
-    2.268,
+    Math.PI / 2 - 0.875,
+    1.75,
     thetaTop,
     thetaBot - thetaTop
   )
   band.scale(shape.headWidth + grow, shape.headHeight + grow, shape.headLength + grow)
   band.translate(0, CRANIUM_CENTER_Y, CRANIUM_CENTER_Z)
-  const parts: THREE.BufferGeometry[] = [band]
-  // Sideburns: frames from hat line to the jaw corner on BOTH sides.
-  for (const side of [-1, 1] as const) {
-    const burn = new THREE.BoxGeometry(0.028, 0.14, 0.045)
-    burn.translate(side * (shape.headWidth - 0.002), 1.83, 0.02)
-    parts.push(burn)
-  }
-  return bindHair(parts)
+  return bindHair([band])
 }
 
 // ---------------------------------------------------------------------------
@@ -2013,35 +2003,49 @@ export function buildGoatee(
 }
 
 /**
- * Full beard: cheek masses + chin curtain with the mouth window open.
- * The old single shell buried the mouth; cheeks flank it (|x| >= 0.055
- * clear) and the curtain top sits below typical grin bottoms.
+ * Full beard: ONE continuous U-shaped mass (cheek wings flowing into a chin
+ * curtain) framing an open mouth window. Surface-projected stations hug any
+ * jaw; the curtain top tucks just under the mouth, the chin blob gives chin
+ * coverage without reaching the mouth.
  */
 export function buildFullBeard(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
   face: FaceShape = DEFAULT_FACE_SHAPE
 ): GarmentBuildResult {
   const mouthY = beardMouthY(shape, face)
-  const parts: THREE.BufferGeometry[] = []
-  for (const side of [-1, 1] as const) {
-    const cheek = makeEllipsoid(0.06, 0.09, 0.07, 16, 12)
-    translateGeometry(
-      cheek,
-      side * 0.115,
-      mouthY - 0.03,
-      surfaceZ(shape, side * 0.115, mouthY - 0.03) + 0.01
-    )
-    parts.push(cheek)
+  const halfPath: Array<[number, number]> = [
+    // [x, y] from left cheek top, under the mouth, to chin center.
+    [0.125, mouthY + 0.005],
+    [0.1, mouthY - 0.045],
+    [0.055, mouthY - 0.085],
+    [0.0, mouthY - 0.1]
+  ]
+  const stations: SweepStation[] = []
+  for (const [hx, hy] of halfPath) {
+    stations.push({
+      center: [-hx, hy, surfaceZ(shape, -hx, hy) + 0.012],
+      width: 0.075,
+      height: 0.07
+    })
   }
-  const curtain = makeEllipsoid(0.075, 0.055, 0.06, 18, 14)
+  for (let i = halfPath.length - 2; i >= 0; i--) {
+    const [hx, hy] = halfPath[i]
+    stations.push({
+      center: [hx, hy, surfaceZ(shape, hx, hy) + 0.012],
+      width: 0.075,
+      height: 0.07
+    })
+  }
+  const beard = makeSweep(stations, 14, true, true)
+  // Chin blob under the curtain for jaw-front fullness.
+  const chin = makeEllipsoid(0.07, 0.05, 0.055, 16, 12)
   translateGeometry(
-    curtain,
+    chin,
     0,
-    mouthY - 0.11,
-    surfaceZ(shape, 0, mouthY - 0.11) + 0.008
+    mouthY - 0.15,
+    surfaceZ(shape, 0, mouthY - 0.15) + 0.006
   )
-  parts.push(curtain)
-  return bindHat(parts)
+  return bindHat([beard, chin])
 }
 
 /**
