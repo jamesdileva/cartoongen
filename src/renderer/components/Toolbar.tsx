@@ -1,4 +1,5 @@
 import { useCharacterStore } from '../stores/useCharacterStore'
+import type { RandomLocks } from '../services/RandomGenerator'
 
 interface ToolbarProps {
   onNewCharacter: () => void
@@ -10,7 +11,15 @@ interface ToolbarProps {
   onPresets: () => void
   onLighting: () => void
   onPlugins: () => void
+  locks: RandomLocks
+  onToggleLock: (key: keyof RandomLocks) => void
 }
+
+const LOCK_DEFS: Array<{ key: keyof RandomLocks; label: string; title: string }> = [
+  { key: 'face', label: 'Face', title: 'Lock face on randomize' },
+  { key: 'outfit', label: 'Outfit', title: 'Lock outfit on randomize' },
+  { key: 'colors', label: 'Colors', title: 'Lock colors on randomize' }
+]
 
 export default function Toolbar({
   onNewCharacter,
@@ -21,7 +30,9 @@ export default function Toolbar({
   onRandomize,
   onPresets,
   onLighting,
-  onPlugins
+  onPlugins,
+  locks,
+  onToggleLock
 }: ToolbarProps) {
   const canUndo = useCharacterStore((s) => s.canUndo)
   const canRedo = useCharacterStore((s) => s.canRedo)
@@ -67,6 +78,20 @@ export default function Toolbar({
       <button style={btnStyle} onClick={onRandomize} title="Randomize Character (Ctrl+R)">
         Random
       </button>
+      {LOCK_DEFS.map(({ key, label, title }) => (
+        <button
+          key={key}
+          style={{
+            ...btnStyle,
+            borderColor: locks[key] ? '#ff9800' : '#444',
+            color: locks[key] ? '#ff9800' : '#888'
+          }}
+          onClick={() => onToggleLock(key)}
+          title={title}
+        >
+          {locks[key] ? `🔒${label}` : label}
+        </button>
+      ))}
       <span style={sepStyle} />
       <button style={btnStyle} onClick={onPlugins} title="Manage Plugins">
         Plugins

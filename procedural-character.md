@@ -460,10 +460,33 @@ attach to Spine2; rules suite still green (4 rules remain).
 **Acceptance**: Style options per feature; old saves migrate silently;
 surface-projection placement holds per style; 310+ tests green.
 
-### Sprint 34 - Win-Unpack Installer (last)
+### Sprint 38 - Win-Unpack Installer (last)
 
 - [ ] electron-builder + win target + icon + `npm run dist`
 - [ ] Smoke-test the unpacked exe (launch, new character, randomize, export)
 
 **Acceptance**: Double-clickable `dist/win-unpack` exe works on a clean
 machine with no dev tools.
+
+### Sprint 35 - Randomize Locks
+
+- [x] Face / Outfit / Colors lock toggles beside Random; pure
+      `applyRandomizeLocks` helper restores locked sections post-roll
+      (outfit lock also skips the 25% outfit roll)
+
+**Acceptance**: Locked sections survive Ctrl+R; unlocked sections reroll.
+
+### Sprint 36 - User-Saved Presets
+
+- [ ] `user-presets.json` in the project, merged through the preset
+      pipeline; save-current-as-preset + delete in PresetPanel
+
+**Acceptance**: Save a look, reload it later, delete it; randomizer can
+roll user outfits.
+
+### Sprint 37 - Pose Library
+
+- [ ] Hand-authored bone-rotation poses (relaxed, A-pose, heroic, wave)
+      + picker; poses bake into GLB export via scene clone
+
+**Acceptance**: Poses apply visibly; export carries the posed skeleton.

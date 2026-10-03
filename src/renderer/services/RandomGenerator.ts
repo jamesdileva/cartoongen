@@ -53,6 +53,36 @@ class SeededPRNG {
   }
 }
 
+export interface RandomLocks {
+  face?: boolean
+  outfit?: boolean
+  colors?: boolean
+}
+
+/**
+ * Restores locked sections from the current DNA onto freshly generated
+ * random DNA. Face = features + styles; outfit = equipped slots (the
+ * outfit roll is skipped separately by the caller); colors = palette.
+ */
+export function applyRandomizeLocks(
+  random: CharacterDNA,
+  current: CharacterDNA | null,
+  locks: RandomLocks
+): CharacterDNA {
+  if (!current) return random
+  const out = { ...random }
+  if (locks.face && current.face) {
+    out.face = { ...current.face }
+  }
+  if (locks.outfit) {
+    out.slots = { ...current.slots }
+  }
+  if (locks.colors) {
+    out.colors = { ...current.colors }
+  }
+  return out
+}
+
 export function generateRandomDNA(params: RandomGeneratorParams): CharacterDNA {
   const rng = new SeededPRNG(params.seed)
   const now = new Date().toISOString()

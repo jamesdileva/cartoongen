@@ -20,7 +20,7 @@ import { useAssetStore } from './stores/useAssetStore'
 import { useRuleStore } from './stores/useRuleStore'
 import { useToastStore } from './stores/useToastStore'
 import { useDataStore } from './stores/useDataStore'
-import { generateRandomDNA } from './services/RandomGenerator'
+import { generateRandomDNA, applyRandomizeLocks, type RandomLocks } from './services/RandomGenerator'
 import { generateCharacterThumbnail } from './services/CharacterThumbnail'
 import type { Template } from '../shared/types/template'
 import type { Preset } from '../shared/types/preset'
@@ -41,6 +41,7 @@ export default function App() {
   const [showPlugins, setShowPlugins] = useState(false)
   const [lightingPreset, setLightingPreset] = useState('studio')
   const [activeSlot, setActiveSlot] = useState('hair')
+  const [locks, setLocks] = useState<RandomLocks>({})
 
   const newCharacter = useCharacterStore((s) => s.newCharacter)
   const undo = useCharacterStore((s) => s.undo)
@@ -110,28 +111,37 @@ export default function App() {
     const rules = useRuleStore.getState().rules
     const palettes = useDataStore.getState().palettes
 
-    const currentBody = useCharacterStore.getState().present?.slots?.body ?? null
-    const dna = generateRandomDNA({
-      seed,
-      slots,
-      assets,
-      palettes,
-      rules,
-      bodyAssetId: currentBody
-    })
+    const current = useCharacterStore.getState().present
+    const currentBody = current?.slots?.body ?? null
+    const dna = applyRandomizeLocks(
+      generateRandomDNA({
+        seed,
+        slots,
+        assets,
+        palettes,
+        rules,
+        bodyAssetId: currentBody
+      }),
+      current,
+      locks
+    )
     dna.slots.body = currentBody
     overwriteDNA(dna)
     // Occasionally dress the result in a complete outfit (slots + palette).
-    // applyOutfit preserves the random morphs/bodyShape/face; base presets
-    // carry morphs too, but those stay out of the random body.
-    if (Math.random() < 0.25) {
+    // Skipped when the outfit is locked; applyOutfit preserves the random
+    // morphs/bodyShape/face either way.
+    if (!locks.outfit && Math.random() < 0.25) {
       const outfits = useDataStore.getState().presets.filter((p) => p.outfit)
       if (outfits.length > 0) {
         const pick = outfits[Math.floor(Math.random() * outfits.length)]
         useCharacterStore.getState().applyOutfit(pick)
       }
     }
-  }, [overwriteDNA])
+  }, [overwriteDNA, locks])
+
+  const handleToggleLock = useCallback((key: keyof RandomLocks) => {
+    setLocks((prev) => ({ ...prev, [key]: !prev[key] }))
+  }, [])
 
   useEffect(() => {
     ;(window as unknown as { __app?: unknown }).__app = {
@@ -271,6 +281,8 @@ export default function App() {
         onPresets={() => setShowPresets(true)}
         onLighting={() => setShowLighting(true)}
         onPlugins={() => setShowPlugins(true)}
+        locks={locks}
+        onToggleLock={handleToggleLock}
       />
       <LayoutShell
         leftPanel={<SlotPanel activeSlot={activeSlot} onActiveSlotChange={setActiveSlot} />}

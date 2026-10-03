@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { generateRandomDNA } from './RandomGenerator'
+import { generateRandomDNA, applyRandomizeLocks } from './RandomGenerator'
 import { CURRENT_DNA_VERSION } from '../../shared/types/dna'
 import type { SlotDefinition } from '../../shared/types/slot'
 import type { AssetEntry } from '../../shared/types/asset'
@@ -245,5 +245,41 @@ describe('generateRandomDNA', () => {
     // No bodyAssetId at all → no filtering
     const dna2 = generateRandomDNA({ seed: 'x', slots: slotsWithBeard, assets: genderedAssets, palettes: testPalettes, rules: testRules })
     expect(dna2.slots.beard).toBe('beard_01')
+  })
+})
+
+describe('applyRandomizeLocks', () => {
+  const base = {
+    seed: 'locktest',
+    slots: testSlots,
+    assets: testAssets,
+    palettes: testPalettes,
+    rules: testRules
+  }
+  const current = generateRandomDNA({ ...base, seed: 'current' })
+  const fresh = generateRandomDNA({ ...base, seed: 'fresh' })
+
+  it('returns random untouched with no locks or no current DNA', () => {
+    expect(applyRandomizeLocks(fresh, current, {})).toEqual(fresh)
+    expect(applyRandomizeLocks(fresh, null, { face: true, outfit: true, colors: true })).toEqual(
+      fresh
+    )
+  })
+
+  it('restores locked face, slots, and colors from current DNA', () => {
+    const out = applyRandomizeLocks(fresh, current, { face: true, outfit: true, colors: true })
+    expect(out.face).toEqual(current.face)
+    expect(out.slots).toEqual(current.slots)
+    expect(out.colors).toEqual(current.colors)
+    // Unlocked sections still come from the fresh roll.
+    expect(out.morphs).toEqual(fresh.morphs)
+    expect(out.bodyShape).toEqual(fresh.bodyShape)
+  })
+
+  it('leaves unlocked sections alone', () => {
+    const out = applyRandomizeLocks(fresh, current, { face: true })
+    expect(out.face).toEqual(current.face)
+    expect(out.slots).toEqual(fresh.slots)
+    expect(out.colors).toEqual(fresh.colors)
   })
 })
