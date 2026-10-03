@@ -486,7 +486,7 @@ roll user outfits.
 
 ### Sprint 37 - Pose Library
 
-- [ ] Hand-authored bone-rotation poses (relaxed, A-pose, heroic, wave)
+- [x] Hand-authored bone-rotation poses (relaxed, A-pose, heroic, wave)
       + picker; poses bake into GLB export via scene clone
 
 **Acceptance**: Poses apply visibly; export carries the posed skeleton.

@@ -1,0 +1,43 @@
+[
+  {
+    "id": "relaxed",
+    "name": "Relaxed",
+    "icon": "🧍",
+    "description": "Arms hang naturally at the sides",
+    "bones": {
+      "LeftUpperArm": [0, 0, 1.25],
+      "RightUpperArm": [0, 0, -1.25]
+    }
+  },
+  {
+    "id": "apose",
+    "name": "A-Pose",
+    "icon": "🙆",
+    "description": "Arms angled down-out, modelling standard",
+    "bones": {
+      "LeftUpperArm": [0, 0, 0.7],
+      "RightUpperArm": [0, 0, -0.7]
+    }
+  },
+  {
+    "id": "heroic",
+    "name": "Heroic",
+    "icon": "🦸",
+    "description": "Chest out, arms slightly raised",
+    "bones": {
+      "LeftUpperArm": [0, 0, -0.25],
+      "RightUpperArm": [0, 0, 0.25],
+      "Spine2": [-0.06, 0, 0]
+    }
+  },
+  {
+    "id": "wave",
+    "name": "Wave",
+    "icon": "👋",
+    "description": "Right hand raised in greeting",
+    "bones": {
+      "RightUpperArm": [0, 0, 0.87],
+      "RightForearm": [0, 0, 0.4]
+    }
+  }
+]

@@ -12,6 +12,8 @@ import ExportProfileEditor from './components/ExportProfileEditor'
 import TemplateDialog from './components/TemplateDialog'
 import PresetPanel from './components/PresetPanel'
 import LightingDialog from './components/LightingDialog'
+import PoseDialog from './components/PoseDialog'
+import type { Pose } from '../shared/types/pose'
 import PluginPanel from './components/PluginPanel'
 import ToastProvider from './components/ToastProvider'
 import { useCharacterStore } from './stores/useCharacterStore'
@@ -39,6 +41,8 @@ export default function App() {
   const [showPresets, setShowPresets] = useState(false)
   const [showLighting, setShowLighting] = useState(false)
   const [showPlugins, setShowPlugins] = useState(false)
+  const [showPoses, setShowPoses] = useState(false)
+  const [poseId, setPoseId] = useState<string | null>(null)
   const [lightingPreset, setLightingPreset] = useState('studio')
   const [activeSlot, setActiveSlot] = useState('hair')
   const [locks, setLocks] = useState<RandomLocks>({})
@@ -92,9 +96,10 @@ export default function App() {
       if (store.present) {
         store.applyPreset(template as unknown as Preset)
       }
+      resetPose()
       setShowTemplate(false)
     },
-    [newCharacter]
+    [newCharacter, resetPose]
   )
 
   const handlePresetApply = useCallback(
@@ -168,6 +173,7 @@ export default function App() {
     )
     dna.slots.body = currentBody
     overwriteDNA(dna)
+    resetPose()
     // Occasionally dress the result in a complete outfit (slots + palette).
     // Skipped when the outfit is locked; applyOutfit preserves the random
     // morphs/bodyShape/face either way.
@@ -178,7 +184,7 @@ export default function App() {
         useCharacterStore.getState().applyOutfit(pick)
       }
     }
-  }, [overwriteDNA, locks])
+  }, [overwriteDNA, locks, resetPose])
 
   const handleToggleLock = useCallback((key: keyof RandomLocks) => {
     setLocks((prev) => ({ ...prev, [key]: !prev[key] }))
@@ -229,6 +235,30 @@ export default function App() {
     setLightingPreset(presetId)
     viewportRef.current?.setLightingPreset(presetId)
   }, [])
+
+  const resetPose = useCallback(() => {
+    viewportRef.current?.resetPose()
+    setPoseId(null)
+  }, [])
+
+  const handlePoseSelect = useCallback((pose: Pose) => {
+    setPoseId(pose.id)
+    viewportRef.current?.applyPose(pose)
+  }, [])
+
+  // A new skeleton forgets any pose: clear the highlight when the body changes.
+  const bodySlot = useCharacterStore((s) => s.present?.slots?.body)
+  const prevBodyRef = useRef<string | null | undefined>(undefined)
+  useEffect(() => {
+    if (prevBodyRef.current === undefined) {
+      prevBodyRef.current = bodySlot
+      return
+    }
+    if (prevBodyRef.current !== bodySlot) {
+      prevBodyRef.current = bodySlot
+      setPoseId(null)
+    }
+  }, [bodySlot])
 
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
@@ -322,6 +352,7 @@ export default function App() {
         onPresets={() => setShowPresets(true)}
         onLighting={() => setShowLighting(true)}
         onPlugins={() => setShowPlugins(true)}
+        onPoses={() => setShowPoses(true)}
         locks={locks}
         onToggleLock={handleToggleLock}
       />
@@ -359,6 +390,14 @@ export default function App() {
           currentPreset={lightingPreset}
           onSelect={handleLightingSelect}
           onClose={() => setShowLighting(false)}
+        />
+      )}
+      {showPoses && (
+        <PoseDialog
+          currentPose={poseId}
+          onSelect={handlePoseSelect}
+          onReset={resetPose}
+          onClose={() => setShowPoses(false)}
         />
       )}
       {showPlugins && <PluginPanel onClose={() => setShowPlugins(false)} />}

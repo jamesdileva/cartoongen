@@ -7,6 +7,7 @@ import { useCharacterStore } from '../stores/useCharacterStore'
 import { useSlotStore } from '../stores/useSlotStore'
 import { useRuleStore } from '../stores/useRuleStore'
 import type { LightingPreset } from '../three/LightingManager'
+import type { Pose } from '../../shared/types/pose'
 import presetsData from '../../shared/data/lighting-presets.json'
 
 export type CameraPreset = 'front' | 'back' | 'side' | 'face' | 'full'
@@ -19,6 +20,8 @@ export interface ViewportHandle {
   getLightingPreset(): string
   getBgIndex(): number
   setBgIndex(index: number): void
+  applyPose(pose: Pose): void
+  resetPose(): void
 }
 
 interface ViewportProps {
@@ -84,6 +87,12 @@ const Viewport = forwardRef<ViewportHandle, ViewportProps>(({ onFileDrop }, ref)
       if (sceneRef.current) {
         sceneRef.current.background = new THREE.Color(BG_COLORS[index] ?? BG_COLORS[0])
       }
+    },
+    applyPose(pose: Pose) {
+      charManagerRef.current?.applyPose(pose)
+    },
+    resetPose() {
+      charManagerRef.current?.resetPose()
     }
   }))
 

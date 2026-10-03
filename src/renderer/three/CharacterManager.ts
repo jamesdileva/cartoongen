@@ -23,6 +23,8 @@ import {
   TOP_LENGTH_DEFAULT,
   type GarmentKey
 } from './procedural/Garments'
+import { snapshotRest, applyPoseOffsets, resetPoseRotations } from './Poses'
+import type { Pose } from '../../shared/types/pose'
 import { sanitizeBodyShape } from '../../shared/types/bodyShape'
 import { sanitizeFaceShape, type FaceShape } from '../../shared/types/faceShape'
 import referenceSkeleton from '../../shared/data/reference-skeleton.json'
@@ -202,6 +204,7 @@ function faceKeyOf(shape: BodyShape, face: FaceShape): string {
 export class CharacterManager {
   private scene = new THREE.Group()
   private boneMap = new Map<string, THREE.Bone>()
+  private poseRest: Map<string, THREE.Euler> | null = null
   private materialManager = new MaterialManager()
   private assetManager = new AssetManager(this.materialManager)
   private slotManager = new SlotManager()
@@ -300,6 +303,7 @@ export class CharacterManager {
     this.lastFaceKey = null
     const rootBone = buildSkeleton(SKELETON)
     collectBones(rootBone, this.boneMap)
+    this.poseRest = snapshotRest(this.boneMap)
 
     const helper = new THREE.SkeletonHelper(rootBone)
     helper.visible = false
@@ -648,6 +652,7 @@ export class CharacterManager {
 
       // Collect ALL bones from the scene (handles any skeleton structure)
       this.boneMap.clear()
+      this.poseRest = null
       gltf.scene.traverse((child) => {
         if (child instanceof THREE.Bone) {
           this.boneMap.set(child.name, child)
@@ -1143,6 +1148,35 @@ export class CharacterManager {
     this.proceduralMeshes = this.proceduralMeshes.filter((m) => m !== this.fringeMesh)
     this.fringeMesh = null
     this.lastFringeKey = null
+  }
+
+  /**
+   * Applies a stance pose as rotation offsets over rest pose. Starts from
+   * reset so poses never stack; unknown bones are skipped (cross-rig safe).
+   * Returns the bone names that moved.
+   */
+  applyPose(pose: Pose): string[] {
+    this.resetPose()
+    if (!this.poseRest) this.poseRest = new Map()
+    const bones = new Map<string, THREE.Bone>()
+    const rest = new Map<string, THREE.Euler>()
+    for (const name of Object.keys(pose.bones)) {
+      const bone = this.boneMap.get(name) ?? this.findBone(name)
+      if (!bone) continue
+      let base = this.poseRest.get(bone.name)
+      if (!base) {
+        base = bone.rotation.clone()
+        this.poseRest.set(bone.name, base)
+      }
+      bones.set(name, bone)
+      rest.set(name, base)
+    }
+    return applyPoseOffsets(bones, rest, pose)
+  }
+
+  resetPose(): void {
+    if (!this.poseRest) return
+    resetPoseRotations(this.boneMap, this.poseRest)
   }
 
   private findBone(name: string): THREE.Bone | null {

@@ -11,6 +11,7 @@ interface ToolbarProps {
   onPresets: () => void
   onLighting: () => void
   onPlugins: () => void
+  onPoses: () => void
   locks: RandomLocks
   onToggleLock: (key: keyof RandomLocks) => void
 }
@@ -31,6 +32,7 @@ export default function Toolbar({
   onPresets,
   onLighting,
   onPlugins,
+  onPoses,
   locks,
   onToggleLock
 }: ToolbarProps) {
@@ -74,6 +76,9 @@ export default function Toolbar({
       </button>
       <button style={btnStyle} onClick={onPresets} title="Apply Preset">
         Presets
+      </button>
+      <button style={btnStyle} onClick={onPoses} title="Pose Character">
+        Pose
       </button>
       <button style={btnStyle} onClick={onRandomize} title="Randomize Character (Ctrl+R)">
         Random
