@@ -3026,3 +3026,22 @@ shoulder blades; fade raised above ears; beard compacted onto chin
 (off neck). 347 tests, probe green. Pushed as `8d926e9`. Full entry
 in worklog.md.
 
+---
+
+## Sessions 065-067 - Sprints 35-37: Locks, User Presets, Poses
+
+### Date
+
+2026-10-03
+
+### What we built
+
+Randomize locks (face/outfit/colors toggles + helper); user-saved
+presets (service + IPC + merge + panel UI); pose library (4 poses,
+pure applier, dialog, export-safe). 359 tests passing. Full entry in
+worklog.md.
+
+### Current status
+
+Pre-packaging features complete. Next: Sprint 38 win-unpack (last).
+

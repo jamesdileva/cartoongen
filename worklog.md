@@ -5,6 +5,45 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Sessions 065-067 - Sprints 35-37: Locks, User Presets, Poses
+
+### Date
+
+2026-10-03
+
+### What we built (pre-packaging features, user-approved)
+
+**Sprint 35 - Randomize locks** (`e350a0a`): Face/Outfit/Colors toggles
+beside Random. Pure `applyRandomizeLocks` restores locked sections
+post-roll; outfit lock also skips the 25% outfit roll.
+
+**Sprint 36 - User-saved presets** (`3106061`): `UserPresetService`
+(`project/presets/user.json`) + `preset:save/delete` IPC merged into
+`data:getPresets`. PresetPanel gains save-current form + two-click
+delete on `custom` presets. Saved looks are `outfit:true`, so the
+randomizer can roll them.
+
+**Sprint 37 - Pose library** (`4dee099`): `poses.json` (relaxed, A-pose,
+heroic, wave) + pure `Poses.ts` applier (offsets over rest, unknown
+bones skipped, reset restores — headless-tested, incl. a live assertion
+that relaxed drops the hand). CharacterManager apply/reset with
+rebuild-safe rest snapshots (alias-aware, GLB-tolerant). PoseDialog +
+toolbar button; pose resets on randomize/new-template/body-switch;
+bakes into GLB export via scene clone. Blind-authored angles are modest
+by design — user to confirm the read live.
+
+### Verification (each sprint)
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings)
+- 359 tests passing (350 locks + 6 service + 3 poses); builds succeed
+
+### Current status
+
+All pre-packaging features complete. Next: Sprint 38 win-unpack (last),
+then user polish testing of everything at once.
+
+---
+
 ## Session 064 - Hair Per-Style Fixes + Chin-Hugger Beard
 
 ### Date
