@@ -79,7 +79,7 @@ import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodySh
 import { DEFAULT_FACE_SHAPE } from '../../../shared/types/faceShape'
 import { surfaceZ, CRANIUM_CENTER_Y } from './FaceFeatures'
 import type { CharacterDNA } from '../../../shared/types/dna'
-import { buildTorso } from './BodyParts'
+import { buildTorso, deltoidCxOf } from './BodyParts'
 import { ProportionManager } from '../ProportionManager'
 
 function weightSumViolations(geometry: THREE.BufferGeometry): number {
@@ -525,8 +525,7 @@ describe('buildTShirt', () => {
       const shape: BodyShape = { ...DEFAULT_BODY_SHAPE, shoulderWidth }
       const geo = buildTShirt(shape, 0.15, 0.5, 0.2).geometry
       const pos = geo.attributes.position as THREE.BufferAttribute
-      const clavEnd = 0.36 * shoulderWidth
-      const cx = clavEnd + 0.005
+      const cx = deltoidCxOf(shape)
       const cy = 1.465
       // Sample deltoid shell points (unit sphere scaled) and require cloth outside.
       const samples: Array<[number, number, number]> = []
@@ -1686,23 +1685,46 @@ describe('accessories', () => {
     }
   })
 
-  it('mask covers the mouth zone without reaching the nose', () => {
-    const geo = buildFaceMask().geometry
-    const pos = geo.attributes.position as THREE.BufferAttribute
-    let minY = Infinity
-    let maxY = -Infinity
-    let maxZ = -Infinity
-    for (let i = 0; i < pos.count; i++) {
-      const y = pos.getY(i)
-      if (y < minY) minY = y
-      if (y > maxY) maxY = y
-      if (y > 1.7 && y < 1.82) maxZ = Math.max(maxZ, pos.getZ(i))
+  it('mask covers the mouth and swallows the nose tip', () => {
+    for (const noseSize of [0.6, 1, 1.6]) {
+      for (const noseStyle of ['button', 'pointed', 'broad'] as const) {
+        const face = { ...DEFAULT_FACE_SHAPE, noseSize, noseStyle }
+        const geo = buildFaceMask(DEFAULT_BODY_SHAPE, face).geometry
+        const pos = geo.attributes.position as THREE.BufferAttribute
+        let minY = Infinity
+        let maxY = -Infinity
+        for (let i = 0; i < pos.count; i++) {
+          const y = pos.getY(i)
+          if (y < minY) minY = y
+          if (y > maxY) maxY = y
+        }
+        // Mouth zone covered below; pocket rises past the nose tip.
+        const noseY = 1.86 - DEFAULT_BODY_SHAPE.headHeight * 0.15
+        expect(minY).toBeLessThan(1.74)
+        expect(maxY).toBeGreaterThan(noseY + 0.02)
+      }
     }
-    // Mouth sits ~1.78; nose bottom ~1.80. Mask spans across the mouth.
-    expect(minY).toBeLessThan(1.74)
-    expect(maxY).toBeGreaterThan(1.76)
-    expect(maxY).toBeLessThan(1.84)
-    expect(maxZ).toBeGreaterThan(0.15)
+  })
+
+  it('goggle cups sit one per eye, proud of the eyeballs', () => {
+    for (const eyeScale of [0.7, 1, 1.3]) {
+      const face = { ...DEFAULT_FACE_SHAPE, eyeScale }
+      const geo = buildGoggles(DEFAULT_BODY_SHAPE, face).geometry
+      const pos = geo.attributes.position as THREE.BufferAttribute
+      // Two cup clusters: verts near each eye line, none bridging center.
+      let centerFront = -Infinity
+      for (let i = 0; i < pos.count; i++) {
+        const x = Math.abs(pos.getX(i))
+        const y = pos.getY(i)
+        if (x < 0.03 && y > 1.85 && y < 1.95) {
+          centerFront = Math.max(centerFront, pos.getZ(i))
+        }
+      }
+      const eyeY = 1.86 + DEFAULT_BODY_SHAPE.headHeight * 0.12
+      const surfCenter = surfaceZ(DEFAULT_BODY_SHAPE, 0, eyeY)
+      // No visor slab across the nose bridge (bridge tube stays near face).
+      expect(centerFront).toBeLessThan(surfCenter + 0.05)
+    }
   })
 
   it('goggle strap rings the head at eye height', () => {
@@ -1805,7 +1827,7 @@ describe('beards', () => {
     expect(box.min).toBeLessThan(1.7)
   })
 
-  it('full beard covers the chin and leaves the nose out', () => {
+  it('full beard frames the mouth: chin covered, nose and mouth clear', () => {
     const geo = buildFullBeard().geometry
     const pos = geo.attributes.position as THREE.BufferAttribute
     let minY = Infinity
@@ -1813,16 +1835,23 @@ describe('beards', () => {
       const y = pos.getY(i)
       if (y < minY) minY = y
     }
-    expect(minY).toBeLessThan(1.7)
-    // Nose tip must stay outside the beard ellipsoid.
+    expect(minY).toBeLessThan(1.66)
+    // Mouth window: no beard in front of the mouth center strip.
+    const mouthY = 1.86 - DEFAULT_BODY_SHAPE.headHeight * 0.15 - 0.05 - 0.02
+    for (let i = 0; i < pos.count; i++) {
+      const x = pos.getX(i)
+      const y = pos.getY(i)
+      const z = pos.getZ(i)
+      if (Math.abs(x) < 0.05 && y > mouthY - 0.09 && y < mouthY + 0.03) {
+        expect(z).toBeLessThan(surfaceZ(DEFAULT_BODY_SHAPE, x, y) + 0.02)
+      }
+    }
+    // Nose tip stays in front of all beard geometry.
     const noseY = 1.86 - DEFAULT_BODY_SHAPE.headHeight * 0.15
     const noseZ = surfaceZ(DEFAULT_BODY_SHAPE, 0, noseY) + 0.03
-    const cx = 0
-    const cy = noseY - 0.02 - 0.005 - 0.055
-    const cz = surfaceZ(DEFAULT_BODY_SHAPE, 0, cy) + 0.01
-    const inside =
-      ((0 - cx) / 0.1) ** 2 + ((noseY - cy) / 0.06) ** 2 + ((noseZ - cz) / 0.05) ** 2 < 1
-    expect(inside).toBe(false)
+    let maxZ = -Infinity
+    for (let i = 0; i < pos.count; i++) maxZ = Math.max(maxZ, pos.getZ(i))
+    expect(maxZ).toBeLessThan(noseZ)
   })
 
   it('mustache wings part at the philtrum below the nose', () => {
@@ -2039,10 +2068,13 @@ describe('sprint 32 back slot', () => {
     }
   })
 
-  it('wings span past the shoulders with tips high', () => {
+  it('wings span outward past the shoulders without climbing', () => {
     const { geometry } = buildWings()
-    expect(xExtent(geometry).max).toBeGreaterThan(0.5)
-    expect(yExt32(geometry).max).toBeGreaterThan(1.9)
+    expect(xExtent(geometry).max).toBeGreaterThan(0.55)
+    const ext = yExt32(geometry)
+    // Lifted outward fan: tips above the root line, below head height.
+    expect(ext.max).toBeGreaterThan(1.6)
+    expect(ext.max).toBeLessThan(1.85)
   })
 
   it('cape opening faces front, rear and sides are closed (frame regression)', () => {

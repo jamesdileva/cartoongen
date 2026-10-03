@@ -130,6 +130,24 @@ describe('buildTorso', () => {
     expect(full).toBeGreaterThan(flat)
   })
 
+  it('bust masses project forward with a fixed lateral footprint', () => {
+    // Verts projecting past the chest tube front (|x|, z of the bust masses).
+    for (const bust of [0.5, 1]) {
+      const pos = buildTorso(DEFAULT_BODY_SHAPE, bust, 0.2).geometry.attributes.position as THREE.BufferAttribute
+      let massVerts = 0
+      for (let i = 0; i < pos.count; i++) {
+        const x = pos.getX(i)
+        const y = pos.getY(i)
+        const z = pos.getZ(i)
+        if (z > 0.23 && y > 1.2 && y < 1.45) {
+          massVerts++
+          expect(Math.abs(x)).toBeLessThan(0.17)
+        }
+      }
+      if (bust === 1) expect(massVerts).toBeGreaterThan(0)
+    }
+  })
+
   it('butt param extends rear projection', () => {
     const flat = -zMin(buildTorso(DEFAULT_BODY_SHAPE, 0.15, 0).geometry, 0.85, 1.05)
     const full = -zMin(buildTorso(DEFAULT_BODY_SHAPE, 0.15, 1).geometry, 0.85, 1.05)

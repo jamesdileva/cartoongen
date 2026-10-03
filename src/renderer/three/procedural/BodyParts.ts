@@ -137,6 +137,15 @@ export function torsoProfile(s: BodyShape): TorsoStation[] {
 const CLAVICLE_ORIGIN_X = 0.1
 const CLAVICLE_Y = 1.47
 
+/**
+ * Deltoid cap center: tucked just inside the arm joint so the muscle reads
+ * merged into the shoulder slope, not perched outside it. Meat, sleeves,
+ * and tests all share this (they must track together).
+ */
+export function deltoidCxOf(shape: BodyShape): number {
+  return 0.36 * shape.shoulderWidth - 0.015
+}
+
 export function buildTorso(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
   bust = 0.15,
@@ -167,28 +176,30 @@ export function buildTorso(
   const deltoidGeo = makeEllipsoid(0.095 * deltScale, 0.115 * deltScale, 0.1 * deltScale, 16, 12)
   const leftDeltoid = translateGeometry(
     deltoidGeo.clone(),
-    -(clavEnd + 0.005),
+    -deltoidCxOf(shape),
     CLAVICLE_Y - 0.005,
     0
   )
-  const rightDeltoid = translateGeometry(deltoidGeo, clavEnd + 0.005, CLAVICLE_Y - 0.005, 0)
+  const rightDeltoid = translateGeometry(deltoidGeo, deltoidCxOf(shape), CLAVICLE_Y - 0.005, 0)
 
   const pelvisGeo = makeEllipsoid(0.32 * shape.hipWidth, 0.14, 0.23, 20, 14)
   const pelvis = translateGeometry(pelvisGeo, 0, 0.9, 0)
 
+  // Bust projects FORWARD only: fixed lateral footprint (no back/side
+  // growth), depth and forward travel carry the slider.
   const bustR = 0.02 + 0.075 * bust
-  const bustGeo = makeEllipsoid(bustR, bustR * 0.92, bustR * 0.78, 14, 10)
+  const bustGeo = makeEllipsoid(0.075, bustR * 0.92, 0.03 + 0.05 * bust, 14, 10)
   const leftBust = translateGeometry(
     bustGeo.clone(),
-    -0.085 - 0.03 * bust,
+    -0.085,
     1.335,
-    (0.155 + 0.045 * bust) * shape.chestDepth
+    (0.14 + 0.06 * bust) * shape.chestDepth
   )
   const rightBust = translateGeometry(
     bustGeo,
-    0.085 + 0.03 * bust,
+    0.085,
     1.335,
-    (0.155 + 0.045 * bust) * shape.chestDepth
+    (0.14 + 0.06 * bust) * shape.chestDepth
   )
 
   const buttBase = 0.055 * shape.hipWidth
