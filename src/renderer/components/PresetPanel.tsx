@@ -5,10 +5,14 @@ import { useDataStore } from '../stores/useDataStore'
 interface PresetPanelProps {
   onApply: (preset: Preset) => void
   onClose: () => void
+  onSavePreset: (name: string) => void
+  onDeletePreset: (id: string) => void
 }
 
-export default function PresetPanel({ onApply, onClose }: PresetPanelProps) {
+export default function PresetPanel({ onApply, onClose, onSavePreset, onDeletePreset }: PresetPanelProps) {
   const [confirmId, setConfirmId] = useState<string | null>(null)
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+  const [newName, setNewName] = useState('')
   const presets = useDataStore((s) => s.presets)
   const loading = useDataStore((s) => s.loading)
 
@@ -19,6 +23,22 @@ export default function PresetPanel({ onApply, onClose }: PresetPanelProps) {
     } else {
       setConfirmId(preset.id)
     }
+  }
+
+  const handleDelete = (preset: Preset) => {
+    if (deleteId === preset.id) {
+      onDeletePreset(preset.id)
+      setDeleteId(null)
+    } else {
+      setDeleteId(preset.id)
+    }
+  }
+
+  const handleSave = () => {
+    const name = newName.trim()
+    if (name.length === 0) return
+    onSavePreset(name)
+    setNewName('')
   }
 
   if (loading) {
@@ -35,6 +55,30 @@ export default function PresetPanel({ onApply, onClose }: PresetPanelProps) {
     <div style={overlayStyle} onClick={onClose}>
       <div style={dialogStyle} onClick={(e) => e.stopPropagation()}>
         <h3 style={{ margin: '0 0 12px', color: '#eee', fontSize: 14 }}>Character Presets</h3>
+        <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+          <input
+            value={newName}
+            onChange={(e) => setNewName(e.target.value)}
+            placeholder="Save current look as…"
+            maxLength={40}
+            style={{
+              flex: 1,
+              padding: '6px 10px',
+              borderRadius: 4,
+              border: '1px solid #444',
+              background: '#2a2a2a',
+              color: '#eee',
+              fontSize: 12
+            }}
+          />
+          <button
+            style={{ ...cancelBtnStyle, opacity: newName.trim() ? 1 : 0.5 }}
+            onClick={handleSave}
+            disabled={!newName.trim()}
+          >
+            Save
+          </button>
+        </div>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
           {presets.map((p) => (
             <button
@@ -42,10 +86,30 @@ export default function PresetPanel({ onApply, onClose }: PresetPanelProps) {
               onClick={() => handleClick(p)}
               style={{
                 ...cardStyle,
-                borderColor: confirmId === p.id ? '#ff9800' : '#333'
+                borderColor: confirmId === p.id ? '#ff9800' : '#333',
+                position: 'relative'
               }}
               title={confirmId === p.id ? 'Click again to confirm' : p.description}
             >
+              {p.custom && (
+                <span
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    handleDelete(p)
+                  }}
+                  title={deleteId === p.id ? 'Click again to delete' : 'Delete preset'}                  style={{
+                    position: 'absolute',
+                    top: 4,
+                    right: 6,
+                    fontSize: 12,
+                    color: deleteId === p.id ? '#ff5252' : '#888',
+                    cursor: 'pointer',
+                    fontWeight: 700
+                  }}
+                >
+                  ×
+                </span>
+              )}
               <div style={{ fontSize: 24, marginBottom: 4 }}>{p.icon}</div>
               <div style={{ fontSize: 13, fontWeight: 600, color: '#ddd' }}>{p.name}</div>
               <div style={{ fontSize: 11, color: '#888', marginTop: 2 }}>{p.description}</div>

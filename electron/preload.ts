@@ -57,6 +57,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     toggle: (pluginId: string, enabled: boolean) =>
       ipcRenderer.invoke(IPC.PLUGIN_TOGGLE, pluginId, enabled)
   },
+  preset: {
+    save: (preset: unknown) => ipcRenderer.invoke(IPC.PRESET_SAVE, preset),
+    remove: (id: string) => ipcRenderer.invoke(IPC.PRESET_DELETE, id)
+  },
   data: {
     getRules: () => ipcRenderer.invoke(IPC.DATA_GET_RULES),
     getPresets: () => ipcRenderer.invoke(IPC.DATA_GET_PRESETS),

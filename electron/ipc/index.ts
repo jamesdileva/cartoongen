@@ -7,6 +7,7 @@ import { registerImportIpc } from './importIpc'
 import { registerExportIpc } from './exportIpc'
 import { registerWorkspaceIpc } from './workspaceIpc'
 import { registerPluginIpc } from './pluginIpc'
+import { registerPresetIpc } from './presetIpc'
 import type { ProjectService } from '../services/ProjectService'
 
 let currentService: ProjectService | null = null
@@ -35,4 +36,5 @@ export function registerAllIpcHandlers(): void {
   registerExportIpc()
   registerWorkspaceIpc()
   registerPluginIpc()
+  registerPresetIpc(getProjectRoot)
 }

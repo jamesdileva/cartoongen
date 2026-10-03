@@ -478,7 +478,7 @@ machine with no dev tools.
 
 ### Sprint 36 - User-Saved Presets
 
-- [ ] `user-presets.json` in the project, merged through the preset
+- [x] `user-presets.json` in the project, merged through the preset
       pipeline; save-current-as-preset + delete in PresetPanel
 
 **Acceptance**: Save a look, reload it later, delete it; randomizer can

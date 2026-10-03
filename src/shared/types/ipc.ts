@@ -2,6 +2,7 @@ import type { CharacterDNA } from './dna'
 import type { AssetEntry, AssetQuery } from './asset'
 import type { SlotDefinition } from './slot'
 import type { Rule } from './rule'
+import type { Preset } from './preset'
 
 export const IPC = {
   PROJECT_CREATE: 'project:create',
@@ -32,6 +33,8 @@ export const IPC = {
   WORKSPACE_SAVE: 'workspace:save',
   PLUGIN_LIST: 'plugin:list',
   PLUGIN_TOGGLE: 'plugin:toggle',
+  PRESET_SAVE: 'preset:save',
+  PRESET_DELETE: 'preset:delete',
   DATA_GET_RULES: 'data:getRules',
   DATA_GET_PRESETS: 'data:getPresets',
   DATA_GET_PALETTES: 'data:getPalettes'
@@ -90,4 +93,9 @@ export interface IpcSlotApi {
 
 export interface IpcRuleApi {
   listAll(): Promise<Rule[]>
+}
+
+export interface IpcPresetApi {
+  save(preset: Preset): Promise<{ ok: true } | { ok: false; error: string }>
+  remove(id: string): Promise<{ ok: true } | { ok: false; error: string }>
 }

@@ -70,6 +70,10 @@ interface ElectronAPI {
     list(): Promise<PluginState[]>
     toggle(pluginId: string, enabled: boolean): Promise<{ ok: true } | { ok: false; error: string }>
   }
+  preset: {
+    save(preset: Preset): Promise<{ ok: true } | { ok: false; error: string }>
+    remove(id: string): Promise<{ ok: true } | { ok: false; error: string }>
+  }
   data: {
     getRules(): Promise<Rule[]>
     getPresets(): Promise<Preset[]>

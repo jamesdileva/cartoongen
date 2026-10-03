@@ -13,4 +13,6 @@ export interface Preset {
   face?: Partial<FaceShape>
   /** Complete look (garments + palette) the randomizer can apply via slots+colors. */
   outfit?: boolean
+  /** User-saved (vs bundled/plugin): the UI offers delete affordances. */
+  custom?: boolean
 }

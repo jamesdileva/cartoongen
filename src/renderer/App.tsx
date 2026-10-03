@@ -104,6 +104,47 @@ export default function App() {
     [applyPreset]
   )
 
+  const handleSavePreset = useCallback(
+    async (name: string) => {
+      const present = useCharacterStore.getState().present
+      if (!present) return
+      const preset: Preset = {
+        id: `user-${Date.now().toString(36)}`,
+        name,
+        description: 'Saved look',
+        icon: '⭐',
+        slots: { ...present.slots },
+        morphs: { ...present.morphs },
+        colors: { ...present.colors },
+        bodyShape: present.bodyShape ? { ...present.bodyShape } : undefined,
+        face: present.face ? { ...present.face } : undefined,
+        outfit: true,
+        custom: true
+      }
+      const res = await window.electronAPI.preset.save(preset)
+      if (res.ok) {
+        await useDataStore.getState().loadAll()
+        addToast(`Preset "${name}" saved`, 'success')
+      } else {
+        addToast(`Preset save failed: ${res.error}`, 'error')
+      }
+    },
+    [addToast]
+  )
+
+  const handleDeletePreset = useCallback(
+    async (id: string) => {
+      const res = await window.electronAPI.preset.remove(id)
+      if (res.ok) {
+        await useDataStore.getState().loadAll()
+        addToast('Preset deleted', 'success')
+      } else {
+        addToast(`Preset delete failed: ${res.error}`, 'error')
+      }
+    },
+    [addToast]
+  )
+
   const handleRandomize = useCallback(() => {
     const seed = Date.now().toString(36)
     const assets = useAssetStore.getState().assets
@@ -306,7 +347,12 @@ export default function App() {
         <TemplateDialog onSelect={handleTemplateSelect} onClose={() => setShowTemplate(false)} />
       )}
       {showPresets && (
-        <PresetPanel onApply={handlePresetApply} onClose={() => setShowPresets(false)} />
+        <PresetPanel
+          onApply={handlePresetApply}
+          onClose={() => setShowPresets(false)}
+          onSavePreset={handleSavePreset}
+          onDeletePreset={handleDeletePreset}
+        />
       )}
       {showLighting && (
         <LightingDialog

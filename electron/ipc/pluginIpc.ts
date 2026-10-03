@@ -89,7 +89,14 @@ export function registerPluginIpc(): void {
   ipcMain.handle(IPC.DATA_GET_PRESETS, async () => {
     const bundled = loadBundledPresets()
     const plugin = pluginService?.getPluginPresets() ?? []
-    return [...bundled, ...plugin]
+    let user: Preset[] = []
+    try {
+      const { UserPresetService } = await import('../services/UserPresetService')
+      user = new UserPresetService(getProjectService().root).load()
+    } catch {
+      // no user presets (or no project yet)
+    }
+    return [...bundled, ...plugin, ...user]
   })
 
   ipcMain.handle(IPC.DATA_GET_PALETTES, async () => {
