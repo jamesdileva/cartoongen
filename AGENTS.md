@@ -2996,3 +2996,18 @@ goggles cups+bridge; mask nose pocket; wings outward; bust front-only;
 deltoids tucked via shared deltoidCxOf. 346 tests, probe green. Pushed
 as `357faac`. Full entry in worklog.md.
 
+---
+
+## Session 063 - One-Piece Beard + Hair Off Cheeks
+
+### Date
+
+2026-10-01
+
+### What we built
+
+Beard as a single U-piece (cheeks + raised curtain, mouth open);
+hair gaps widened per style with sideburns removed (clean cheeks);
+fringe narrowed to ±50° bangs. 346 tests, probe green. Pushed as
+`12d4602`. Full entry in worklog.md.
+

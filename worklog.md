@@ -5,6 +5,37 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 063 - One-Piece Beard + Hair Off Cheeks
+
+### Date
+
+2026-10-01
+
+### What we built (2 user items)
+
+1. **Beard as one item**: `buildFullBeard` is now a single U sweep
+   (cheek wings flowing into a raised chin curtain) + overlapping chin
+   blob — reads as one continuous beard with the mouth window open.
+   Curtain top sits just under typical grin bottoms (max-grin tuck
+   accepted + documented in-test).
+2. **Hair off the face sides**: gaps widened per style (0.5–0.7,
+   re-differentiated); fringe narrowed to a ±50° bangs band with the
+   sideburn boxes deleted (clean cheeks, verified by an inverted test:
+   zero verts low-outside). Probe wedges track with margin.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 346 tests passing, probe ALL PASSED
+- Pushed as `12d4602`
+
+### Current status
+
+Pending user live confirmation. Next: continued polish testing, then
+Sprint 34 win-unpack (last).
+
+---
+
 ## Session 062 - Polish Round 2 (9 User Items)
 
 ### Date
