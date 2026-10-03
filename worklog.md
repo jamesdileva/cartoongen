@@ -5,6 +5,36 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 064 - Hair Per-Style Fixes + Chin-Hugger Beard
+
+### Date
+
+2026-10-01
+
+### What we built (4 user items)
+
+| # | Report | Fix |
+|---|---|---|
+| 1 | Ponytail should pull behind ears | Short crown cap (hem above ear tops) + back nape panel + tail; ears exposed, sides read as slicked undercut |
+| 2 | Long fall extends all the way down | Mane panel ends at shoulder blades (1.44, was 1.12); probe fall band floored to match |
+| 3 | Fade should show ears fully | Cap raised above ear tops (0.36PI), tighter buzz growth |
+| 4 | Beard blob on neck | Compacted onto the chin (curtain bottom -0.09, blob -0.115/-0.15); stays off the neck, mouth window open |
+
+Crop intentionally still covers ears (short-crop look).
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings); build succeeds
+- 347 tests passing, probe ALL PASSED
+- Pushed as `8d926e9`
+
+### Current status
+
+Pending user live confirmation. Next: continued polish testing, then
+Sprint 34 win-unpack (last).
+
+---
+
 ## Session 063 - One-Piece Beard + Hair Off Cheeks
 
 ### Date

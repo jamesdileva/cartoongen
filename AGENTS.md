@@ -3011,3 +3011,18 @@ hair gaps widened per style with sideburns removed (clean cheeks);
 fringe narrowed to ±50° bangs. 346 tests, probe green. Pushed as
 `12d4602`. Full entry in worklog.md.
 
+---
+
+## Session 064 - Hair Per-Style Fixes + Chin-Hugger Beard
+
+### Date
+
+2026-10-01
+
+### What we built
+
+Ponytail exposes ears (short cap + nape panel); long fall ends at
+shoulder blades; fade raised above ears; beard compacted onto chin
+(off neck). 347 tests, probe green. Pushed as `8d926e9`. Full entry
+in worklog.md.
+
