@@ -467,11 +467,13 @@ for (const { name, shape } of shapes) {
               )
             }
             if (hairName === 'long_hair') {
+              // Fall panel ends at the shoulder blades (hem 1.44): only the
+              // draped zone claims back coverage.
               report(
                 issues,
                 'long_hair fall',
                 countPokes(torso, hair, {
-                  yMin: 1.12,
+                  yMin: 1.44,
                   yMax: 1.62,
                   mode: 'rear',
                   xMin: -0.12,
@@ -629,7 +631,7 @@ for (const { name, shape } of headShapes) {
   // opening, edge rays graze the rim), so test containment directly.
   const hairShells = {
     crop_hair: { yMin: 1.7, gx: 0.05, gy: 0.015, gz: 0.03, wedge: 0.68 },
-    ponytail: { yMin: 1.79, gx: 0.03, gy: 0.015, gz: 0.02, wedge: 0.63 },
+    ponytail: { yMin: 1.95, gx: 0.03, gy: 0.015, gz: 0.02, wedge: 0.63 },
     long_hair: { yMin: 1.68, gx: 0.035, gy: 0.015, gz: 0.03, wedge: 0.68 },
     bun_hair: { yMin: 1.7, gx: 0.05, gy: 0.015, gz: 0.03, wedge: 0.68 },
     bob_hair: { yMin: 1.7, gx: 0.055, gy: 0.02, gz: 0.035, wedge: 0.73 },

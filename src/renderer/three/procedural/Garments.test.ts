@@ -1273,9 +1273,25 @@ describe('hair', () => {
     expect(box.min).toBeLessThan(top)
   })
 
-  it('long fall reaches mid-back', () => {
+  it('long fall ends at the shoulder blades, not the waist', () => {
     const box = yExtent(buildLongHair().geometry)
-    expect(box.min).toBeLessThan(1.15)
+    expect(box.min).toBeLessThan(1.5)
+    expect(box.min).toBeGreaterThan(1.3)
+  })
+
+  it('ponytail exposes the ears below a short crown cap', () => {
+    const geo = buildPonytail().geometry
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    // Ear zone sides (|x| > 0.2, y 1.78-1.92, front of the fall panel):
+    // cap hem sits above, fall hangs behind, tail below.
+    let sideCover = 0
+    for (let i = 0; i < pos.count; i++) {
+      const x = Math.abs(pos.getX(i))
+      const y = pos.getY(i)
+      const z = pos.getZ(i)
+      if (x > 0.2 && y > 1.78 && y < 1.92 && z > -0.05) sideCover++
+    }
+    expect(sideCover).toBe(0)
   })
 })
 
@@ -1836,6 +1852,8 @@ describe('beards', () => {
       if (y < minY) minY = y
     }
     expect(minY).toBeLessThan(1.66)
+    // Hangs off the chin, not the neck.
+    expect(minY).toBeGreaterThan(1.55)
     // Mouth window: no beard in front of the mouth center strip.
     // (Max-grin bottoms may kiss the curtain top; typical travel clears.)
     const mouthY = 1.86 - DEFAULT_BODY_SHAPE.headHeight * 0.15 - 0.05 - 0.02
