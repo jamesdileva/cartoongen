@@ -14,7 +14,14 @@ function makeArmRig(): Map<string, THREE.Bone> {
   spine2.name = 'Spine2'
   spine2.position.set(0, 0.7, 0)
   root.add(spine2)
+  map.set('Root', root)
+  map.set('Spine2', spine2)
   for (const side of ['Left', 'Right'] as const) {
+    const clav = new THREE.Bone()
+    clav.name = `${side}Clavicle`
+    clav.position.set(side === 'Left' ? -0.1 : 0.1, 0.02, 0)
+    spine2.add(clav)
+    map.set(clav.name, clav)
     const upper = new THREE.Bone()
     upper.name = `${side}UpperArm`
     upper.position.set(side === 'Left' ? -0.38 : 0.38, 0.05, 0)
@@ -27,8 +34,6 @@ function makeArmRig(): Map<string, THREE.Bone> {
     map.set(upper.name, upper)
     map.set(fore.name, fore)
   }
-  map.set('Root', root)
-  map.set('Spine2', spine2)
   root.updateMatrixWorld(true)
   return map
 }
@@ -80,6 +85,22 @@ describe('pose offsets', () => {
     expect(bones.get('LeftUpperArm')!.rotation.z).toBeCloseTo(Math.PI / 2 + 0.5, 5)
     resetPoseRotations(bones, rest)
     expect(bones.get('LeftUpperArm')!.rotation.z).toBeCloseTo(Math.PI / 2, 5)
+  })
+
+  it('real relaxed pose drops both arm tips symmetrically', () => {
+    const relaxed = (poses as Pose[]).find((p) => p.id === 'relaxed')!
+    for (const side of ['Left', 'Right'] as const) {
+      const bones = makeArmRig()
+      const rest = snapshotRest(bones)
+      const before = tipWorld(bones, `${side}Forearm`)
+      const applied = applyPoseOffsets(bones, rest, relaxed)
+      expect(applied).toContain(`${side}Clavicle`)
+      expect(applied).toContain(`${side}UpperArm`)
+      expect(applied).toContain(`${side}Forearm`)
+      bones.get('Root')!.updateMatrixWorld(true)
+      const after = tipWorld(bones, `${side}Forearm`)
+      expect(after.y).toBeLessThan(before.y - 0.3)
+    }
   })
 })
 
