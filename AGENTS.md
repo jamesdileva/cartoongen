@@ -3088,3 +3088,23 @@ green. Pushed as `15f380d`. Full entry in worklog.md.
 Pending user live confirmation (incl. the stomach spot, which has no
 repro mechanism — asked for a focused re-test). Next: Sprint 38.
 
+---
+
+## Session 070 - Armpit/Stomach Skin + Mask/Sunglasses Grounding
+
+### Date
+
+2026-10-04
+
+### What we did
+
+Reverted clavicle from poses (frame math: tucked ring would sweep the
+chest; upperarm-only is provably benign). Cape narrowed above hips for
+hanging arms; wrist tubes close bare wrists; mask rebuilt as one uniform
+panel with ear strings; sunglass temples reach ears. 362 tests, probe
+green. Pushed as `180167a`. Full entry in worklog.md.
+
+### Current status
+
+Pending user live confirmation. Next: Sprint 38 win-unpack (last).
+

@@ -5,6 +5,46 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 070 - Armpit/Stomach Skin + Mask/Sunglasses Grounding
+
+### Date
+
+2026-10-04
+
+### What we built (live user feedback, 3 items)
+
+**1. Relaxed clavicle revert (frame math).** Shipped clavicle rotation
+in Session 069, then proved it harmful: the sleeve's tucked ring sits
+inboard-below the clavicle pivot, so rotating it sweeps the ring across
+the chest (computed endpoint: opposite side, inside the torso). Upper-
+arm-only rotation is provably benign (108mm slide stays inside the
+185mm deltoid+tube overlap). Poses back to upperarm+forearm; test
+asserts clavicles untouched.
+
+**2. Side/armpit coverage.** Cape narrows above the hips (hard 0.26 cap
+for y >= 1.0) so hanging arms clear the drape sides; back zone stays
+covered (probe bound ±0.24 now matches the design claim). Glove wrist
+tubes + extended bracers close the bare wrist (roomy for max muscle).
+
+**3. Mask + sunglasses grounded.** Mask rebuilt as ONE uniform panel
+(nose bridge over tip, mouth covered, ends below mouth) with ear
+strings routed over the cheek surface into the ears. Sunglass temples
+extended to embed in the ears (goggles already had them).
+
+### Verification
+
+- typecheck 0 errors; lint clean back to 4 pre-existing warnings (fixed
+  a new unused-arg on the way); 362 tests passing; build succeeds;
+  probe ALL PASSED
+- Pushed as `180167a`
+
+### Current status
+
+Pending user live confirmation (pose coherence + armpit sides + mask).
+Next: Sprint 38 win-unpack (last).
+
+---
+
 ## Session 069 - Relaxed Pose Full-Chain Fix
 
 ### Date
