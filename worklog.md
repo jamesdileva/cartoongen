@@ -5,6 +5,43 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 068 - White-Screen Crash (TDZ) + Startup Hardening
+
+### Date
+
+2026-10-04
+
+### What we found (live user report: white screen on `npm run dev`)
+
+Reproduced locally via CDP against the running app: `ReferenceError:
+Cannot access 'resetPose' before initialization` at App render —
+`handleTemplateSelect`'s deps array referenced the later `const
+resetPose`, which evaluates during render (closures defer bodies, not
+deps arrays). Total blank (`rootKids: 0`, no canvas). Single-function
+hoist fixed it; verified live (toolbar + canvas + loaded character,
+zero exceptions). Lesson: declare shared callbacks above first use;
+the pattern bit because body-watcher/reset wiring landed after its
+consumers in Sprint 37.
+
+User also reported a project folder picker on launch. Not reproduced
+(saved root valid, launches skip it here); hardened the path anyway:
+plugin-init failure can no longer force the dialog, and both failure
+points now log instead of swallowing. If the picker recurs, run with
+devtools open and report the `[startup]` line.
+
+### Verification
+
+- CDP console capture before/after on the real app window
+- typecheck 0 errors; build succeeds
+- Pushed as `c128d20` (crash fix) + `2bb1be5` (hardening)
+
+### Current status
+
+App launches and renders. Next: user polish testing continues, then
+Sprint 38 win-unpack (last).
+
+---
+
 ## Sessions 065-067 - Sprints 35-37: Locks, User Presets, Poses
 
 ### Date

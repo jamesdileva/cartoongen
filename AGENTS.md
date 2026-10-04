@@ -3045,3 +3045,24 @@ worklog.md.
 
 Pre-packaging features complete. Next: Sprint 38 win-unpack (last).
 
+---
+
+## Session 068 - White-Screen Crash (TDZ) + Startup Hardening
+
+### Date
+
+2026-10-04
+
+### What we did
+
+Live user report: white screen on dev launch. Reproduced via CDP:
+`resetPose` TDZ crash at App render (deps array evaluates during
+render). Hoisted the declaration; verified live render with zero
+exceptions. Hardened startup so plugin failure can't force the project
+dialog (picker report not reproduced; failures now log). Pushed as
+`c128d20` + `2bb1be5`. Full entry in worklog.md.
+
+### Current status
+
+App launches and renders. Next: polish testing, then Sprint 38.
+
