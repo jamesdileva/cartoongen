@@ -23,12 +23,22 @@ async function initializeApp(): Promise<void> {
     try {
       const svc = await ProjectService.open(projectRoot)
       setProjectService(svc)
-      await initializePluginService(projectRoot)
-      createWindow()
-      return
-    } catch {
-      // saved project is invalid, fall through to dialog
+    } catch (err) {
+      // Saved project is invalid: fall through to dialog.
+      console.error(`[startup] saved project failed to open (${projectRoot}):`, err)
+      projectRoot = null
     }
+  }
+
+  if (projectRoot) {
+    try {
+      await initializePluginService(projectRoot)
+    } catch (err) {
+      // Plugin scan must never block startup into the project itself.
+      console.error('[startup] plugin init failed, continuing without plugins:', err)
+    }
+    createWindow()
+    return
   }
 
   const userDataPath = app.getPath('userData')
