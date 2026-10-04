@@ -1701,7 +1701,7 @@ describe('accessories', () => {
     }
   })
 
-  it('mask covers the mouth and swallows the nose tip', () => {
+  it('mask is one uniform panel: nose bridge over tip, mouth covered', () => {
     for (const noseSize of [0.6, 1, 1.6]) {
       for (const noseStyle of ['button', 'pointed', 'broad'] as const) {
         const face = { ...DEFAULT_FACE_SHAPE, noseSize, noseStyle }
@@ -1714,12 +1714,46 @@ describe('accessories', () => {
           if (y < minY) minY = y
           if (y > maxY) maxY = y
         }
-        // Mouth zone covered below; pocket rises past the nose tip.
         const noseY = 1.86 - DEFAULT_BODY_SHAPE.headHeight * 0.15
-        expect(minY).toBeLessThan(1.74)
+        const mouthY = noseY - 0.05 * noseSize - 0.02
+        // Panel runs nose bridge (above tip) to below the mouth.
         expect(maxY).toBeGreaterThan(noseY + 0.02)
+        expect(minY).toBeLessThan(mouthY - 0.03)
+        // Nose tip swallows inside the panel front (5mm+ margin).
+        const tipZ =
+          surfaceZ(DEFAULT_BODY_SHAPE, 0, noseY) +
+          (noseStyle === 'pointed' ? 0.049 : 0.03) * noseSize
+        let panelFront = -Infinity
+        for (let i = 0; i < pos.count; i++) {
+          const y = pos.getY(i)
+          if (Math.abs(y - noseY) < 0.03 && Math.abs(pos.getX(i)) < 0.06) {
+            panelFront = Math.max(panelFront, pos.getZ(i))
+          }
+        }
+        expect(panelFront).toBeGreaterThan(tipZ + 0.005)
       }
     }
+  })
+
+  it('mask strings reach the ears without burying in cheeks', () => {
+    const geo = buildFaceMask().geometry
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let maxX = 0
+    for (let i = 0; i < pos.count; i++) {
+      maxX = Math.max(maxX, Math.abs(pos.getX(i)))
+    }
+    // Strings terminate inside the ear zone.
+    expect(maxX).toBeGreaterThan(DEFAULT_BODY_SHAPE.headWidth * 0.9)
+  })
+
+  it('sunglass temples terminate inside the ears', () => {
+    const geo = buildSunglasses().geometry
+    const pos = geo.attributes.position as THREE.BufferAttribute
+    let maxX = 0
+    for (let i = 0; i < pos.count; i++) {
+      maxX = Math.max(maxX, Math.abs(pos.getX(i)))
+    }
+    expect(maxX).toBeGreaterThan(DEFAULT_BODY_SHAPE.headWidth * 0.9)
   })
 
   it('goggle cups sit one per eye, proud of the eyeballs', () => {

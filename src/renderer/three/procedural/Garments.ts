@@ -1385,7 +1385,9 @@ export function buildSunglasses(
       [
         { center: [side * (eyeX + 0.04), eyeY, lz - 0.01], width: 0.016, height: 0.016 },
         { center: [side * shape.headWidth * 0.7, eyeY + 0.03, -0.08], width: 0.016, height: 0.016 },
-        { center: [side * shape.headWidth * 0.85, eyeY + 0.04, -0.12], width: 0.016, height: 0.016 }
+        { center: [side * shape.headWidth * 0.85, eyeY + 0.04, -0.12], width: 0.016, height: 0.016 },
+        // Temple tip embeds in the ear (grounded, never floating).
+        { center: [side * (shape.headWidth + 0.005), eyeY + 0.015, -0.04], width: 0.016, height: 0.016 }
       ],
       8
     )
@@ -1471,8 +1473,9 @@ export function buildGoggles(
 }
 
 /**
- * Face mask: lower shell over mouth/chin + nose pocket swallowing the nose
- * tip. Reads as a ski mask, not a chin shelf.
+ * Face mask: ONE uniform panel from the nose bridge over the tip, covering
+ * the mouth and ending below it — plus ear strings so it reads worn, not
+ * floating. Panel depth swallows every nose style/size (verified).
  */
 export function buildFaceMask(
   shape: BodyShape = DEFAULT_BODY_SHAPE,
@@ -1481,15 +1484,51 @@ export function buildFaceMask(
   // Mirror buildFace anchoring: mouth sits 2cm below the nose bottom edge.
   const noseWorldY = CRANIUM_CENTER_Y - shape.headHeight * 0.15
   const noseBottomY = noseWorldY - 0.05 * face.noseSize
-  const centerY = noseBottomY - 0.005 - 0.06
-  const mask = new THREE.SphereGeometry(1, 20, 14)
-  mask.scale(0.1, 0.06, 0.05)
-  mask.translate(0, centerY, surfaceZ(shape, 0, centerY) + 0.01)
-  // Nose pocket: swallows every nose style/size with margin.
-  const pocket = new THREE.SphereGeometry(1, 16, 12)
-  pocket.scale(0.05, 0.055 + 0.03 * face.noseSize, 0.05 + 0.02 * face.noseSize)
-  pocket.translate(0, noseWorldY - 0.015, surfaceZ(shape, 0, noseWorldY) + 0.01)
-  return bindHat([mask, pocket])
+  const mouthY = noseBottomY - 0.02
+  // Panel: nose bridge (above the tip) to below-mouth, face-hugging curve.
+  const topY = noseWorldY + 0.055 * face.noseSize
+  const botY = mouthY - 0.055
+  const panelDepth = (y: number): number => {
+    // Deep enough at nose height to swallow the tip, slim at chin.
+    const noseZone = Math.max(0, 1 - Math.abs(y - noseWorldY) / 0.09)
+    return 0.035 + 0.045 * noseZone
+  }
+  const panelZ = (y: number): number => surfaceZ(shape, 0, y) + 0.008
+  const midY = (topY + botY) / 2
+  const panel = makeSweep(
+    [
+      { center: [0, topY, panelZ(topY)], width: 0.13, height: panelDepth(topY) * 2 },
+      { center: [0, noseWorldY, panelZ(noseWorldY)], width: 0.155, height: panelDepth(noseWorldY) * 2 },
+      { center: [0, mouthY, panelZ(mouthY)], width: 0.17, height: panelDepth(mouthY) * 2 },
+      { center: [0, midY - 0.03, panelZ(midY - 0.03)], width: 0.16, height: panelDepth(midY - 0.03) * 2 },
+      { center: [0, botY, panelZ(botY)], width: 0.13, height: panelDepth(botY) * 2 }
+    ],
+    16
+  )
+  const parts: THREE.BufferGeometry[] = [panel]
+  // Ear strings: panel edge, OVER the cheek surface, to the ears (grounded
+  // like goggle straps — never buried, never floating).
+  const earX = shape.headWidth * 0.92
+  const cheekY = mouthY + 0.02
+  for (const side of [-1, 1] as const) {
+    const cheekX = side * 0.16
+    parts.push(
+      makeSweep(
+        [
+          { center: [side * 0.075, mouthY + 0.01, panelZ(mouthY + 0.01) + 0.02], width: 0.018, height: 0.018 },
+          { center: [cheekX, cheekY, surfaceZ(shape, cheekX, cheekY) + 0.01], width: 0.018, height: 0.018 },
+          { center: [side * earX, eyeYOf(shape, face) - 0.02, 0.0], width: 0.018, height: 0.018 }
+        ],
+        8
+      )
+    )
+  }
+  return bindHat(parts)
+}
+
+/** Eye-line height shared by accessories (mirrors buildFace). */
+function eyeYOf(shape: BodyShape, _face: FaceShape): number {
+  return CRANIUM_CENTER_Y + shape.headHeight * 0.12
 }
 
 /** Top hat: tall straight crown containing the upper skull + flat brim. */
@@ -1908,6 +1947,19 @@ function gloveShell(offset: number): THREE.BufferGeometry[] {
     cuff.rotateY(Math.PI / 2)
     cuff.translate(s * 0.92, 1.508, 0)
     out.push(cuff)
+    // Wrist tube: closes the bare wrist between cuff ring and palm.
+    // Roomy like sleeves (clears max-muscle forearms).
+    out.push(
+      makeSweep(
+        [
+          { center: [s * 0.86, 1.506, 0], width: 0.14, height: 0.13 },
+          { center: [s * 0.96, 1.507, 0], width: 0.14, height: 0.13 }
+        ],
+        12,
+        false,
+        true
+      )
+    )
   }
   return out
 }
@@ -1971,7 +2023,7 @@ export function buildBracers(): GarmentBuildResult {
     parts.push(
       makeSweep(
         [
-          { center: [s * 0.88, 1.508, 0], width: 0.125, height: 0.115 },
+          { center: [s * 0.94, 1.508, 0], width: 0.12, height: 0.11 },
           { center: [s * 0.76, 1.505, 0], width: 0.135, height: 0.125 },
           { center: [s * 0.66, 1.502, 0], width: 0.14, height: 0.13 }
         ],
@@ -2853,7 +2905,9 @@ export function buildCape(
   for (const [rowIdx, [y, wAdd, margin]] of rows.entries()) {
     const rear = capeBodyRear(shape, belly, butt, y)
     const base = y >= 1.3 ? 0.27 * shape.shoulderWidth : 0.2 * (0.85 + 0.15 * shape.hipWidth)
-    const hw = base + wAdd
+    // Hanging arms (inner edge ~0.28) must clear the drape sides: hard cap
+    // above the hips. Back zone (+-0.24 probe bound) stays covered.
+    const hw = y >= 1.0 ? Math.min(base + wAdd, 0.26) : base + wAdd
     // Monotonic backward drift: keeps every step tilted (|tangent.y| < 0.999)
     // so ALL rings use the kernel's refUp=Y frame. Parallel rings straddle
     // the frame threshold and bowtie (rear slit instead of front opening).

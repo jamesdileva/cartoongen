@@ -89,12 +89,14 @@ describe('pose offsets', () => {
 
   it('real relaxed pose drops both arm tips symmetrically', () => {
     const relaxed = (poses as Pose[]).find((p) => p.id === 'relaxed')!
+    // Clavicles stay fixed by design (rotating them sweeps the tucked
+    // sleeve ring through the chest); upperarm+forearm carry the drop.
+    expect(Object.keys(relaxed.bones)).not.toContain('LeftClavicle')
     for (const side of ['Left', 'Right'] as const) {
       const bones = makeArmRig()
       const rest = snapshotRest(bones)
       const before = tipWorld(bones, `${side}Forearm`)
       const applied = applyPoseOffsets(bones, rest, relaxed)
-      expect(applied).toContain(`${side}Clavicle`)
       expect(applied).toContain(`${side}UpperArm`)
       expect(applied).toContain(`${side}Forearm`)
       bones.get('Root')!.updateMatrixWorld(true)
