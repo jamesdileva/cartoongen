@@ -88,6 +88,11 @@ export default function App() {
     setShowTemplate(true)
   }, [])
 
+  const resetPose = useCallback(() => {
+    viewportRef.current?.resetPose()
+    setPoseId(null)
+  }, [])
+
   const handleTemplateSelect = useCallback(
     (template: Template) => {
       const name = `Character_${Date.now().toString(36)}`
@@ -234,11 +239,6 @@ export default function App() {
   const handleLightingSelect = useCallback((presetId: string) => {
     setLightingPreset(presetId)
     viewportRef.current?.setLightingPreset(presetId)
-  }, [])
-
-  const resetPose = useCallback(() => {
-    viewportRef.current?.resetPose()
-    setPoseId(null)
   }, [])
 
   const handlePoseSelect = useCallback((pose: Pose) => {
