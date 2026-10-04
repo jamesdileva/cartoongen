@@ -5,6 +5,44 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 069 - Relaxed Pose Full-Chain Fix
+
+### Date
+
+2026-10-04
+
+### What we found (live user report + saved preset `relaxed knight`)
+
+Relaxed rotated only the upper arms, but sleeves, deltoids, and
+pauldrons are all clavicle-weighted — the shoulder stayed up while the
+arms dropped (skin gaps + shirt/armour not tracking). analytical
+check of the skin-weight design made the fix obvious: drive the whole
+chain. Relaxed/apose now rotate clavicle+upperarm+forearm coherently
+(rigid drop, zero shear); heroic gains matching clavicle offsets; wave
+drops its blind-signed forearm bend (straight raised arm is
+unambiguous) but keeps the verified head tilt.
+
+The reported stomach spot on the knight preset has no mechanism to show
+skin (cuirass hem fixed full, faulds/legs overlap, plate ignores
+topLength) — asked the user to re-test that exact spot with the saved
+preset and report back.
+
+### Verification
+
+- New integration test applies the real `relaxed` pose and asserts both
+  arm tips drop symmetrically (headless THREE rig with clavicles)
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings)
+- 360 tests passing; build succeeds (probe N/A — pose data changes no
+  geometry; sleeve/deltoid coverage already green there)
+- Pushed as `15f380d`
+
+### Current status
+
+Pose coherence fixed pending user live confirmation (incl. the stomach
+spot). Next: Sprint 38 win-unpack (last) once polish testing lands.
+
+---
+
 ## Session 068 - White-Screen Crash (TDZ) + Startup Hardening
 
 ### Date

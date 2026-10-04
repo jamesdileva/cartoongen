@@ -3066,3 +3066,25 @@ dialog (picker report not reproduced; failures now log). Pushed as
 
 App launches and renders. Next: polish testing, then Sprint 38.
 
+---
+
+## Session 069 - Relaxed Pose Full-Chain Fix
+
+### Date
+
+2026-10-04
+
+### What we did
+
+Live user report (relaxed gaps, saved `relaxed knight` preset): poses
+rotated upper arms only while sleeves/deltoids/pauldrons are
+clavicle-weighted. Relaxed/apose now drive clavicle+upperarm+forearm;
+heroic gains clavicle offsets; wave drops the blind forearm bend.
+Integration test asserts symmetric arm-tip drop. 360 tests, build
+green. Pushed as `15f380d`. Full entry in worklog.md.
+
+### Current status
+
+Pending user live confirmation (incl. the stomach spot, which has no
+repro mechanism — asked for a focused re-test). Next: Sprint 38.
+
