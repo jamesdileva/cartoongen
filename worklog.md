@@ -5,6 +5,39 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 072 - Live Visual Verification (Relaxed Knight)
+
+### Date
+
+2026-10-05
+
+### What we did
+
+User screenshot showed arm skin on relaxed knight. Verified end to end
+in the LIVE app via CDP (kept helpers: `cdp-verify-pose.mts`,
+`cdp-ray.mts`):
+
+- Knight preset applies (slots confirmed), relaxed applies (bone reads
+  ±2.82/±1.25, clavicles fixed, idempotent)
+- Camera keys needed rawKeyDown + keyCode form to register
+- PoseDialog stays open by design (covers viewport; close before shots)
+- Dense live ray grid (x 0.15–0.5, y 1.05–1.55, both sides): ZERO skin
+  hits — only the red cape cord (by design). Larger pauldrons swallow
+  the static deltoid; rerebrace covers through the pose
+
+Conclusion: current code is clean on knight defaults. Remaining
+candidate for the user's shot is triple-extreme morph corners
+(stocky body + max muscle + max shoulder slide the deltoid pole past
+any sane cap — documented residual class) or a stale pre-fix build.
+Asked for a fresh-restart screenshot if it persists.
+
+### Current status
+
+Pending user live confirmation with current build. Next: Sprint 38
+win-unpack (last).
+
+---
+
 ## Session 071 - Screenshot Review: Cape Fixes + Pose Coverage Proof
 
 ### Date

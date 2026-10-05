@@ -3124,3 +3124,19 @@ predates plate-v2 fixes, needs fresh-restart retest. Cape: mid-thigh
 hem + rear standoff + arm clearance caps. 363 tests, probe green.
 Pushed as `919e943`. Full entry in worklog.md.
 
+---
+
+## Session 072 - Live Visual Verification (Relaxed Knight)
+
+### Date
+
+2026-10-05
+
+### What we did
+
+CDP-verified relaxed knight in the live app: pose applies (bone
+reads), dense ray grid finds zero skin (only red cord by design).
+Current code clean; leftover candidate is triple-extreme morph corners
+or a stale build. Kept `cdp-verify-pose.mts` + `cdp-ray.mts` as reusable
+helpers. Full entry in worklog.md.
+
