@@ -5,6 +5,39 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 071 - Screenshot Review: Cape Fixes + Pose Coverage Proof
+
+### Date
+
+2026-10-04
+
+### What we did (live user screenshot of relaxed knight, back view)
+
+Built a headless posed-skinning harness (mini-rig + real relaxed
+offsets + CPU skinning with rest inverses + raycast): relaxed+plate
+upper-arm zone measures **0/923 bare** — the rerebrace covers through
+the pose (tube top lands on the static deltoid). Conclusion: the arm
+skin in the screenshot predates the plate-v2/arm fixes; user to retest
+on a fresh dev restart.
+
+Cape fixes from the same screenshot (present in all versions):
+mid-thigh hem (was calves — no more between-legs strip), extra rear
+offset for drape air gap (no more melted-on read), sides hard-capped
+clear of hanging arms. Harness script removed after use.
+
+### Verification
+
+- typecheck 0 errors; lint 0 errors (4 pre-existing warnings)
+- 363 tests passing; probe ALL PASSED; build succeeds
+- Pushed as `919e943`
+
+### Current status
+
+Pending user live confirmation on a fresh restart. Next: Sprint 38
+win-unpack (last).
+
+---
+
 ## Session 070 - Armpit/Stomach Skin + Mask/Sunglasses Grounding
 
 ### Date

@@ -3108,3 +3108,19 @@ green. Pushed as `180167a`. Full entry in worklog.md.
 
 Pending user live confirmation. Next: Sprint 38 win-unpack (last).
 
+---
+
+## Session 071 - Screenshot Review: Cape Fixes + Pose Coverage Proof
+
+### Date
+
+2026-10-04
+
+### What we did
+
+User screenshot review (relaxed knight, back view): headless posed
+harness proves 0/923 bare in the relaxed upper-arm zone — arm skin
+predates plate-v2 fixes, needs fresh-restart retest. Cape: mid-thigh
+hem + rear standoff + arm clearance caps. 363 tests, probe green.
+Pushed as `919e943`. Full entry in worklog.md.
+
