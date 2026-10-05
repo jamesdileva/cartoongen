@@ -149,6 +149,11 @@ export class AssetManager {
 
     gltf.scene.traverse((child) => {
       if (child instanceof THREE.Mesh) {
+        if (child instanceof THREE.SkinnedMesh) {
+          // Bone-deformed bounds outgrow the static geometry bounds (poses
+          // and morphs); never cull skinned meshes (see bindToBones).
+          child.frustumCulled = false
+        }
         if (Array.isArray(child.material)) {
           child.material = child.material.map((m) => this.remapMaterial(m))
         } else if (child.material) {

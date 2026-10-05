@@ -1325,8 +1325,25 @@ describe('plate armour', () => {
 
   it('pauldrons clear the deltoid meat', () => {
     const ext = xExtent(buildPlate().geometry)
-    // Deltoid outer reaches ~0.46 at rest; pauldron must exceed it.
+    // Pauldrons extend past the deltoid pole.
     expect(ext.max).toBeGreaterThan(0.46)
+    expect(ext.min).toBeLessThan(-0.46)
+  })
+
+  it('inner pauldron swallows the whole deltoid at any muscle', () => {
+    // Static deltoid must never read as a bare shoulder gap (relaxed pose
+    // swings the arm tube away while the ball stays put).
+    for (const muscle of [0, 0.5, 1]) {
+      const ds = 0.9 + 0.2 * muscle
+      const dcx = deltoidCxOf(DEFAULT_BODY_SHAPE)
+      const dcy = 1.47 - 0.005
+      const contained =
+        0.095 * ds <= 0.16 &&
+        Math.abs(dcy - 1.47) + 0.115 * ds <= 0.19 &&
+        0.1 * ds <= 0.15
+      expect(contained, `muscle=${muscle}`).toBe(true)
+      void dcx
+    }
   })
 
   it('armet contains cranium top, nose tip, and chin', () => {

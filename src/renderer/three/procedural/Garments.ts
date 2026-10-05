@@ -2244,13 +2244,16 @@ export function buildPlate(
     20
   )
   // Pauldrons: two layered caps per shoulder, sized past max-muscle meat.
+  // Sized to swallow the whole deltoid ball: in relaxed pose the arm tube
+  // swings away and the static deltoid would otherwise read as a bare
+  // shoulder gap between pauldron and rerebrace.
   const clavEnd = 0.36 * shape.shoulderWidth
   const pauldrons: THREE.BufferGeometry[] = []
   for (const side of [-1, 1] as const) {
-    const inner = makeEllipsoid(0.13, 0.15, 0.125, 16, 12)
+    const inner = makeEllipsoid(0.16, 0.19, 0.15, 16, 12)
     translateGeometry(inner, side * deltoidCxOf(shape), 1.47, 0)
     pauldrons.push(inner)
-    const outer = makeEllipsoid(0.15, 0.14, 0.14, 16, 12)
+    const outer = makeEllipsoid(0.17, 0.16, 0.15, 16, 12)
     translateGeometry(outer, side * (clavEnd + 0.075), 1.5, 0)
     pauldrons.push(outer)
   }

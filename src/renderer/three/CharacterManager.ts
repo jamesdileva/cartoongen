@@ -371,6 +371,10 @@ export class CharacterManager {
     // before rebuilds). Geometry is authored in world space and the mesh sits
     // at identity, so the correct bindMatrix is identity.
     mesh.bind(skeleton, new THREE.Matrix4())
+    // Skinned vertices deform on the GPU beyond the static geometry bounds
+    // (morphs AND poses), so frustum culling against rest bounds wrongly
+    // culls posed limbs. Standard practice: never cull skinned meshes.
+    mesh.frustumCulled = false
     return mesh
   }
 
@@ -675,6 +679,7 @@ export class CharacterManager {
       this.baseBodyFeatures = { eyebrows: [], eyes: [] }
       gltf.scene.traverse((child) => {
         if (child instanceof THREE.Mesh) {
+          if (child instanceof THREE.SkinnedMesh) child.frustumCulled = false
           this.baseBodyMeshes.push(child)
           const mats = Array.isArray(child.material) ? child.material : [child.material]
           for (const m of mats) {
