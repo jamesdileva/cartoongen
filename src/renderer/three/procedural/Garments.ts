@@ -2877,7 +2877,7 @@ function capeBodyRear(shape: BodyShape, belly: number, butt: number, y: number):
 }
 
 /**
- * Draped cape: open-front shell hanging from the shoulders to the calves.
+ * Draped cape: open-front shell hanging from the shoulders to mid-thigh.
  * The front wedge stays open (no front coverage claim); cross-section
  * tracks the body rear + butt so the seat never pokes through. Clasp
  * spheres + sagging cord across the chest front.
@@ -2892,15 +2892,14 @@ export function buildCape(
   const stations: SweepStation[] = []
   // [y, widthAdd, rearMargin]: drape widens and stands further off downward.
   // Top rows hang from the SHOULDERS (shoulder-scaled, inside the arms);
-  // lower rows flare over the hips. Front edges tuck beside the trapezius,
-  // hidden from the front by the chest — no melding into the back.
+  // lower rows flare over the hips. Hem ends mid-thigh (no leg strip);
+  // extra rear offset keeps an air gap so the drape never reads melted on.
   const rows: Array<[number, number, number]> = [
     [1.56, 0.03, 0.05],
     [1.3, 0.05, 0.06],
     [1.0, 0.09, 0.08],
     [0.7, 0.13, 0.1],
-    [0.4, 0.16, 0.11],
-    [0.25, 0.17, 0.11]
+    [0.55, 0.15, 0.11]
   ]
   for (const [rowIdx, [y, wAdd, margin]] of rows.entries()) {
     const rear = capeBodyRear(shape, belly, butt, y)
@@ -2911,7 +2910,7 @@ export function buildCape(
     // Monotonic backward drift: keeps every step tilted (|tangent.y| < 0.999)
     // so ALL rings use the kernel's refUp=Y frame. Parallel rings straddle
     // the frame threshold and bowtie (rear slit instead of front opening).
-    const zc = -(rear * 0.45 + 0.04) - rowIdx * 0.016
+    const zc = -(rear * 0.45 + 0.07) - rowIdx * 0.016
     const hd = rear * 0.55 + 0.05 + margin * 0.4
     stations.push({ center: [0, y, zc], width: hw * 2, height: hd * 2 })
   }
@@ -2955,8 +2954,8 @@ export function buildCape(
   parts.push(
     makeSweep(
       [
-        { center: [0, 0.25, hem.center[2]], width: hem.width + 0.02, height: hem.height + 0.02 },
-        { center: [0, 0.32, hem.center[2]], width: hem.width + 0.024, height: hem.height + 0.024 }
+        { center: [0, 0.55, hem.center[2]], width: hem.width + 0.02, height: hem.height + 0.02 },
+        { center: [0, 0.62, hem.center[2]], width: hem.width + 0.024, height: hem.height + 0.024 }
       ],
       22
     )

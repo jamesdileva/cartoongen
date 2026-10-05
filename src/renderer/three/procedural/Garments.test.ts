@@ -2097,13 +2097,28 @@ describe('sprint 32 back slot', () => {
     }
   })
 
-  it('cape drapes shoulders to calves with cord across the chest', () => {
+  it('cape drapes shoulders to mid-thigh with cord across the chest', () => {
     const { geometry } = buildCape()
     const y = yExt32(geometry)
     expect(y.max).toBeGreaterThan(1.5)
-    expect(y.min).toBeLessThan(0.3)
+    // Hem ends mid-thigh: no strip showing between the legs.
+    expect(y.min).toBeGreaterThan(0.5)
+    expect(y.min).toBeLessThan(0.62)
     // Cord crosses the chest front.
     expect(zExt(geometry).max).toBeGreaterThan(0.18)
+  })
+
+  it('cape sides clear hanging arms above the hips', () => {
+    const { geometry } = buildCape()
+    const pos = geometry.attributes.position as THREE.BufferAttribute
+    let maxX = 0
+    for (let i = 0; i < pos.count; i++) {
+      const y = pos.getY(i)
+      if (y < 1.0 || y > 1.5) continue
+      maxX = Math.max(maxX, Math.abs(pos.getX(i)))
+    }
+    // Arm inner edge ~0.28: 20mm+ of air between arm and drape.
+    expect(maxX).toBeLessThan(0.27)
   })
 
   it('cape rear stands proud of the full butt silhouette', () => {
