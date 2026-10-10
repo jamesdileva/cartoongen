@@ -5,6 +5,49 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 074 - Sprint 38: Win-Unpack Installer (Last)
+
+### Date
+
+2026-10-07
+
+### What we built
+
+Sprint 38 (final roadmap sprint) — distributable Windows build.
+
+- `electron-builder` 26 + `win: dir` target + generated app icon
+  (`build/icon.ico`, cartoon face, multi-size) + `npm run dist`
+  (electron-vite build, builder pack, rename `win-unpacked` to the
+  `dist/win-unpack` acceptance name via `scripts/rename-unpack.mjs`).
+  `dist/` stays gitignored; icon source commits.
+- **Asar path bug found by the smoke test, fixed**: main-process
+  `readFileSync(join(__dirname, '../../src/shared/data/*.json'))`
+  (slots/rules/presets/palettes) resolves in dev but not in asar —
+  first packed run showed empty slot tabs + "No palettes loaded".
+  All three call sites (SlotService, ruleIpc, pluginIpc) now use
+  static JSON imports bundled at build time. Project-file I/O
+  (characters, assets, exports) was already path-safe.
+- **Smoke test** (`scripts/debug/cdp-smoke-dist.mts`, CDP on 9223):
+  launch (hooks up, no white screen), New -> Mage template (DNA v4),
+  randomize (DNA changes), export (toolbar + dialog) -> valid 987KB
+  glTF v2 GLB + sidecar on disk. Slot tabs, palettes, and outfit
+  render all confirmed in screenshots.
+
+### Verification
+
+- `typecheck` 0 errors; `lint` 0 errors (4 pre-existing warnings)
+- `test` 366 passing, no regressions
+- `probe:clearance` ALL PASSED; `build` succeeds
+- Packed exe drive green end to end (see above)
+
+### Current status
+
+All 38 sprints complete: procedural characters with expressions,
+65+ garments, poses, locks, user presets, and a distributable
+Windows unpacked build. Pushed; ready for user acceptance.
+
+---
+
 ## Session 073 - Relaxed-Knight Armpit: Root Cause + Fix
 
 ### Date

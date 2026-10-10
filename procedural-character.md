@@ -460,13 +460,20 @@ attach to Spine2; rules suite still green (4 rules remain).
 **Acceptance**: Style options per feature; old saves migrate silently;
 surface-projection placement holds per style; 310+ tests green.
 
-### Sprint 38 - Win-Unpack Installer (last)
+### Sprint 38 - Win-Unpack Installer (last) ✓ complete (2026-10-07)
 
-- [ ] electron-builder + win target + icon + `npm run dist`
-- [ ] Smoke-test the unpacked exe (launch, new character, randomize, export)
+- [x] electron-builder + win target + icon + `npm run dist`
+- [x] Smoke-test the unpacked exe (launch, new character, randomize, export)
 
 **Acceptance**: Double-clickable `dist/win-unpack` exe works on a clean
 machine with no dev tools.
+
+Sprint 38 notes: `dist/` stays gitignored (build artifact). Found + fixed
+the classic asar path bug en route — main-process `readFileSync` of
+`src/shared/data/*.json` (slots/rules/presets/palettes) fails once packed;
+now static JSON imports bundled at build time (SlotService, ruleIpc,
+pluginIpc). Packed exe verified end to end via CDP (`cdp-smoke-dist.mts`):
+launch, Mage template, randomize, GLB export (987KB, valid glTF magic).
 
 ### Sprint 35 - Randomize Locks
 

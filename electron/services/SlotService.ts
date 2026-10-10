@@ -1,5 +1,6 @@
-import { readFileSync } from 'node:fs'
-import { join } from 'node:path'
+// Bundled slots ship inside the app bundle (static import works in dev
+// and in the asar-packed build; fs reads of src/ do not survive packing).
+import slotsData from '../../src/shared/data/slots.json'
 import type { SlotDefinition } from '../../src/shared/types/slot'
 
 let defaultSlots: SlotDefinition[] | null = null
@@ -7,9 +8,7 @@ let defaultSlots: SlotDefinition[] | null = null
 function loadDefaultSlots(): SlotDefinition[] {
   if (defaultSlots) return defaultSlots
 
-  const filePath = join(__dirname, '../../src/shared/data/slots.json')
-  const raw = readFileSync(filePath, 'utf-8')
-  defaultSlots = JSON.parse(raw) as SlotDefinition[]
+  defaultSlots = slotsData as SlotDefinition[]
   return defaultSlots
 }
 

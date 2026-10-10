@@ -5,36 +5,25 @@ import { readFileSync, writeFileSync } from 'node:fs'
 import { join } from 'node:path'
 import type { Rule } from '../../src/shared/types/rule'
 import type { Preset } from '../../src/shared/types/preset'
+// Static imports: bundled into out/main at build time, work packed (asar).
+// (fs reads of src/ break once packed.)
+import bundledRulesData from '../../src/shared/data/rules.json'
+import bundledPresetsData from '../../src/shared/data/presets.json'
+import bundledPalettesData from '../../src/shared/data/palettes.json'
 import { getProjectService } from './index'
 
 let pluginService: PluginService | null = null
 
-const BUNDLED_RULES_PATH = join(__dirname, '../../src/shared/data/rules.json')
-const BUNDLED_PRESETS_PATH = join(__dirname, '../../src/shared/data/presets.json')
-const BUNDLED_PALETTES_PATH = join(__dirname, '../../src/shared/data/palettes.json')
-
 function loadBundledRules(): Rule[] {
-  try {
-    return JSON.parse(readFileSync(BUNDLED_RULES_PATH, 'utf-8')) as Rule[]
-  } catch {
-    return []
-  }
+  return bundledRulesData as Rule[]
 }
 
 function loadBundledPresets(): Preset[] {
-  try {
-    return JSON.parse(readFileSync(BUNDLED_PRESETS_PATH, 'utf-8')) as Preset[]
-  } catch {
-    return []
-  }
+  return bundledPresetsData as Preset[]
 }
 
 function loadBundledPalettes(): Record<string, { default: string; colors: string[] }> {
-  try {
-    return JSON.parse(readFileSync(BUNDLED_PALETTES_PATH, 'utf-8'))
-  } catch {
-    return {}
-  }
+  return bundledPalettesData as Record<string, { default: string; colors: string[] }>
 }
 
 export async function initializePluginService(projectRoot: string): Promise<void> {

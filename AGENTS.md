@@ -3168,3 +3168,27 @@ succeeds. Full entry in worklog.md.
 Relaxed-knight armpit fixed. Next: Sprint 38 win-unpack (last) on user
 go.
 
+---
+
+## Session 074 - Sprint 38: Win-Unpack Installer (Last)
+
+### Date
+
+2026-10-07
+
+### What we did
+
+Final roadmap sprint: electron-builder 26 + win dir target + generated
+icon + `npm run dist` (build, pack, rename to `dist/win-unpack`).
+Smoke test caught the asar path bug (main-process fs reads of
+`src/shared/data/*.json` fail packed) — fixed via static JSON imports
+in SlotService, ruleIpc, pluginIpc. Packed exe driven end to end via
+CDP: launch, Mage template, randomize, GLB export (valid 987KB glTF).
+366 tests, probe green, build succeeds. Full entry in worklog.md.
+`procedural-character.md` Sprint 38 marked complete.
+
+### Current status
+
+All 38 sprints complete. Project is distributable (`dist/win-unpack`,
+gitignored build artifact) and ready for user acceptance.
+

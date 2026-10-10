@@ -1,18 +1,19 @@
 import { ipcMain } from 'electron'
 import { IPC } from '../../src/shared/types/ipc'
+// Static import: bundled into out/main at build time, works packed (asar).
+// (fs reads of src/ break once packed.)
+import bundledRulesData from '../../src/shared/data/rules.json'
+import type { Rule } from '../../src/shared/types/rule'
 
 export function registerRuleIpc(): void {
   ipcMain.handle(IPC.RULE_LIST_ALL, async () => {
     const { getPluginService } = await import('./pluginIpc')
-    const plugin = getPluginService()?.getPluginRules() ?? []
-    const { readFileSync } = await import('node:fs')
-    const { join } = await import('node:path')
-    const bundledPath = join(__dirname, '../../src/shared/data/rules.json')
+    let plugin: Rule[] = []
     try {
-      const bundled = JSON.parse(readFileSync(bundledPath, 'utf-8'))
-      return [...bundled, ...plugin]
+      plugin = getPluginService()?.getPluginRules() ?? []
     } catch {
-      return plugin
+      // plugin service unavailable; bundled rules still served
     }
+    return [...(bundledRulesData as Rule[]), ...plugin]
   })
 }
