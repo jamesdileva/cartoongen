@@ -1,5 +1,8 @@
+// Live sightline probe: dense front+back grid, reports non-metal first-hits.
+// Usage: app running with --remote-debugging-port=9223, then:
+//   npx tsx scripts/debug/cdp-ray.mts
 const list = await fetch('http://127.0.0.1:9223/json/list').then((r) => r.json())
-const page = list.find((t) => t.type === 'page')
+const page = (Array.isArray(list) ? list : []).find((t) => t.type === 'page')
 if (!page) throw new Error('no page target')
 const ws = new WebSocket(page.webSocketDebuggerUrl)
 await new Promise((res, rej) => {
@@ -29,16 +32,11 @@ const evalJs = async (expression) => {
   const r = await send('Runtime.evaluate', { expression, returnByValue: true, awaitPromise: true })
   return r.result?.result?.value
 }
-const sleep = (ms) => new Promise((r) => setTimeout(r, ms))
-// Front camera.
-await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', windowsVirtualKeyCode: 50, nativeVirtualKeyCode: 50, key: '2', text: '2' })
-await send('Input.dispatchKeyEvent', { type: 'keyUp', windowsVirtualKeyCode: 50, key: '2' })
-await sleep(1200)
 const report = await evalJs(`(() => {
   const mgr = window.__ccm
+  if (!mgr || typeof mgr.getSceneGroup !== 'function') return { err: 'no scene' }
   const group = mgr.getSceneGroup()
   group.updateWorldMatrix(true, true)
-  // Collect world-space triangles: [ax,ay,az,bx..,cx.., matHex, meshTag]
   const tris = []
   group.traverse((o) => {
     if (!o.isMesh || !o.visible) return
@@ -46,26 +44,20 @@ const report = await evalJs(`(() => {
     const idx = o.geometry.index
     const mat = Array.isArray(o.material) ? o.material[0] : o.material
     const hex = mat && mat.color ? mat.color.getHexString() : '?'
-    const tag = (o.name || '?') + ':' + hex
     o.updateWorldMatrix(true, false)
     const e = o.matrixWorld.elements
     const v = (i) => {
       const x = pos.getX(i), y = pos.getY(i), z = pos.getZ(i)
-      return [
-        e[0]*x + e[4]*y + e[8]*z + e[12],
-        e[1]*x + e[5]*y + e[9]*z + e[13],
-        e[2]*x + e[6]*y + e[10]*z + e[14]
-      ]
+      return [e[0]*x+e[4]*y+e[8]*z+e[12], e[1]*x+e[5]*y+e[9]*z+e[13], e[2]*x+e[6]*y+e[10]*z+e[14]]
     }
     const n = idx ? idx.count : pos.count
     for (let t = 0; t < n; t += 3) {
       const a = idx ? v(idx.getX(t)) : v(t)
       const b = idx ? v(idx.getX(t+1)) : v(t+1)
       const c = idx ? v(idx.getX(t+2)) : v(t+2)
-      tris.push([a, b, c, tag])
+      tris.push([a, b, c, hex])
     }
   })
-  // Moller-Trumbore, DoubleSide (any winding hits).
   function rayTri(o, d, a, b, c) {
     const e1x=b[0]-a[0], e1y=b[1]-a[1], e1z=b[2]-a[2]
     const e2x=c[0]-a[0], e2y=c[1]-a[1], e2z=c[2]-a[2]
@@ -83,21 +75,31 @@ const report = await evalJs(`(() => {
     return t > 1e-6 ? t : -1
   }
   const out = []
-  for (const sx of [-0.4, -0.35, -0.3, -0.25, 0.25, 0.3, 0.35, 0.4]) {
-    for (const sy of [1.1, 1.2, 1.3, 1.4, 1.5]) {
-      const o = [sx, sy, 3], d = [0, 0, -1]
-      let best = -1, tag = 'MISS'
-      for (const [a, b, c, t] of tris) {
-        const t2 = rayTri(o, d, a, b, c)
-        if (t2 > 0 && (best < 0 || t2 < best)) { best = t2; tag = t }
+  for (let ix = 0; ix <= 22; ix++) {
+    const sx = 0.1 + ix * 0.025
+    for (let iy = 0; iy <= 18; iy++) {
+      const sy = 0.8 + iy * 0.05
+      for (const sgn of [1, -1]) {
+        for (const [zo, dz, dir] of [[3, -1, 'F'], [-3, 1, 'B']]) {
+          const o = [sgn * sx, sy, zo], d = [0, 0, dz]
+          let best = -1, tag = null
+          for (const [a, b, c, hex] of tris) {
+            const t2 = rayTri(o, d, a, b, c)
+            if (t2 > 0 && (best < 0 || t2 < best)) { best = t2; tag = hex }
+          }
+          if (tag && tag !== 'a0a0a0') {
+            const zhit = dz < 0 ? 3 - best : best - 3
+            out.push([+(sgn*sx).toFixed(2), +sy.toFixed(2), dir, +zhit.toFixed(2), tag])
+          }
+        }
       }
-      out.push([sx, sy, best < 0 ? null : +((3 - best).toFixed(2)), tag.split(':').pop()])
     }
   }
   return out
 })()`)
-for (const [x, y, z, mat] of report) {
-  console.log(`(${x},${y}) z=${z} mat=${mat}`)
+for (const [x, y, dir, z, mat] of report) {
+  console.log(`NONMETAL (${x},${y}) ${dir} z=${z} mat=${mat}`)
 }
+console.log('count:', report.length)
 ws.close()
 console.log('DONE')

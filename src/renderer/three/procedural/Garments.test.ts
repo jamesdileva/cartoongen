@@ -79,7 +79,10 @@ import { DEFAULT_BODY_SHAPE, type BodyShape } from '../../../shared/types/bodySh
 import { DEFAULT_FACE_SHAPE } from '../../../shared/types/faceShape'
 import { surfaceZ, CRANIUM_CENTER_Y } from './FaceFeatures'
 import type { CharacterDNA } from '../../../shared/types/dna'
-import { buildTorso, deltoidCxOf } from './BodyParts'
+import { buildTorso, buildArm, deltoidCxOf } from './BodyParts'
+import { deformSkin, snapshotRest, applyPoseOffsets } from '../Poses'
+import posesData from '../../../shared/data/poses.json'
+import type { Pose } from '../../../shared/types/pose'
 import { ProportionManager } from '../ProportionManager'
 
 function weightSumViolations(geometry: THREE.BufferGeometry): number {
@@ -1316,10 +1319,12 @@ describe('plate armour', () => {
 
   it('produces normalized weights with x symmetry', () => {
     for (const build of [buildPlate, buildPlateLegs, buildArmet]) {
-      const { geometry } = build()
-      expect(weightSumViolations(geometry)).toBe(0)
-      const ext = xExtent(geometry)
-      expect(ext.min).toBeCloseTo(-ext.max, 3)
+      const built = build()
+      for (const part of [built, ...(built.extra ?? [])]) {
+        expect(weightSumViolations(part.geometry)).toBe(0)
+        const ext = xExtent(part.geometry)
+        expect(ext.min).toBeCloseTo(-ext.max, 3)
+      }
     }
   })
 
@@ -1389,11 +1394,14 @@ describe('plate armour', () => {
   })
 
   it('plate v2 binds the full arm chain and reaches the wrist', () => {
-    const { boneNames, geometry } = buildPlate()
-    expect(boneNames).toContain('LeftForearm')
-    expect(boneNames).toContain('RightForearm')
-    expect(weightSumViolations(geometry)).toBe(0)
-    const ext = xExtent(geometry)
+    const built = buildPlate()
+    // Arm harness lives in the pose-rigid extra part (arm-chain-only bind).
+    expect(built.extra).toHaveLength(1)
+    const armPart = built.extra![0]
+    expect(armPart.boneNames).toContain('LeftForearm')
+    expect(armPart.boneNames).not.toContain('LeftClavicle')
+    expect(weightSumViolations(armPart.geometry)).toBe(0)
+    const ext = xExtent(armPart.geometry)
     // Vambrace runs to the wrist, tucking under the gauntlet cuff at 0.7+.
     expect(ext.max).toBeGreaterThan(0.85)
     expect(ext.min).toBeCloseTo(-ext.max, 3)
@@ -2161,6 +2169,166 @@ describe('sprint 32 back slot', () => {
     expect(ext.max).toBeGreaterThan(1.6)
     expect(ext.max).toBeLessThan(1.85)
   })
+})
+
+describe('posed plate coverage (relaxed)', () => {
+  // Mini-rig mirroring SKELETON arm layout; skinned with the same equation
+  // as the renderer to prove posed coverage headlessly.
+  function makePosedRig(): Map<string, THREE.Bone> {
+    const defs: Array<{ name: string; pos: [number, number, number]; rotZ?: number; parent?: string }> = [
+      { name: 'Root', pos: [0, 0.9, 0] },
+      { name: 'Spine', pos: [0, 0.25, 0], parent: 'Root' },
+      { name: 'Spine1', pos: [0, 0.15, 0], parent: 'Spine' },
+      { name: 'Spine2', pos: [0, 0.15, 0], parent: 'Spine1' },
+      { name: 'LeftClavicle', pos: [-0.1, 0.02, 0], parent: 'Spine2' },
+      { name: 'RightClavicle', pos: [0.1, 0.02, 0], parent: 'Spine2' },
+      { name: 'LeftUpperArm', pos: [-0.38, 0.05, 0], rotZ: Math.PI / 2, parent: 'Spine2' },
+      { name: 'LeftForearm', pos: [0, 0.3, 0], parent: 'LeftUpperArm' },
+      { name: 'LeftHand', pos: [0, 0.25, 0], parent: 'LeftForearm' },
+      { name: 'RightUpperArm', pos: [0.38, 0.05, 0], rotZ: -Math.PI / 2, parent: 'Spine2' },
+      { name: 'RightForearm', pos: [0, 0.3, 0], parent: 'RightUpperArm' },
+      { name: 'RightHand', pos: [0, 0.25, 0], parent: 'RightForearm' }
+    ]
+    const map = new Map<string, THREE.Bone>()
+    for (const d of defs) {
+      const b = new THREE.Bone()
+      b.name = d.name
+      b.position.set(...d.pos)
+      if (d.rotZ !== undefined) b.rotation.z = d.rotZ
+      map.set(d.name, b)
+    }
+    for (const d of defs) {
+      if (d.parent) map.get(d.parent)!.add(map.get(d.name)!)
+    }
+    map.get('Root')!.updateMatrixWorld(true)
+    return map
+  }
+
+  it('relaxed arms stay inside plate + pauldrons (no armpit holes)', () => {
+    const bones = makePosedRig()
+    const rest = snapshotRest(bones)
+    const inverses = new Map<string, THREE.Matrix4>()
+    bones.forEach((b, n) => inverses.set(n, new THREE.Matrix4().copy(b.matrixWorld).invert()))
+    // Triple-extreme corner: wide stocky geometry AND max bone morphs, then
+    // the relaxed drop. Rest inverses mirror the renderer (pre-proportion).
+    const pm = new ProportionManager()
+    pm.setBoneMap(bones)
+    pm.applyProportions({ shoulderWidth: 1, muscleMass: 1 })
+    const relaxed = (posesData as Pose[]).find((p) => p.id === 'relaxed')!
+    applyPoseOffsets(bones, rest, relaxed)
+    bones.get('Root')!.updateMatrixWorld(true)
+
+    const shape = { ...DEFAULT_BODY_SHAPE, shoulderWidth: 1.2, chestDepth: 1.1, hipWidth: 1.08 }
+    const torso = buildTorso(shape, 0.5, 0.5, 0.5, 1)
+    const armL = buildArm(-1)
+    const armR = buildArm(1)
+    const plate = buildPlate(shape, 0.5, 0.5, 0.5, 0)
+    const skin = (g: THREE.BufferGeometry, order: string[]): THREE.BufferGeometry =>
+      deformSkin(g, order, bones, inverses)
+    const bodyParts = [
+      skin(torso.geometry, torso.segments.map((s) => s.name)),
+      skin(armL.geometry, ['LeftUpperArm', 'LeftForearm', 'LeftHand']),
+      skin(armR.geometry, ['RightUpperArm', 'RightForearm', 'RightHand'])
+    ]
+    const clothParts = [
+      skin(plate.geometry, plate.boneNames),
+      ...[...(plate.extra ?? [])].map((p) => skin(p.geometry, p.boneNames))
+    ]
+    const clothMeshes = clothParts.map(
+      (g) => new THREE.Mesh(g, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+    )
+    for (const m of clothMeshes) m.updateMatrixWorld(true)
+    const dirs: THREE.Vector3[] = []
+    for (let k = 0; k < 12; k++) {
+      const a = (k / 12) * Math.PI * 2
+      dirs.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a)))
+    }
+    dirs.push(new THREE.Vector3(0, 1, 0), new THREE.Vector3(0, -1, 0))
+    const ray = new THREE.Raycaster()
+    ray.far = 1.0
+    let uncovered = 0
+    let total = 0
+    // Both arms: shoulder hollow through elbow.
+    for (const part of [bodyParts[1], bodyParts[2]]) {
+      const pp = part.attributes.position as THREE.BufferAttribute
+      for (let i = 0; i < pp.count; i++) {
+        const bx = pp.getX(i)
+        const by = pp.getY(i)
+        const bz = pp.getZ(i)
+        if (by < 1.0 || by > 1.62 || Math.abs(bx) < 0.15 || Math.abs(bx) > 0.62) continue
+        total++
+        let covered = false
+        for (const d of dirs) {
+          ray.set(new THREE.Vector3(bx, by, bz).addScaledVector(d, 1e-4), d)
+          if (clothMeshes.some((m) => ray.intersectObject(m, false).length > 0)) {
+            covered = true
+            break
+          }
+        }
+        if (!covered) uncovered++
+      }
+    }
+    expect(total).toBeGreaterThan(0)
+    expect(uncovered).toBe(0)
+  })
+
+  it('relaxed knight flank hidden from camera sightlines (live Session 073)', () => {
+    // Live CDP (knight preset + relaxed) showed torso-flank skin through
+    // the armhole wedge: the arm-skin test above passes because it tests
+    // the wrong surface. This tests TORSO verts against the two real
+    // camera sightlines, with exact knight DNA (default shape, bust 0.15,
+    // butt 0.2, belly 0.5, shoulderWidth 0.8, muscleMass 0.7).
+    const bones = makePosedRig()
+    const rest = snapshotRest(bones)
+    const inverses = new Map<string, THREE.Matrix4>()
+    bones.forEach((b, n) => inverses.set(n, new THREE.Matrix4().copy(b.matrixWorld).invert()))
+    const pm = new ProportionManager()
+    pm.setBoneMap(bones)
+    pm.applyProportions({ shoulderWidth: 0.8, muscleMass: 0.7 })
+    const relaxed = (posesData as Pose[]).find((p) => p.id === 'relaxed')!
+    applyPoseOffsets(bones, rest, relaxed)
+    bones.get('Root')!.updateMatrixWorld(true)
+
+    const torso = buildTorso(DEFAULT_BODY_SHAPE, 0.15, 0.2, 0.5, 0.7)
+    const plate = buildPlate(DEFAULT_BODY_SHAPE, 0.15, 0.5, 0.2, 0)
+    const skin = (g: THREE.BufferGeometry, order: string[]): THREE.BufferGeometry =>
+      deformSkin(g, order, bones, inverses)
+    const torsoDef = skin(torso.geometry, torso.segments.map((s) => s.name))
+    const clothMeshes = [
+      skin(plate.geometry, plate.boneNames),
+      ...[...(plate.extra ?? [])].map((p) => skin(p.geometry, p.boneNames))
+    ].map((g) => {
+      const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ side: THREE.DoubleSide }))
+      m.updateMatrixWorld(true)
+      return m
+    })
+    const cams = [new THREE.Vector3(0, 0.9, 3), new THREE.Vector3(0, 0.9, -3)]
+    const ray = new THREE.Raycaster()
+    ray.far = 10
+    const leaks: string[] = []
+    let total = 0
+    const pp = torsoDef.attributes.position as THREE.BufferAttribute
+    for (let i = 0; i < pp.count; i++) {
+      const v = new THREE.Vector3(pp.getX(i), pp.getY(i), pp.getZ(i))
+      if (v.y < 1.1 || v.y > 1.45 || Math.abs(v.x) < 0.15) continue
+      total++
+      for (const cam of cams) {
+        const dist = v.distanceTo(cam)
+        const dir = v.clone().sub(cam).normalize()
+        ray.set(cam, dir)
+        const blocked = clothMeshes.some((m) =>
+          ray.intersectObject(m, false).some((h) => h.distance < dist - 0.002)
+        )
+        if (!blocked) {
+          if (leaks.length < 8) leaks.push(v.toArray().map((n) => n.toFixed(3)).join(','))
+          break
+        }
+      }
+    }
+    expect(total).toBeGreaterThan(0)
+    expect(leaks, `flank leaks: ${leaks.join(' | ')}`).toEqual([])
+  })
+})
 
   it('cape opening faces front, rear and sides are closed (frame regression)', () => {
     // The drape path straddles the sweep kernel's frame threshold; a wrong
@@ -2188,7 +2356,6 @@ describe('sprint 32 back slot', () => {
     expect(sideHit).not.toBeNull()
     expect(sideHit!.x).toBeGreaterThan(0.2)
   })
-})
 
 it('wizard cone contains the skull on all head shapes (no poke-through)', () => {
   // Point-in-mesh parity: skull surface samples (pulled 3% inward) cast

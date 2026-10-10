@@ -502,16 +502,25 @@ export class CharacterManager {
   ): THREE.Group | null {
     const def = findProceduralAsset(assetId)
     if (!def) return null
-    const { geometry, boneNames } = def.build(dna)
+    const built = def.build(dna)
     const material = this.materialManager.getMaterial(def.materialId)
-    const mesh = this.bindToBones(geometry, boneNames, material)
-    if (!mesh) {
-      geometry.dispose()
+    const group = new THREE.Group()
+    let ok = false
+    for (const part of [built, ...(built.extra ?? [])]) {
+      const mesh = this.bindToBones(part.geometry, part.boneNames, material)
+      if (!mesh) {
+        continue
+      }
+      mesh.renderOrder = layer
+      group.add(mesh)
+      ok = true
+    }
+    if (!ok) {
+      group.traverse((child) => {
+        if (child instanceof THREE.Mesh) child.geometry.dispose()
+      })
       return null
     }
-    mesh.renderOrder = layer
-    const group = new THREE.Group()
-    group.add(mesh)
     return group
   }
 

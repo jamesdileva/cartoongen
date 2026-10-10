@@ -38,3 +38,37 @@ export function resetPoseRotations(
     bones.get(name)?.rotation.copy(euler)
   })
 }
+
+/**
+ * CPU skinning: deforms geometry by its own skinIndex/skinWeight attributes
+ * using rest inverses and CURRENT bone matrices. Pure/headless; mirrors the
+ * GPU path for verification (posed coverage, bind parity).
+ */
+export function deformSkin(
+  geometry: THREE.BufferGeometry,
+  order: string[],
+  bones: Map<string, THREE.Bone>,
+  inverses: Map<string, THREE.Matrix4>
+): THREE.BufferGeometry {
+  const pos = geometry.attributes.position as THREE.BufferAttribute
+  const si = geometry.attributes.skinIndex.array as ArrayLike<number>
+  const sw = geometry.attributes.skinWeight.array as ArrayLike<number>
+  const g = geometry.clone()
+  const p = g.attributes.position as THREE.BufferAttribute
+  const v = new THREE.Vector3()
+  const sk = new THREE.Vector3()
+  const m = new THREE.Matrix4()
+  for (let i = 0; i < pos.count; i++) {
+    v.set(pos.getX(i), pos.getY(i), pos.getZ(i))
+    sk.set(0, 0, 0)
+    for (let k = 0; k < 4; k++) {
+      const w = sw[i * 4 + k]
+      if (w <= 0) continue
+      const bone = bones.get(order[si[i * 4 + k]])!
+      m.multiplyMatrices(bone.matrixWorld, inverses.get(order[si[i * 4 + k]])!)
+      sk.addScaledVector(v.clone().applyMatrix4(m), w)
+    }
+    p.setXYZ(i, sk.x, sk.y, sk.z)
+  }
+  return g
+}

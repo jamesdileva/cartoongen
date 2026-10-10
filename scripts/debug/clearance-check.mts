@@ -1,4 +1,5 @@
 import * as THREE from 'three'
+import { mergeGeometries } from 'three/examples/jsm/utils/BufferGeometryUtils.js'
 import {
   buildArm,
   buildHead,
@@ -138,6 +139,19 @@ function report(
   }
 }
 
+/**
+ * Full cloth shell for a garment result: main geometry plus any `extra`
+ * parts (e.g. plate's separately-bound arm harness). All parts share
+ * position/normal/uv attributes so they merge into one raycast target.
+ */
+function shellOf(result: { geometry: THREE.BufferGeometry; extra?: Array<{ geometry: THREE.BufferGeometry }> }): THREE.BufferGeometry {
+  const parts = [result.geometry, ...(result.extra ?? []).map((e) => e.geometry)]
+  if (parts.length === 1) return parts[0]
+  const merged = mergeGeometries(parts)
+  if (!merged) throw new Error('shellOf: mergeGeometries returned null')
+  return merged
+}
+
 const shapes: Array<{ name: string; shape: BodyShape }> = [
   { name: 'default', shape: DEFAULT_BODY_SHAPE },
   {
@@ -271,7 +285,7 @@ for (const { name, shape } of shapes) {
           const strapX = 0.085 + 0.03 * bust + 0.02
 
           for (const [shirtName, buildShirt] of Object.entries(shirtBuilders)) {
-            const shirt = buildShirt(shape, bust, belly, butt, topLength).geometry
+            const shirt = shellOf(buildShirt(shape, bust, belly, butt, topLength))
             const openShirt =
               shirtName === 'jacket' || shirtName === 'vest' || shirtName === 'dwarf_vest'
             const bareShirt =
@@ -401,7 +415,7 @@ for (const { name, shape } of shapes) {
             'long_coat'
             // dress + tabard are sleeveless: deltoids bare by design (like tank)
           ] as const) {
-            const shirt = shirtBuilders[shirtName](shape, bust, belly, butt, topLength).geometry
+            const shirt = shellOf(shirtBuilders[shirtName](shape, bust, belly, butt, topLength))
             const clavEnd = 0.36 * shape.shoulderWidth
             report(
               issues,

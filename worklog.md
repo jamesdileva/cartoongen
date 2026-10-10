@@ -5,6 +5,64 @@ Running session log. Prior history (Sessions 001-042, Sprints 0-20) lives in
 
 ---
 
+## Session 073 - Relaxed-Knight Armpit: Root Cause + Fix
+
+### Date
+
+2026-10-07
+
+### What we did
+
+Picked up the errored post-compaction session (recovered its plan from the
+opencode DB). User confirmed the relaxed-knight arm skin still reproduces.
+Drove knight preset + relaxed live via CDP and found + fixed the actual
+root cause.
+
+**Diagnosis (false-color + unprojection).** Painted skin blue live,
+screenshotted front/back, then raycast a dense NDC grid in-page with the
+REAL perspective camera + CPU skinning (bind-pose testing lies under
+poses). 27 torso-flank skin triangles visible through the armhole wedge.
+Rim-diff (rest vs relaxed) showed the rerebrace-top rim drops 9.4cm and
+leaks go 0 -> 27.
+
+**Root cause (definitive).** The plate body shell carried 20-30%
+upperarm weights on its flank (via `topSegments` proxies). Under relaxed
+(72-degree adduction) those verts swing ~75mm while spine-weighted
+neighbors stay, shearing the 1.14->1.24 band open. The torso shell must
+not swing with arm poses. (Also found en route: my own headless harness
+passed belly/butt swapped to `buildPlate` — `(bust,belly,butt)` vs
+`buildTorso`'s `(bust,butt,belly)`. Catalog call sites are correct; only
+my scripts were wrong. Positional-arg footgun documented, not renamed.)
+
+**Fix (all in `Garments.ts`, plate-only unless noted).**
+- `topSegments` gains `arms=false`: plate body binds spine+clavicle only
+  (arm harness already binds separately via `extra`). THE fix — shell is
+  pose-stable, morph tracking kept via clavicle reach.
+- `torsoShellStations` gains plate-only `sideEase` (0.035 halfW,
+  0.75x halfD, y 1.1-1.45): closes the oblique graze corridor.
+- Plate body sweep 20 -> 64 radial segs (facet sagitta 3.8 -> 0.3mm).
+- Inner pauldron enlarged twice (now 0.18/0.235/0.17 @ y 1.44, 32x24)
+  + enclosed mid cap (20x14, independent groove phase) + rerebrace mouth
+  raised 1.47 -> 1.50 (buries into deltoid/pauldron, closes rim crescent).
+- New failing-first test `relaxed knight flank` (exact knight DNA +
+  camera-segment leak check): failed before, passes after.
+- Probe `shellOf()` merges `extra` parts (was testing plate body only
+  -> 270 false failures).
+
+**Verification.**
+- Live false-color: 27 skin tris -> 0/0 front/back; pixel count 0 true-
+  blue in torso zones both views (face slit by design). Back view was
+  already clean; front armpits read clean black armor.
+- `typecheck` 0 errors; `lint` 0 errors (4 pre-existing warnings);
+  `test` 366 passing; `probe:clearance` ALL PASSED; `build` succeeds.
+
+### Current status
+
+Relaxed-knight armpit skin fixed and verified live. Committed as
+Session 073 work (see git log). Next: Sprint 38 win-unpack on user go.
+
+---
+
 ## Session 072 - Live Visual Verification (Relaxed Knight)
 
 ### Date

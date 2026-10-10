@@ -34,6 +34,10 @@ export function isProceduralAssetId(id: string): boolean {
 export interface GarmentBuildResult {
   geometry: THREE.BufferGeometry
   boneNames: string[]
+  /** Additional rigidly-bound parts (own segment sets, e.g. pose-driven
+   * limbs on an otherwise morph-driven garment). Merged visually, bound
+   * separately. */
+  extra?: GarmentBuildResult[]
 }
 
 const BUST_DEFAULT = 0.15
@@ -125,7 +129,12 @@ function torsoShellStations(
   belly: number,
   butt: number,
   hemY: number,
-  openFrontGap = 0
+  openFrontGap = 0,
+  // Extra +/-x half-width on armpit-band stations (Session 073: relaxed
+  // knight showed torso flank through the armhole wedge at y 1.24-1.36 —
+  // oblique camera sightlines thread past the shell lips once the
+  // rerebrace swings down. Plate-only; other garments keep 0.
+  sideEase = 0
 ): TorsoShell {
   const bellyScale = bellyScaleOf(belly)
   const pelvisHalfW = 0.32 * shape.hipWidth + CLOTH_OFFSET
@@ -141,8 +150,14 @@ function torsoShellStations(
     // Butt ellipsoids reach y ≈ 0.925 + buttR ≈ 1.045 at butt=1 — include
     // the y=1.06 waist station so the hip depth carries through the butt top.
     const isHip = y <= 1.06
-    const halfW = Math.max(w * (isWaist ? bellyScale : 1) + CLOTH_OFFSET, isHip ? pelvisHalfW : 0)
+    const halfW =
+      Math.max(w * (isWaist ? bellyScale : 1) + CLOTH_OFFSET, isHip ? pelvisHalfW : 0) +
+      (y >= 1.1 && y <= 1.45 ? sideEase : 0)
     let halfD = d * (isWaist ? bellyScale : 1) + CLOTH_OFFSET
+    // Same band deepens front/back: the flank sightlines graze nearly
+    // tangent to the side wall, so width alone chases them asymptotically;
+    // a deeper front wall meets those rays head-on instead.
+    if (y >= 1.1 && y <= 1.45) halfD += sideEase * 0.75
     // Per-station ellipse: narrower stations need more depth for the same
     // body silhouette — never reuse a wider station's correction.
     if (isChest) halfD = Math.max(halfD, halfDForProfile(halfW, bustSamples))
@@ -200,13 +215,17 @@ export function waistDims(
  * clavicle capsules toward the sleeve so the deltoid cap region binds
  * clavicle-dominant and tracks shoulderWidth-driven deltoid slide instead
  * of staying behind on the upper arm. Defaults to legacy reach (no sleeves).
- * Pass the sleeve outer x to cover the cuff region.
+ * Pass the sleeve outer x to cover the cuff region. Set arms=false for
+ * torso-only shells (e.g. plate body, whose arm harness binds separately):
+ * upperarm/forearm weights would swing flank verts under arm poses and
+ * shear the shell open (Session 073).
  */
 function topSegments(
   clavEnd: number,
   armStart: number,
   longSleeves: boolean,
-  clavReachX: number | null = null
+  clavReachX: number | null = null,
+  arms = true
 ): BoneSegment[] {
   const reach = clavReachX ?? clavEnd + 0.02
   // Short sleeves end at the deltoid: cap the upperarm proxy past the cap so
@@ -224,15 +243,18 @@ function topSegments(
     { name: 'Spine1', start: [0, 1.3, 0], end: [0, 1.45, 0] },
     { name: 'Spine2', start: [0, 1.45, 0], end: [0, 1.6, 0] },
     { name: 'LeftClavicle', start: [-0.1, 1.47, 0], end: [-reach, 1.46, 0] },
-    { name: 'RightClavicle', start: [0.1, 1.47, 0], end: [reach, 1.46, 0] },
-    // Upperarm proxy ends past the deltoid cap: sleeve verts beyond it bind
-    // clavicle-dominant and track shoulderWidth-driven deltoid slide as one
-    // unit with the deltoid meat (which is ~91% clavicle). The arm mesh
-    // itself keeps its own full-length segments, so muscle tracking is
-    // unaffected - static headroom covers thickness instead.
+    { name: 'RightClavicle', start: [0.1, 1.47, 0], end: [reach, 1.46, 0] }
+  ]
+  if (!arms) return segs
+  // Upperarm proxy ends past the deltoid cap: sleeve verts beyond it bind
+  // clavicle-dominant and track shoulderWidth-driven deltoid slide as one
+  // unit with the deltoid meat (which is ~91% clavicle). The arm mesh
+  // itself keeps its own full-length segments, so muscle tracking is
+  // unaffected - static headroom covers thickness instead.
+  segs.push(
     { name: 'LeftUpperArm', start: [-upperStart, 1.5, 0], end: [-upperEnd, 1.5, 0] },
     { name: 'RightUpperArm', start: [upperStart, 1.5, 0], end: [upperEnd, 1.5, 0] }
-  ]
+  )
   if (longSleeves) {
     segs.push(
       { name: 'LeftForearm', start: [-0.66, 1.5, 0], end: [-0.91, 1.51, 0] },
@@ -243,13 +265,42 @@ function topSegments(
 }
 
 function bindTop(parts: THREE.BufferGeometry[], segments: BoneSegment[]): GarmentBuildResult {
+  const merged = mergeParts(parts)
+  return attributeParts(merged, segments)
+}
+
+function mergeParts(parts: THREE.BufferGeometry[]): THREE.BufferGeometry {
   const merged = mergeGeometries(parts)
   if (!merged) {
-    throw new Error('bindTop: mergeGeometries returned null')
+    throw new Error('mergeParts: mergeGeometries returned null')
   }
-  const binding = computeSkinBindings(merged.attributes.position.array as Float32Array, segments)
-  applySkinAttributes(merged, binding)
-  return { geometry: merged, boneNames: segments.map((s) => s.name) }
+  return merged
+}
+
+function attributeParts(geometry: THREE.BufferGeometry, segments: BoneSegment[]): GarmentBuildResult {
+  const binding = computeSkinBindings(geometry.attributes.position.array as Float32Array, segments)
+  applySkinAttributes(geometry, binding)
+  return { geometry, boneNames: segments.map((s) => s.name) }
+}
+
+/**
+ * Arm-chain-only segments (no clavicles): parts bound here rotate rigidly
+ * with arm poses instead of shearing between static clavicle weights and
+ * rotated arm weights. Used for plate arm harness; morph-slide tracking is
+ * traded for pose coherence (documented corner at extreme width morphs).
+ */
+function armTopSegments(clavEnd: number): BoneSegment[] {
+  const upperStart = clavEnd + 0.005
+  return [
+    { name: 'Root', start: [0, 0.86, 0], end: [0, 1.15, 0] },
+    { name: 'Spine', start: [0, 1.15, 0], end: [0, 1.3, 0] },
+    { name: 'Spine1', start: [0, 1.3, 0], end: [0, 1.45, 0] },
+    { name: 'Spine2', start: [0, 1.45, 0], end: [0, 1.6, 0] },
+    { name: 'LeftUpperArm', start: [-upperStart, 1.5, 0], end: [-0.66, 1.5, 0] },
+    { name: 'RightUpperArm', start: [upperStart, 1.5, 0], end: [0.66, 1.5, 0] },
+    { name: 'LeftForearm', start: [-0.66, 1.5, 0], end: [-0.91, 1.51, 0] },
+    { name: 'RightForearm', start: [0.66, 1.5, 0], end: [0.91, 1.51, 0] }
+  ]
 }
 
 /**
@@ -2181,8 +2232,11 @@ export function buildPlate(
   // Armour never crops: fixed full hem overlapping the faulds, so no
   // midriff gap can open between cuirass and leg harness at any morph.
   const hemY = 0.9
-  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, hemY)
-  const body = makeSweep(stations, 20, false, false, phiStart, phiLength)
+  const { stations, phiStart, phiLength } = torsoShellStations(shape, bust, belly, butt, hemY, 0, 0.035)
+  // Denser rings on plate: the relaxed-knight flank sightlines graze the
+  // shell at ~2mm, inside the 20-seg facet sagitta (3.8mm). 48 segments
+  // drop sagitta to ~0.3mm so grooves can't thread the clearance.
+  const body = makeSweep(stations, 64, false, false, phiStart, phiLength)
   // Sternum ridge riding the chest tube surface (belly-scaled at waist).
   const ridgeZ = (y: number): number => {
     const d = profileAt(shape, y).d * (y >= 1.0 && y <= 1.18 ? bellyScale : 1)
@@ -2246,13 +2300,22 @@ export function buildPlate(
   // Pauldrons: two layered caps per shoulder, sized past max-muscle meat.
   // Sized to swallow the whole deltoid ball: in relaxed pose the arm tube
   // swings away and the static deltoid would otherwise read as a bare
-  // shoulder gap between pauldron and rerebrace.
+  // shoulder gap between pauldron and rerebrace. The inner cap's skirt
+  // reaches down-inboard (Session 073: relaxed-knight flank sightlines
+  // grazed under it at y 1.28-1.36) so the deltoid underside stays
+  // covered; the swung tube top tucks under the skirt like a lame.
+  // A mid cap with independent tessellation sits between the layers:
+  // fully enclosed (zero silhouette change), its grooves never align
+  // with either neighbor's, so no single sightline can thread all three.
   const clavEnd = 0.36 * shape.shoulderWidth
   const pauldrons: THREE.BufferGeometry[] = []
   for (const side of [-1, 1] as const) {
-    const inner = makeEllipsoid(0.16, 0.19, 0.15, 16, 12)
-    translateGeometry(inner, side * deltoidCxOf(shape), 1.47, 0)
+    const inner = makeEllipsoid(0.18, 0.235, 0.17, 32, 24)
+    translateGeometry(inner, side * deltoidCxOf(shape), 1.44, 0)
     pauldrons.push(inner)
+    const mid = makeEllipsoid(0.175, 0.2, 0.16, 20, 14)
+    translateGeometry(mid, side * (deltoidCxOf(shape) + 0.02), 1.47, 0)
+    pauldrons.push(mid)
     const outer = makeEllipsoid(0.17, 0.16, 0.15, 16, 12)
     translateGeometry(outer, side * (clavEnd + 0.075), 1.5, 0)
     pauldrons.push(outer)
@@ -2263,6 +2326,9 @@ export function buildPlate(
   // Arm harness: rerebrace tubes (deltoid -> elbow) + elbow couters +
   // vambrace tubes (elbow -> wrist, tucking under the gauntlet cuff at 0.7).
   // Proud of cloth dims (+0.012) with muscle headroom like sleeve tubes.
+  // The mouth sits HIGH (y 1.50, buried in deltoid + pauldron at rest) so
+  // that after the relaxed drop it still overlaps the deltoid lower ball
+  // instead of opening a rim-meat viewing crescent (Session 073).
   const armR = (r: number): number => r * MUSCLE_HEADROOM + CLOTH_OFFSET + 0.012
   const arms: THREE.BufferGeometry[] = []
   for (const side of [-1, 1] as const) {
@@ -2270,7 +2336,7 @@ export function buildPlate(
     arms.push(
       makeSweep(
         [
-          { center: [s * (clavEnd - 0.05), 1.47, 0], width: 0.23, height: 0.24 },
+          { center: [s * (clavEnd - 0.05), 1.5, 0], width: 0.23, height: 0.24 },
           {
             center: [s * (clavEnd + 0.12), 1.485, 0],
             width: armR(0.0625) * 2,
@@ -2304,8 +2370,11 @@ export function buildPlate(
     )
   }
   const armStart = sleeveArmStart(shape)
-  return bindTop(
-    [
+  // Two binds: the body shell stays morph-correct (full clavicle-weighted
+  // segments) while the arm harness binds arm-chain-only so it swings
+  // rigidly with poses instead of shearing at mixed weights.
+  const bodyResult = attributeParts(
+    mergeParts([
       body,
       ridge,
       lameBand(1.02, 0.02),
@@ -2314,11 +2383,16 @@ export function buildPlate(
       faulds,
       collarRing(),
       gorget,
-      ...pauldrons,
-      ...arms
-    ],
-    topSegments(clavEnd, armStart, true, clavEnd + 0.23)
+      ...pauldrons
+    ]),
+    // Torso-only shell: no arm bones (arms=false). Upperarm weights would
+    // swing flank verts under arm poses and shear the shell open; the
+    // separate arm harness already tracks the limbs. Clavicle reach keeps
+    // shoulderWidth slide tracking for morphs.
+    topSegments(clavEnd, armStart, false, clavEnd + 0.23, false)
   )
+  const armResult = attributeParts(mergeParts(arms), armTopSegments(clavEnd))
+  return { ...bodyResult, extra: [armResult] }
 }
 
 /**

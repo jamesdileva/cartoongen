@@ -3140,3 +3140,31 @@ Current code clean; leftover candidate is triple-extreme morph corners
 or a stale build. Kept `cdp-verify-pose.mts` + `cdp-ray.mts` as reusable
 helpers. Full entry in worklog.md.
 
+---
+
+## Session 073 - Relaxed-Knight Armpit Root Cause + Fix
+
+### Date
+
+2026-10-07
+
+### What we did
+
+Picked up the compacted/errored session (context recovered from opencode
+DB + working tree). User confirmed the skin still reproduces. Live
+false-color diagnosis (blue skin + perspective-correct NDC scan with CPU
+skinning) found 27 flank tris visible; rim-diff proved the rerebrace rim
+drops 9.4cm in relaxed. Root cause: plate body shell's 20-30% upperarm
+weights swung flank verts ~75mm under pose, shearing the shell open.
+Fixed with pose-stable shell binding (`topSegments` `arms=false`),
+plate-only side ease, denser shell tessellation, enlarged + triple-layer
+pauldrons, raised rerebrace mouth, and a failing-first knight-flank test.
+Probe gained `shellOf()` for multi-mesh garments. Live re-shoot: 0 skin
+tris front/back, 0 true-blue pixels. 366 tests, probe green, build
+succeeds. Full entry in worklog.md.
+
+### Current status
+
+Relaxed-knight armpit fixed. Next: Sprint 38 win-unpack (last) on user
+go.
+
